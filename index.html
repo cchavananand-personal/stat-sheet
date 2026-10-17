@@ -349,7 +349,7 @@ nav button.on{color:var(--accent)}
       <div class="grid2" style="margin-top:10px"><button id="copyLink">Copy link</button><button id="rotateLink">Reset link</button></div>
     </div></details>
 
-    <details class="card" id="healthDetails"><summary>Garmin (free, via Apple Health)</summary><div id="healthBox" class="small"></div></details>
+    <details class="card" id="healthDetails"><summary>Scale &amp; Garmin (free, via Apple Health)</summary><div id="healthBox" class="small"></div></details>
 
     <details class="card"><summary>WHOOP</summary><div id="whoopBox" class="small"></div></details>
 
@@ -1114,6 +1114,15 @@ async function renderHealthBox() {
       <li>Add <b>Dictionary</b> with: <code>k</code> = your key, <code>action</code> = <code>healthDay</code>, <code>steps</code>, <code>activeKcal</code>, <code>restingHR</code> = the three results.</li>
       <li>Add <b>Get Contents of URL</b>: the URL below, Method <b>POST</b>, Request Body <b>JSON</b> = Dictionary.</li>
     </ol>
+    <p style="margin:14px 0 6px"><b>FitDays scale → weight &amp; body fat (fills in by itself)</b></p>
+    <ol style="padding-left:18px;line-height:1.6;margin:0 0 10px">
+      <li><b>FitDays</b> → Me → Settings → <b>Apple Health</b> → turn on Weight and Body Fat.</li>
+      <li><b>Shortcuts</b> → Automation → <b>+</b> → <b>App</b> → FitDays → <b>Is Closed</b> → <b>Run Immediately</b>.</li>
+      <li><b>Find Health Samples</b>: Type <b>Weight</b>, Start Date <b>is today</b>, Sort <b>Latest First</b>, Limit <b>1</b>. Repeat for <b>Body Fat Percentage</b>.</li>
+      <li><b>Dictionary</b>: <code>action</code> = <code>healthDay</code>, <code>weight</code> and <code>bodyfat</code> = the two samples.</li>
+      <li><b>Get Contents of URL</b>: URL below, <b>POST</b>, Request Body <b>JSON</b> = Dictionary.</li>
+    </ol>
+    <p class="muted" style="margin:0 0 10px">Weigh in → close FitDays → your weight appears in Stat Sheet.</p>
     <label>URL<input readonly value="${esc(s.postUrl)}" onclick="this.select()"></label>
     <label style="margin-top:8px">Your key (keep private)<input readonly value="${esc(s.ownerKey)}" onclick="this.select()"></label>
     <button id="hSync" class="link" style="margin-top:8px;padding-left:0">Refresh status</button>`;
