@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Keng X Yoon · Stat Sheet</title>
+<meta name="description" content="Weight, body fat, meals and progress photos in one simple stat sheet.">
+<!-- link previews (LINE, iMessage, WhatsApp …) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Stat Sheet">
+<meta property="og:title" content="Keng X Yoon · Stat Sheet">
+<meta property="og:description" content="Weight, body fat, meals and progress photos in one simple stat sheet.">
+<meta property="og:image" content="https://cchavananand-personal.github.io/stat-sheet/icon-512.png">
+<meta property="og:url" content="https://cchavananand-personal.github.io/stat-sheet/">
+<meta name="twitter:card" content="summary">
+<!-- home screen: icon + name -->
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-512.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stat Sheet">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#0f1312">
+<script>
+  // The app itself lives on Google Apps Script. Opened from the home-screen icon → go straight in.
+  var APP = 'https://script.google.com/macros/s/AKfycbzLggqhy0TH8zRjU1ow5gf0O0UfVh8EBTnvWkcvOYOSZXo4vvcKeMZb-gLKymSr-28/exec';
+  if (navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || /[?&]go\b/.test(location.search)) {
+    location.replace(APP);
+  }
+</script>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; min-height: 100%; background: #0f1312; color: #e6ece9;
+    font: 16px -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; }
+  main { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 24px 24px calc(24px + env(safe-area-inset-bottom)); box-sizing: border-box; text-align: center; }
+  img { width: 112px; height: 112px; border-radius: 26px; box-shadow: 0 10px 30px #0008; }
+  h1 { font-size: 22px; letter-spacing: .04em; margin: 22px 0 6px; }
+  h1 span { color: #3fb58a; }
+  p { color: #93a09a; margin: 0 0 28px; max-width: 320px; line-height: 1.45; }
+  a.open { display: block; width: 100%; max-width: 320px; padding: 15px 0; border-radius: 14px; background: #3fb58a;
+    color: #06120d; font-weight: 700; font-size: 17px; text-decoration: none; }
+  .tip { margin-top: 26px; font-size: 14px; color: #93a09a; max-width: 320px; line-height: 1.5; }
+  .tip b { color: #e6ece9; }
+</style>
+</head>
+<body>
+<main>
+  <img src="icon-512.png" alt="">
+  <h1>KENG <span>X</span> YOON <span>·</span> STAT SHEET</h1>
+  <p>Weight, body fat, meals and progress photos in one simple stat sheet.</p>
+  <a class="open" href="https://script.google.com/macros/s/AKfycbzLggqhy0TH8zRjU1ow5gf0O0UfVh8EBTnvWkcvOYOSZXo4vvcKeMZb-gLKymSr-28/exec">Open Stat Sheet</a>
+  <div class="tip">📲 On iPhone, tap <b>Share</b> then <b>Add to Home Screen</b> from this page to get the app icon.</div>
+</main>
+</body>
+</html>
