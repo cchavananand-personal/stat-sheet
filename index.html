@@ -29,7 +29,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background:var(--bg);padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px;max-width:680px;margin:auto}
-.brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:.05em;font-size:14px}.brand span{color:var(--accent)}
+.brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:.05em;font-size:14px;min-width:0}.brand b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.brand span{color:var(--accent)}
 .role{font-size:12px;color:var(--muted);background:var(--soft);padding:5px 10px;border-radius:99px}
 main{max-width:680px;margin:auto;padding:0 16px}
 h2{font-size:26px;margin:8px 0 14px;letter-spacing:-.02em}h3{font-size:17px;margin:0 0 12px}
@@ -185,10 +185,16 @@ nav button.on{color:var(--accent)}
 .ent .add{position:relative;width:64px;height:64px;border-radius:10px;border:1.5px dashed var(--line);display:grid;place-items:center;color:var(--muted);flex:none}
 .ent .add svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8}
 .ent .add input{position:absolute;inset:0;opacity:0;min-height:0;height:100%}
+/* first-load screen */
+#boot{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:var(--muted);font-size:15px;transition:opacity .25s}
+#boot img{width:84px;height:84px;border-radius:20px;animation:pulse 1.4s ease-in-out infinite}
+#boot.done{opacity:0;pointer-events:none}
+@keyframes pulse{50%{transform:scale(.92);opacity:.7}}
 .sect{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin:22px 2px 10px}
 </style>
 </head>
 <body>
+<div id="boot"><img src="icon-180.png" alt=""><div id="bootMsg">Loading your stats…</div></div>
 <header>
   <div class="brand"><svg width="30" height="30" viewBox="0 0 1024 1024" aria-hidden="true" style="border-radius:8px;flex:none">
     <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#062a22"/><stop offset=".5" stop-color="#0d6a50"/><stop offset="1" stop-color="#3a2a9e"/></linearGradient></defs>
@@ -496,7 +502,7 @@ const ICONS = {
 };
 const TABS = OWNER ? [['progress','Progress'],['today','Today'],['meals','Meals'],['more','More']] : [['progress','Progress'],['today','Today']];
 $('#nav').innerHTML = TABS.map(([id, label]) => `<button data-t="${id}"><svg viewBox="0 0 24 24">${ICONS[id]}</svg>${label}</button>`).join('');
-if (!OWNER) { document.body.classList.add('ro'); $$('#bodyForm input').forEach(i => i.readOnly = true); $('#roleTag').textContent = 'Trainer · read-only'; $('#roleTag').classList.remove('hide'); }
+if (!OWNER) { document.body.classList.add('ro'); $$('#bodyForm input').forEach(i => i.readOnly = true); $('#roleTag').textContent = 'View only'; $('#roleTag').classList.remove('hide'); }
 function show(id) {
   $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.t === id));
   $$('main > section').forEach(s => s.classList.toggle('hide', s.id !== 'tab-' + id));
@@ -1129,8 +1135,9 @@ function renderWhoop() {
 }
 
 /* start */
-api('bootstrap', { date: TODAY }).then(d => { Object.assign(S, d); show('progress'); })
-  .catch(e => { $('#tab-progress').innerHTML = `<div class="card">Could not load: ${esc(e.message || e)}</div>`; });
+api('bootstrap', { date: TODAY })
+  .then(d => { Object.assign(S, d); show('progress'); $('#boot').classList.add('done'); setTimeout(() => $('#boot').remove(), 400); })
+  .catch(e => { $('#bootMsg').innerHTML = `Couldn't load your stats.<br><button class="primary" style="margin-top:14px" onclick="location.reload()">Try again</button>`; });
 </script>
 </body>
 </html>
