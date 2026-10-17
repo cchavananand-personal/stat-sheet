@@ -25,6 +25,11 @@
 <script>
   // The app itself lives on Google Apps Script. Opened from the home-screen icon → go straight in.
   var APP = 'https://script.google.com/macros/s/AKfycbzLggqhy0TH8zRjU1ow5gf0O0UfVh8EBTnvWkcvOYOSZXo4vvcKeMZb-gLKymSr-28/exec';
+  // LINE's built-in browser can't open Google Apps Script pages ("unable to open the file").
+  // LINE opens any link carrying openExternalBrowser=1 in Safari instead — so hop out to Safari straight away.
+  if (/ Line\//i.test(navigator.userAgent) && !/openExternalBrowser=1/.test(location.search)) {
+    location.replace(location.pathname + (location.search ? location.search + '&' : '?') + 'openExternalBrowser=1');
+  }
   if (navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || /[?&]go\b/.test(location.search)) {
     location.replace(APP);
   }
@@ -52,6 +57,10 @@
   <p>Weight, body fat, meals and progress photos in one simple stat sheet.</p>
   <a class="open" href="https://script.google.com/macros/s/AKfycbzLggqhy0TH8zRjU1ow5gf0O0UfVh8EBTnvWkcvOYOSZXo4vvcKeMZb-gLKymSr-28/exec">Open Stat Sheet</a>
   <div class="tip">📲 On iPhone, tap <b>Share</b> then <b>Add to Home Screen</b> from this page to get the app icon.</div>
+  <script>
+    // Inside LINE, make the button open the app in Safari too (belt and braces).
+    if (/ Line\//i.test(navigator.userAgent)) document.querySelector('a.open').href = APP + '?openExternalBrowser=1';
+  </script>
 </main>
 </body>
 </html>
