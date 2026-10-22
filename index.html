@@ -626,7 +626,7 @@ function drawTrend(id, points, color, o) {
   const s = trendSeries(points, M), idx = s.data.map((v, i) => v == null ? -1 : i).filter(i => i >= 0), dp = o.d == null ? 1 : o.d;
   const last = idx.length ? s.data[idx[idx.length - 1]] : null, prev = idx.length > 1 ? s.data[idx[idx.length - 2]] : null;
   o.head.innerHTML = last == null ? ''
-    : `<b>${fmtN(last, dp)}${o.u}</b>${prev != null ? ` <i class="${(last > prev) !== !!o.bar ? 'up' : 'down'}">${last > prev ? '↑' : '↓'} ${fmtN(Math.abs(last - prev), dp)}</i>` : ''}
+    : `<b>${fmtN(last, dp)}${o.u}</b>${prev != null && fmtN(Math.abs(last - prev), dp) !== fmtN(0, dp) ? ` <i class="${(last > prev) !== !!o.bar ? 'up' : 'down'}">${last > prev ? '↑' : '↓'} ${fmtN(Math.abs(last - prev), dp)}</i>` : ''}
        <small>${M === 'day' ? (o.bar ? 'latest day' : 'latest') : s.labels[idx[idx.length - 1]] + ' avg'}${o.target ? ' · target ' + o.target : ''}</small>`;
   const box = $('#' + id).parentNode; // friendly empty state instead of empty axes
   box.classList.toggle('empty-chart', last == null);
@@ -659,7 +659,7 @@ function drawTrend(id, points, color, o) {
           const raw = s.data[c.dataIndex];
           return ['Trend ' + fx(c.parsed.y, dp) + o.u].concat(raw != null ? ['Weighed ' + (+raw) + o.u] : []);
         } } } },
-      scales: { x: { grid: { display: false }, border: { color: css('--line') }, ticks: { color: tick, maxRotation: 0, autoSkip: true, maxTicksLimit: 5, align: 'inner', autoSkipPadding: 16,
+      scales: { x: { grid: { display: false }, border: { color: css('--line') }, ticks: { color: tick, maxRotation: 0, autoSkip: true, maxTicksLimit: 5, align: 'inner', autoSkipPadding: 26,
                   callback: v => s.ticks ? s.ticks[v] : s.labels[v] } },
                 y: Object.assign(y, { grid: { color: css('--line') }, border: { display: false } }) } }
   });
