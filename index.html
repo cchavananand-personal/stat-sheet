@@ -395,7 +395,7 @@ nav button.on{color:var(--accent)}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261022131218';
+const BUILD = '20261022140929';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -909,7 +909,7 @@ function renderMealsTab() {
   $('#mealsIntake').classList.toggle('hide', mealsMode !== 'intake');
   if (mealsMode === 'intake') drawIntake();
   const ps = planStartFor(TODAY);
-  $('#planVersion').textContent = ps ? 'Started ' + nice(ps, {day: 'numeric', month: 'short', year: 'numeric'}) : 'No plan yet';
+  $('#planVersion').textContent = ps ? 'Started ' + nice(ps, {day: 'numeric', month: 'short', year: 'numeric'}) + ' · logged automatically each day' : 'No plan yet';
   // Your Meal Plan folder (Drive, synced to E:\ETC\Fitness App\Meal Plan on the PC)
   $('#planFolderLink').href = 'https://drive.google.com/drive/folders/1m6SBYvWmjOdZquG5nAPyHh88a8O5cBwm';
   $('#planFolderLink').target = '_blank';
