@@ -86,6 +86,10 @@ button.link{background:none;min-height:36px;padding:6px 8px;color:var(--muted);f
 .parts button.on{background:var(--c);color:#fff}
 .parts button:disabled{opacity:1}
 .parts button:disabled:not(.on){opacity:.35}
+.setrow{display:grid;grid-template-columns:40px 1fr 1fr 32px;gap:8px;align-items:center;margin-bottom:8px}
+.setrow.head{margin:12px 0 4px}.setrow b{text-align:center}.setrow input{margin:0}
+.setrow .link{padding:0;min-height:0}
+.sets{font-variant-numeric:tabular-nums}
 #wpDay button{position:relative;padding:6px 0;font-size:13px}
 .pdot{position:absolute;bottom:4px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--accent)}
 .cal button.ph::after{content:"";position:absolute;top:5px;right:6px;width:5px;height:5px;border-radius:50%;background:var(--bf)}
@@ -271,15 +275,10 @@ nav button.on{color:var(--accent)}
       <div class="card owner-only"><h3>Add details <span class="small muted">(optional)</span></h3>
         <form id="wkForm">
           <label>Exercise<select name="code"></select></label>
-          <div class="grid2">
-            <label>Sets<input type="number" name="sets" min="0" inputmode="numeric" placeholder="—"></label>
-            <label>Reps<input type="number" name="reps" min="0" inputmode="numeric" placeholder="—"></label>
-          </div>
-          <div class="grid2">
-            <label>Weight (kg)<input type="number" name="weight" min="0" step="0.5" inputmode="decimal" placeholder="—"></label>
-            <label>Minutes<input type="number" name="minutes" min="0" inputmode="numeric" placeholder="—"></label>
-          </div>
-          <button class="primary">Add exercise</button>
+          <div class="setrow head small muted"><span>Set</span><span>Reps</span><span>kg</span><span></span></div>
+          <div id="wkSets"></div>
+          <button type="button" class="link" id="wkAddSet" style="margin:2px 0 10px">+ Add set</button>
+          <button class="primary">Save exercise</button>
         </form>
       </div>
     </div>
@@ -455,7 +454,7 @@ nav button.on{color:var(--accent)}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261022175540';
+const BUILD = '20261022180117';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -876,16 +875,23 @@ const WK = () => S.workoutCatalog || { parts: [], exercises: [] };
 const DOW = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const exName = code => (WK().exercises.find(e => e[0] === code) || [, code])[1];
 const partOf = name => WK().parts.find(p => p.name === name) || { name, code: '', color: '#7f8c86' };
-const exDetail = w => [w.sets && w.reps ? w.sets + ' × ' + w.reps : w.sets ? w.sets + ' sets' : w.reps ? w.reps + ' reps' : '',
-  num(w.weight) ? w.weight + ' kg' : '', num(w.minutes) ? w.minutes + ' min' : ''].filter(Boolean).join(' · ');
+/** Each logged set is its own row; this lists them in order, e.g. "60 kg × 8 · 55 kg × 10 · 50 kg × 12". */
+const setsText = rows => rows.filter(w => num(w.reps) || num(w.weight)).sort((a, b) => (num(a.set) || 0) - (num(b.set) || 0))
+  .map(w => (num(w.weight) ? w.weight + ' kg × ' : '× ') + (num(w.reps) || '–')).join(' · ');
+const setCount = rows => rows.filter(w => num(w.reps) || num(w.weight)).length;
 const partChips = (on, attr, off) => WK().parts.map(p =>
   `<button style="--c:${p.color}" ${attr}="${esc(p.name)}" class="${on.has(p.name) ? 'on' : ''}" ${off ? 'disabled' : ''}>${esc(p.name)}</button>`).join('');
-/** Exercise tiles grouped in body-part order. del = data attribute for the ✕ button; btn = custom right-hand button. */
-const exTiles = (rows, del, btn) => WK().parts.map(p => rows.filter(w => w.code && w.part === p.name).map(w => {
-  const d = exDetail(w);
-  return `<div class="item mtile" style="--c:${p.color};--cbg:${p.color}1f"><div class="grow"><b>${esc(w.name || exName(w.code))}</b><p>${esc(p.name)}${d ? ' · ' + esc(d) : ''}</p></div>
-    ${btn ? btn(w) : del ? `<button class="link" ${del}="${w.id}" aria-label="Delete">✕</button>` : ''}</div>`;
-}).join('')).join('');
+/** One tile per exercise (all its sets together), in body-part order. del = data attribute for ✕ (gets the code); btn = custom button. */
+const exTiles = (rows, del, btn) => WK().parts.map(p => {
+  const groups = {};
+  rows.filter(w => w.code && w.part === p.name).forEach(w => (groups[w.code] = groups[w.code] || []).push(w));
+  return Object.values(groups).map(g => {
+    const n = setCount(g), s = setsText(g);
+    return `<div class="item mtile" style="--c:${p.color};--cbg:${p.color}1f"><div class="grow"><b>${esc(g[0].name || exName(g[0].code))}</b>
+      <p>${esc(p.name)}${n ? ' · ' + n + (n > 1 ? ' sets' : ' set') : ''}</p>${s ? `<p class="sets">${esc(s)}</p>` : ''}</div>
+      ${btn ? btn(g[0]) : del ? `<button class="link" ${del}="${g[0].code}" aria-label="Delete">✕</button>` : ''}</div>`;
+  }).join('');
+}).join('');
 /** Exercise picker with one group per body part; the parts given come first. */
 function fillExercises(sel, first) {
   const keep = sel.value, parts = WK().parts.slice().sort((a, b) => first.has(b.name) - first.has(a.name));
@@ -928,17 +934,16 @@ function renderWorkout(list, loading) {
   $('#wkParts').innerHTML = partChips(trained, 'data-part', !OWNER || loading);
   $$('[data-part]').forEach(b => b.onclick = () => togglePart(b));
 
-  const ex = list.filter(w => w.code);
-  const vol = ex.reduce((t, w) => t + (num(w.sets) || 1) * (num(w.reps) || 0) * (num(w.weight) || 0), 0);
-  const mins = ex.reduce((t, w) => t + (num(w.minutes) || 0), 0);
+  const ex = list.filter(w => w.code), nEx = new Set(ex.map(w => w.code)).size, nSets = setCount(ex);
+  const vol = ex.reduce((t, w) => t + (num(w.reps) || 0) * (num(w.weight) || 0), 0);
   $('#wkSum').textContent = !list.length ? (OWNER ? 'Tap the body parts you trained. Details are optional.' : `No workout logged for ${wSel === TODAY ? 'today' : 'this day'}.`)
-    : [ex.length && ex.length + (ex.length > 1 ? ' exercises' : ' exercise'), vol && fmtN(vol, 0) + ' kg lifted', mins && mins + ' min'].filter(Boolean).join(' · ');
+    : [nEx && nEx + (nEx > 1 ? ' exercises' : ' exercise'), nSets && nSets + (nSets > 1 ? ' sets' : ' set'), vol && fmtN(vol, 0) + ' kg lifted'].filter(Boolean).join(' · ');
   $('#wkList').innerHTML = exTiles(ex, OWNER && 'data-delw');
   $$('[data-delw]').forEach(b => b.onclick = () => {
-    if (!confirm('Delete this exercise?')) return;
-    const id = b.dataset.delw, date = wSel;
-    renderWorkout(wkList.filter(x => x.id !== id)); drawCal();
-    wkSync(date, () => api('remove', { sheet: 'Workouts', id }).then(() => null));
+    if (!confirm('Delete this exercise and all its sets?')) return;
+    const code = b.dataset.delw, date = wSel;
+    renderWorkout(wkList.filter(x => x.code !== code)); drawCal();
+    wkSync(date, () => api('removeWorkoutExercise', { date, code }));
   });
   fillExercises($('#wkForm').code, trained);
   renderDayWorkoutPlan();
@@ -949,14 +954,37 @@ function togglePart(b) {
   renderWorkout(on ? wkList.concat([{ id: 'new' + Date.now(), date, part, code: '' }]) : wkList.filter(w => w.part !== part)); drawCal();
   wkSync(date, () => api('setWorkoutPart', { date, part, on }));
 }
+/* details form: one line per set, each with its own reps and kg (pyramids, drop sets…) */
+function setLine(i, s) {
+  return `<div class="setrow"><b>${i + 1}</b>
+    <input type="number" data-k="reps" min="0" inputmode="numeric" placeholder="reps" value="${s.reps}">
+    <input type="number" data-k="weight" min="0" step="0.5" inputmode="decimal" placeholder="kg" value="${s.weight}">
+    <button type="button" class="link" data-dels="${i}" aria-label="Remove set">✕</button></div>`;
+}
+const readSets = () => $$('#wkSets .setrow').map(r => ({ reps: $('[data-k=reps]', r).value, weight: $('[data-k=weight]', r).value }));
+function drawSets(sets) {
+  $('#wkSets').innerHTML = sets.map((s, i) => setLine(i, s)).join('');
+  $$('[data-dels]', $('#wkSets')).forEach(b => b.onclick = () => {
+    const s = readSets(); s.splice(+b.dataset.dels, 1); drawSets(s.length ? s : [{ reps: '', weight: '' }]);
+  });
+}
+const resetSets = () => drawSets([0, 1, 2].map(() => ({ reps: '', weight: '' })));
+resetSets();
+$('#wkAddSet').onclick = () => { // new set starts as a copy of the last one; change what differs
+  const s = readSets(), last = s[s.length - 1] || { reps: '', weight: '' };
+  drawSets(s.concat([Object.assign({}, last)]));
+  const r = $$('#wkSets [data-k=reps]').pop(); r.focus(); r.select();
+};
 $('#wkForm').onsubmit = e => {
-  e.preventDefault(); const f = e.target, date = wSel, row = formObj(f);
-  if (!row.code) return toast('Choose an exercise', true);
-  busy($('button.primary', f), () => wkSync(date, () => api('addWorkout', Object.assign(row, { date }))).then(ok => {
-    if (!ok) return;
-    const code = f.code.value; f.reset(); f.code.value = code; // keep the exercise for the next set
-    toast('Added · ' + nice(date));
-  }));
+  e.preventDefault(); const f = e.target, date = wSel, code = f.code.value;
+  if (!code) return toast('Choose an exercise', true);
+  const sets = readSets().filter(s => s.reps !== '' || s.weight !== '');
+  if (!sets.length) return toast('Enter reps or kg for at least one set', true);
+  const part = WK().parts.find(p => p.code === code.slice(0, 2)).name, k = Math.max(0, ...wkList.filter(w => w.code === code).map(w => num(w.set) || 0));
+  // show it straight away; the server numbers the sets the same way and replaces these when it answers
+  renderWorkout(wkList.concat(sets.map((s, i) => ({ id: 'new' + i + Date.now(), date, part, code, name: exName(code), reps: s.reps, weight: s.weight, set: k + i + 1 }))));
+  drawCal(); f.reset(); resetSets(); toast(exName(code) + ' · ' + sets.length + (sets.length > 1 ? ' sets' : ' set') + ' saved');
+  wkSync(date, () => api('addWorkout', { date, code, sets }));
 };
 $('#wkRepeat').onclick = e => busy(e.target, () => wkSync(wSel, async () => {
   const r = await api('repeatWorkout', { date: wSel }); toast('Copied from ' + nice(r.from)); return r.list;
@@ -983,8 +1011,8 @@ function renderDayWorkoutPlan() {
   $$('[data-logw]', el).forEach(b => b.onclick = () => {
     const x = lines[+b.dataset.logw];
     if (!x.code) return $(`#wkParts [data-part="${x.part}"]`).click();
-    const f = $('#wkForm'); f.reset(); f.code.value = x.code;
-    f.scrollIntoView({ behavior: 'smooth', block: 'center' }); f.sets.focus({ preventScroll: true });
+    const f = $('#wkForm'); f.reset(); resetSets(); f.code.value = x.code;
+    f.scrollIntoView({ behavior: 'smooth', block: 'center' }); $('#wkSets [data-k=reps]').focus({ preventScroll: true });
   });
   const all = $('#wkLogAll');
   if (all) all.onclick = () => partsLeft.forEach(p => $(`#wkParts [data-part="${p}"]:not(.on)`)?.click()); // marks the planned body parts
@@ -1016,7 +1044,7 @@ function renderWorkoutPlan() {
   const shown = planFor(wpDow);
   $('#wpList').innerHTML = exTiles(shown, 'data-delwp') || (rows.length ? '' : '<div class="empty">Rest day</div>');
   $$('[data-delwp]').forEach(b => b.onclick = () => {
-    const keep = planRows(wpDow); keep.splice(shown.findIndex(r => r.id === b.dataset.delwp), 1); setPlanDay(wpDow, keep);
+    setPlanDay(wpDow, planRows(wpDow).filter(r => r.code !== b.dataset.delwp));
   });
   fillExercises($('#wpForm').code, on);
   const ef = $('#exForm').part, keep = ef.value;
