@@ -315,14 +315,16 @@ nav button.on{color:var(--accent)}
     <h2 style="margin:6px 0 12px">Plan</h2>
     <div class="seg go" id="planKind"><button data-m="meals" class="on">🍽️ Meals</button><button data-m="workout">🏋️ Workout</button></div>
     <div id="planWorkout" class="hide">
+      <p class="small muted" style="margin:0 2px 10px">Your rotation repeats in order, whatever the weekday. Today shows which day is next.</p>
       <div class="seg" id="wpDay"></div>
       <div class="card"><h3 id="wpTitle" style="margin-bottom:2px"></h3>
-        <p class="small muted" style="margin:0">Tap the body parts for this day, then add exercises below.</p>
+        <p class="small muted" style="margin:0">Tap the body parts for this day.</p>
         <div class="parts" id="wpParts"></div>
         <div id="wpList" style="margin-top:8px"></div>
+        <button type="button" class="link" id="wpRemove" style="margin-top:6px">Remove this day</button>
       </div>
       <div class="card"><h3 id="wpFormTitle" style="margin-bottom:2px">Exercises</h3>
-        <p class="small muted" style="margin:0 0 10px">Only what you plan to do. Sets, reps and kg are logged in Today.</p>
+        <p class="small muted" style="margin:0 0 10px">Optional: your usual exercises for this day. Sets, reps and kg are logged in Today.</p>
         <form id="wpForm">
           <label>Exercise<select name="code"></select></label>
           <button class="primary">Add to plan</button>
@@ -455,7 +457,7 @@ nav button.on{color:var(--accent)}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261022195350';
+const BUILD = '20261022215237';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -993,73 +995,99 @@ $('#wkRepeat').onclick = e => busy(e.target, () => wkSync(wSel, async () => {
   const r = await api('repeatWorkout', { date: wSel }); toast('Copied from ' + nice(r.from)); return r.list;
 }));
 
-/* the weekly split, shown on Today › Workout with a "+ Log" per line */
-const planFor = dow => (S.workoutPlan || []).filter(r => Number(r.dow) === dow);
+/* the training rotation (e.g. 1 Chest+Triceps → 2 Back+Biceps → 3 Shoulders+Abs → 4 Legs → 1 …), whatever the weekday.
+   Today › Workout suggests the day that follows your last workout. */
+const ROT = () => S.rotation || [];
+const rotSteps = () => [...new Set(ROT().map(r => Number(r.step)))].sort((a, b) => a - b);
+const stepItems = step => ROT().filter(r => Number(r.step) === step);
+const stepParts = step => WK().parts.map(p => p.name).filter(n => stepItems(step).some(r => r.part === n));
+/** Body parts trained on a day: the loaded day if we have it, else the history sent with bootstrap. */
+function partsOn(date) {
+  if (WKD[date]) return new Set(WKD[date].map(w => w.part));
+  const t = (S.trainedDays || []).find(x => x[0] === date);
+  return new Set(t ? t[1].split(',') : []);
+}
+/** The rotation day for `date`: the one after the day that best matches your last workout before it. */
+function nextStep(date) {
+  const steps = rotSteps().filter(s => stepParts(s).length);
+  if (!steps.length) return null;
+  const days = (S.trainedDays || []).map(x => x[0]).concat(Object.keys(WKD));
+  const prev = days.filter(d => d < date && partsOn(d).size).sort().pop();
+  if (!prev) return steps[0];
+  const did = partsOn(prev);
+  let best = -1, score = 0;
+  steps.forEach((s, i) => { const n = stepParts(s).filter(p => did.has(p)).length; if (n > score) { score = n; best = i; } });
+  return best < 0 ? steps[0] : steps[(best + 1) % steps.length];
+}
 function renderDayWorkoutPlan() {
-  const el = $('#wkPlan'), dow = parse(wSel).getDay(), items = planFor(dow);
+  const el = $('#wkPlan');
   if (!OWNER) return el.classList.add('hide');
   el.classList.remove('hide');
-  if (!items.length) { el.innerHTML = `<div class="small muted">No plan for ${DOW[dow]}s. Set your weekly split in the Plan tab.</div>`; return; }
-  const done = x => wkList.some(w => x.code ? w.code === x.code : w.part === x.part);
-  const parts = [...new Set(items.map(x => x.part))].filter(p => !items.some(x => x.part === p && x.code)).map(p => ({ part: p, code: '' }));
-  const lines = parts.concat(items.filter(x => x.code));
-  const partsLeft = [...new Set(items.map(x => x.part))].filter(p => !wkList.some(w => w.part === p));
-  const logBtn = x => done(x) ? '<span class="down" style="font-weight:700;padding:0 8px">✓</span>'
-    : `<button class="primary" data-logw="${lines.indexOf(x)}" style="min-height:40px;padding:6px 14px">+ Log</button>`;
-  el.innerHTML = `<div class="row between"><h3 style="margin:0">Plan · ${DOW[dow]}</h3>${partsLeft.length ? '<button class="link" id="wkLogAll">✓ Trained these</button>' : ''}</div>` +
-    parts.map(x => { const p = partOf(x.part);
-      return `<div class="item mtile" style="--c:${p.color};--cbg:${p.color}1f"><div class="grow"><b>${esc(p.name)}</b><p>Body part</p></div>${logBtn(x)}</div>`; }).join('') +
-    exTiles(items, null, logBtn);
-  // a planned body part logs straight away; a planned exercise opens the details form so you enter what you actually did
+  const step = nextStep(wSel), steps = rotSteps().filter(s => stepParts(s).length);
+  if (step == null) { el.innerHTML = `<div class="small muted">Set your training rotation in the Plan tab and this shows which day is next.</div>`; return; }
+  const parts = stepParts(step), items = stepItems(step);
+  const partsLeft = parts.filter(p => !wkList.some(w => w.part === p));
+  const logBtn = x => wkList.some(w => w.code === x.code) ? '<span class="tick">✓</span>'
+    : `<button class="primary" data-logw="${x.code}" style="min-height:40px;padding:6px 14px">+ Log</button>`;
+  el.innerHTML = `<div class="row between"><div><div class="small muted">Next up · Day ${steps.indexOf(step) + 1} of ${steps.length}</div>
+      <h3 style="margin:2px 0 0">${parts.map(p => `<span style="color:${partOf(p).color}">${esc(p)}</span>`).join(' + ')}</h3></div>
+      ${partsLeft.length ? '<button class="primary" id="wkLogAll" style="min-height:40px;padding:6px 14px">✓ Trained</button>' : '<span class="tick">✓</span>'}</div>` +
+    (items.some(x => x.code) ? `<div style="margin-top:10px">${exTiles(items, null, logBtn)}</div>` : '');
+  // a usual exercise opens the sets form with it chosen, so you enter what you actually did
   $$('[data-logw]', el).forEach(b => b.onclick = () => {
-    const x = lines[+b.dataset.logw];
-    if (!x.code) return $(`#wkParts [data-part="${x.part}"]`).click();
-    const f = $('#wkForm'); f.reset(); resetSets(); f.code.value = x.code;
+    const f = $('#wkForm'); f.reset(); resetSets(); f.code.value = b.dataset.logw;
     f.scrollIntoView({ behavior: 'smooth', block: 'center' }); $('#wkSets [data-k=reps]').focus({ preventScroll: true });
   });
   const all = $('#wkLogAll');
-  if (all) all.onclick = () => partsLeft.forEach(p => $(`#wkParts [data-part="${p}"]:not(.on)`)?.click()); // marks the planned body parts
+  if (all) all.onclick = () => partsLeft.forEach(p => $(`#wkParts [data-part="${p}"]:not(.on)`)?.click());
 }
 
-/* PLAN › Workout: edit the weekly split. Shows instantly; each weekday saves in the background, in order. */
-let wpDow = new Date().getDay(), wpQ = Promise.resolve();
-const planRows = dow => planFor(dow).map(r => ({ part: r.part, code: r.code }));
-function setPlanDay(dow, rows) {
-  S.workoutPlan = (S.workoutPlan || []).filter(r => Number(r.dow) !== dow)
-    .concat(rows.map((r, i) => Object.assign({ id: 'p' + dow + '-' + i, dow, name: r.code ? exName(r.code) : '' }, r)));
+/* PLAN › Workout: edit the rotation. Shows instantly; saves in the background, in order. */
+let rStep = 1, rDays = 0, rQ = Promise.resolve();
+const rotRows = () => ROT().map(r => ({ step: Number(r.step), part: r.part, code: r.code }));
+function setRotation(rows) {
+  S.rotation = rows.map((r, i) => Object.assign({ id: 'r' + i, name: r.code ? exName(r.code) : '' }, r));
   renderWorkoutPlan();
-  wpQ = wpQ.then(() => api('saveWorkoutPlan', { dow, items: planRows(dow) })).catch(() => {});
+  rQ = rQ.then(() => api('saveRotation', { items: rotRows() })).catch(() => {});
 }
 function renderWorkoutPlan() {
-  const order = [1, 2, 3, 4, 5, 6, 0];
-  $('#wpDay').innerHTML = order.map(d => `<button data-m="${d}" class="${d === wpDow ? 'on' : ''}">${DOW[d].slice(0, 3)}${planFor(d).length ? '<i class="pdot"></i>' : ''}</button>`).join('');
-  $$('#wpDay button').forEach(b => b.onclick = () => { wpDow = +b.dataset.m; renderWorkoutPlan(); });
-  const rows = planRows(wpDow), on = new Set(rows.map(r => r.part));
-  $('#wpTitle').textContent = DOW[wpDow];
-  $('#wpFormTitle').textContent = 'Exercises for ' + DOW[wpDow];
+  rDays = Math.max(rDays, 1, ...ROT().map(r => Number(r.step)));
+  rStep = Math.min(rStep, rDays);
+  $('#wpDay').innerHTML = Array.from({ length: rDays }, (_, i) => `<button data-m="${i + 1}" class="${i + 1 === rStep ? 'on' : ''}">Day ${i + 1}</button>`).join('')
+    + (rDays < 6 ? '<button data-m="add" aria-label="Add a day">＋</button>' : '');
+  $$('#wpDay button').forEach(b => b.onclick = () => {
+    if (b.dataset.m === 'add') { rDays++; rStep = rDays; } else rStep = +b.dataset.m;
+    renderWorkoutPlan();
+  });
+  const rows = rotRows().filter(r => r.step === rStep), on = new Set(rows.map(r => r.part));
+  $('#wpTitle').textContent = 'Day ' + rStep + (on.size ? ' · ' + stepParts(rStep).join(' + ') : '');
+  $('#wpFormTitle').textContent = 'Usual exercises for Day ' + rStep;
   $('#wpParts').innerHTML = partChips(on, 'data-wpart');
   $$('[data-wpart]').forEach(b => b.onclick = () => {
     const part = b.dataset.wpart;
-    if (!on.has(part)) return setPlanDay(wpDow, rows.concat([{ part, code: '' }]));
+    if (!on.has(part)) return setRotation(rotRows().concat([{ step: rStep, part, code: '' }]));
     if (rows.some(r => r.part === part && r.code)) return toast('Delete the ' + part.toLowerCase() + ' exercises first', true);
-    setPlanDay(wpDow, rows.filter(r => r.part !== part));
+    setRotation(rotRows().filter(r => !(r.step === rStep && r.part === part)));
   });
-  const shown = planFor(wpDow);
-  $('#wpList').innerHTML = exTiles(shown, 'data-delwp') || (rows.length ? '' : '<div class="empty">Rest day</div>');
-  $$('[data-delwp]').forEach(b => b.onclick = () => {
-    setPlanDay(wpDow, planRows(wpDow).filter(r => r.code !== b.dataset.delwp));
-  });
+  $('#wpList').innerHTML = exTiles(stepItems(rStep), 'data-delwp');
+  $$('[data-delwp]').forEach(b => b.onclick = () => setRotation(rotRows().filter(r => !(r.step === rStep && r.code === b.dataset.delwp))));
+  $('#wpRemove').classList.toggle('hide', rDays < 2);
   fillExercises($('#wpForm').code, on);
   const ef = $('#exForm').part, keep = ef.value;
   ef.innerHTML = WK().parts.map(p => `<option>${esc(p.name)}</option>`).join(''); if (keep) ef.value = keep;
 }
+$('#wpRemove').onclick = () => {
+  if (!confirm('Remove Day ' + rStep + ' from the rotation?')) return;
+  const gone = rStep; rDays--;
+  setRotation(rotRows().filter(r => r.step !== gone).map(r => Object.assign(r, { step: r.step > gone ? r.step - 1 : r.step })));
+};
 $('#wpForm').onsubmit = e => {
-  e.preventDefault(); const f = e.target, row = formObj(f);
-  if (!row.code) return toast('Choose an exercise', true);
-  const part = WK().parts.find(p => p.code === row.code.slice(0, 2)).name;
-  if (planRows(wpDow).some(r => r.code === row.code)) return toast('Already planned for ' + DOW[wpDow], true);
-  setPlanDay(wpDow, planRows(wpDow).filter(r => r.code || r.part !== part).concat([{ part, code: row.code }]));
-  f.reset(); toast('Added to ' + DOW[wpDow]);
+  e.preventDefault(); const f = e.target, code = f.code.value;
+  if (!code) return toast('Choose an exercise', true);
+  if (rotRows().some(r => r.step === rStep && r.code === code)) return toast('Already in Day ' + rStep, true);
+  const part = WK().parts.find(p => p.code === code.slice(0, 2)).name;
+  setRotation(rotRows().filter(r => !(r.step === rStep && r.part === part && !r.code)).concat([{ step: rStep, part, code }]));
+  f.reset(); toast('Added to Day ' + rStep);
 };
 $('#exForm').onsubmit = e => {
   e.preventDefault(); const f = e.target, x = formObj(f);
