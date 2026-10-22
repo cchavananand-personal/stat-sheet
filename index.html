@@ -878,7 +878,9 @@ $('#mealForm').onsubmit = e => {
 /* ---------- MEALS: quick-log menu + targets ---------- */
 function renderMealsTab() {
   $('#planVersion').textContent = planLabel(TODAY);
-  $('#planFolderLink').onclick = e => { e.preventDefault(); api('planFolder').then(r => window.open(r.url, '_blank')); };
+  // Your Meal Plan folder (Drive, synced to E:\ETC\Fitness App\Meal Plan on the PC)
+  $('#planFolderLink').href = 'https://drive.google.com/drive/folders/1m6SBYvWmjOdZquG5nAPyHh88a8O5cBwm';
+  $('#planFolderLink').target = '_blank';
   const t = $('#targetForm'); t.calories.value = S.profile.calories || ''; t.protein.value = S.profile.protein || '';
   renderPlanList();
 }
