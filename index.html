@@ -86,7 +86,7 @@ button.link{background:none;min-height:36px;padding:6px 8px;color:var(--muted);f
 .parts button.on{background:var(--c);color:#fff}
 .parts button:disabled{opacity:1}
 .parts button:disabled:not(.on){opacity:.35}
-.tick{color:var(--accent);font-size:22px;font-weight:800;padding:0 10px;min-height:40px}
+.tick,button.link.tick{color:var(--accent);font-size:22px;font-weight:800;padding:0 10px;min-height:40px}
 .setrow{display:grid;grid-template-columns:40px 1fr 1fr 32px;gap:8px;align-items:center;margin-bottom:8px}
 .setrow.head{margin:12px 0 4px}.setrow b{text-align:center}.setrow input{margin:0}
 .setrow .link{padding:0;min-height:0}
@@ -455,7 +455,7 @@ nav button.on{color:var(--accent)}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261022195244';
+const BUILD = '20261022195350';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
