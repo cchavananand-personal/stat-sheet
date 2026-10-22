@@ -86,6 +86,8 @@ button.link{background:none;min-height:36px;padding:6px 8px;color:var(--muted);f
 .parts button.on{background:var(--c);color:#fff}
 .parts button:disabled{opacity:1}
 .parts button:disabled:not(.on){opacity:.35}
+#wpDay button{position:relative;padding:6px 0;font-size:13px}
+.pdot{position:absolute;bottom:4px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--accent)}
 .cal button.ph::after{content:"";position:absolute;top:5px;right:6px;width:5px;height:5px;border-radius:50%;background:var(--bf)}
 .cal button:disabled{opacity:.25}
 
@@ -259,6 +261,7 @@ nav button.on{color:var(--accent)}
     </div>
 
     <div id="logWorkout" class="hide">
+      <div class="card owner-only" id="wkPlan"></div>
       <div class="card">
         <div class="row between"><h3 style="margin:0">What did you train?</h3><button class="link owner-only" id="wkRepeat">↻ Repeat last</button></div>
         <div class="parts" id="wkParts"></div>
@@ -307,10 +310,44 @@ nav button.on{color:var(--accent)}
     </div>
   </section>
 
-  <!-- MEALS: set up the quick-log menu -->
+  <!-- PLAN: meal plan + intake, and the weekly workout split -->
   <section id="tab-meals" class="hide">
-    <div class="row between" style="margin:6px 0 14px"><h2 style="margin:0">Meals</h2>
-      <div class="seg" id="mealsMode" style="margin:0;width:170px"><button data-m="plan" class="on">Plan</button><button data-m="intake">Intake</button></div></div>
+    <h2 style="margin:6px 0 12px">Plan</h2>
+    <div class="seg go" id="planKind"><button data-m="meals" class="on">🍽️ Meals</button><button data-m="workout">🏋️ Workout</button></div>
+    <div id="planWorkout" class="hide">
+      <div class="seg" id="wpDay"></div>
+      <div class="card"><h3 id="wpTitle" style="margin-bottom:2px"></h3>
+        <p class="small muted" style="margin:0">Tap the body parts for this day, then add exercises below.</p>
+        <div class="parts" id="wpParts"></div>
+        <div id="wpList" style="margin-top:8px"></div>
+      </div>
+      <div class="card"><h3 id="wpFormTitle">Add exercise</h3>
+        <form id="wpForm">
+          <label>Exercise<select name="code"></select></label>
+          <div class="grid2">
+            <label>Sets<input type="number" name="sets" min="0" inputmode="numeric" placeholder="—"></label>
+            <label>Reps<input type="number" name="reps" min="0" inputmode="numeric" placeholder="—"></label>
+          </div>
+          <div class="grid2">
+            <label>Weight (kg)<input type="number" name="weight" min="0" step="0.5" inputmode="decimal" placeholder="—"></label>
+            <label>Minutes<input type="number" name="minutes" min="0" inputmode="numeric" placeholder="—"></label>
+          </div>
+          <button class="primary">Add to plan</button>
+        </form>
+      </div>
+      <div class="card"><h3 style="margin-bottom:2px">Exercise not in the list?</h3>
+        <p class="small muted" style="margin:0 0 10px">Add it here. It gets its own code, so graphs group it with its body part.</p>
+        <form id="exForm">
+          <div class="grid2">
+            <label>Body part<select name="part"></select></label>
+            <label>Name<input name="name" maxlength="60" placeholder="e.g. Cable fly"></label>
+          </div>
+          <button class="primary">Add exercise</button>
+        </form>
+      </div>
+    </div>
+    <div id="planMeals">
+    <div class="seg" id="mealsMode"><button data-m="plan" class="on">Menu</button><button data-m="intake">Intake</button></div>
     <div id="mealsIntake" class="hide">
       <div class="seg" id="kMode" style="margin:0 0 14px"><button data-m="day" class="on">30d</button><button data-m="week">Weeks</button><button data-m="month">Months</button></div>
     <div class="card"><div class="row between"><h3 style="margin:0">Calorie intake</h3><div class="thead" id="tKHead"></div></div><div class="chart sm"><canvas id="tK"></canvas></div></div>
@@ -344,6 +381,7 @@ nav button.on{color:var(--accent)}
         <button class="primary" id="planSave">Add to menu</button>
         <button type="button" class="link hide" id="planCancel">Cancel editing</button>
       </form>
+    </div>
     </div>
     </div>
   </section>
@@ -424,7 +462,7 @@ nav button.on{color:var(--accent)}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261022170551';
+const BUILD = '20261022172634';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -549,10 +587,10 @@ $('#lightbox').onclick = () => $('#lightbox').classList.add('hide');
 const ICONS = {
   progress: '<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/>',
   today: '<rect x="3.5" y="4.5" width="17" height="16" rx="3"/><path d="M3.5 9.5h17M8 2.5v4M16 2.5v4"/><path d="M9 15l2 2 4-4"/>',
-  meals: '<path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10"/><path d="M18 21V3c-2.2 1.2-3.5 4-3.5 7.5V13H18"/>',
+  meals: '<rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4V2.8h6V4M9 10h6M9 14h6M9 18h3"/>',
   more: '<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>'
 };
-const TABS = OWNER ? [['progress','Progress'],['today','Today'],['meals','Meals'],['more','More']] : [['progress','Progress'],['today','Today']];
+const TABS = OWNER ? [['progress','Progress'],['today','Today'],['meals','Plan'],['more','More']] : [['progress','Progress'],['today','Today']];
 $('#nav').innerHTML = TABS.map(([id, label]) => `<button data-t="${id}"><svg viewBox="0 0 24 24">${ICONS[id]}</svg>${label}</button>`).join('');
 if (!OWNER) { document.body.classList.add('ro'); $$('#bodyForm input').forEach(i => i.readOnly = true); $('#roleTag').textContent = 'View only'; $('#roleTag').classList.remove('hide'); }
 function show(id) {
@@ -840,20 +878,49 @@ function renderDayPhotos() {
 
 /* workout for the selected day: tap the body parts trained; exercises underneath are optional detail */
 const WK = () => S.workoutCatalog || { parts: [], exercises: [] };
-const partOf = name => WK().parts.find(p => p.name === name) || { name, color: '#7f8c86' };
+const DOW = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const exName = code => (WK().exercises.find(e => e[0] === code) || [, code])[1];
+const partOf = name => WK().parts.find(p => p.name === name) || { name, code: '', color: '#7f8c86' };
+const exDetail = w => [w.sets && w.reps ? w.sets + ' × ' + w.reps : w.sets ? w.sets + ' sets' : w.reps ? w.reps + ' reps' : '',
+  num(w.weight) ? w.weight + ' kg' : '', num(w.minutes) ? w.minutes + ' min' : ''].filter(Boolean).join(' · ');
+const partChips = (on, attr, off) => WK().parts.map(p =>
+  `<button style="--c:${p.color}" ${attr}="${esc(p.name)}" class="${on.has(p.name) ? 'on' : ''}" ${off ? 'disabled' : ''}>${esc(p.name)}</button>`).join('');
+/** Exercise tiles grouped in body-part order. del = data attribute for the ✕ button; btn = custom right-hand button. */
+const exTiles = (rows, del, btn) => WK().parts.map(p => rows.filter(w => w.code && w.part === p.name).map(w => {
+  const d = exDetail(w);
+  return `<div class="item mtile" style="--c:${p.color};--cbg:${p.color}1f"><div class="grow"><b>${esc(w.name || exName(w.code))}</b><p>${esc(p.name)}${d ? ' · ' + esc(d) : ''}</p></div>
+    ${btn ? btn(w) : del ? `<button class="link" ${del}="${w.id}" aria-label="Delete">✕</button>` : ''}</div>`;
+}).join('')).join('');
+/** Exercise picker with one group per body part; the parts given come first. */
+function fillExercises(sel, first) {
+  const keep = sel.value, parts = WK().parts.slice().sort((a, b) => first.has(b.name) - first.has(a.name));
+  sel.innerHTML = '<option value="">Choose…</option>' + parts.map(p => `<optgroup label="${esc(p.name)}">` +
+    WK().exercises.filter(e => e[0].slice(0, 2) === p.code).map(e => `<option value="${e[0]}">${esc(e[1])}</option>`).join('') + '</optgroup>').join('');
+  sel.value = keep;
+}
+
+/* Changes show on screen straight away; saving runs in the background, one request at a time, in tap order.
+   When the last one finishes, the server's list (with real ids) replaces the on-screen one. */
+let wkQ = Promise.resolve(), wkPending = 0;
+function wkSync(date, call) {
+  wkPending++;
+  return wkQ = wkQ.then(call).then(list => {
+    if (--wkPending === 0 && date === wSel && Array.isArray(list)) { renderWorkout(list); drawCal(); }
+    return true;
+  }, () => { wkPending--; if (date === wSel) loadWorkout(); return false; });
+}
 async function loadWorkout() {
   const want = wSel;
-  $('#wkList').innerHTML = '<div class="empty">Loading…</div>'; $('#wkSum').textContent = '';
+  if (wkList.date !== wSel) { $('#wkList').innerHTML = '<div class="empty">Loading…</div>'; $('#wkSum').textContent = ''; }
   const list = await api('workouts', { date: wSel });
-  if (want === wSel && logMode === 'workout') renderWorkout(list);
+  if (want === wSel && logMode === 'workout' && !wkPending) renderWorkout(list);
 }
 let wkList = [];
 function renderWorkout(list) {
-  wkList = list;
+  wkList = list; wkList.date = wSel;
   if (list.length) MD.wk[wSel] = 1; else delete MD.wk[wSel];
   const trained = new Set(list.map(w => w.part));
-  $('#wkParts').innerHTML = WK().parts.map(p =>
-    `<button style="--c:${p.color}" data-part="${esc(p.name)}" class="${trained.has(p.name) ? 'on' : ''}" ${OWNER ? '' : 'disabled'}>${esc(p.name)}</button>`).join('');
+  $('#wkParts').innerHTML = partChips(trained, 'data-part', !OWNER);
   $$('[data-part]').forEach(b => b.onclick = () => togglePart(b));
 
   const ex = list.filter(w => w.code);
@@ -861,50 +928,106 @@ function renderWorkout(list) {
   const mins = ex.reduce((t, w) => t + (num(w.minutes) || 0), 0);
   $('#wkSum').textContent = !list.length ? (OWNER ? 'Tap the body parts you trained. Details are optional.' : `No workout logged for ${wSel === TODAY ? 'today' : 'this day'}.`)
     : [ex.length && ex.length + (ex.length > 1 ? ' exercises' : ' exercise'), vol && fmtN(vol, 0) + ' kg lifted', mins && mins + ' min'].filter(Boolean).join(' · ');
-  $('#wkList').innerHTML = WK().parts.filter(p => ex.some(w => w.part === p.name)).map(p =>
-    ex.filter(w => w.part === p.name).map(w => {
-      const detail = [w.sets && w.reps ? w.sets + ' × ' + w.reps : w.sets ? w.sets + ' sets' : w.reps ? w.reps + ' reps' : '',
-        num(w.weight) ? w.weight + ' kg' : '', num(w.minutes) ? w.minutes + ' min' : ''].filter(Boolean).join(' · ');
-      return `<div class="item mtile" style="--c:${p.color};--cbg:${p.color}1f"><div class="grow"><b>${esc(w.name)}</b><p>${esc(p.name)}${detail ? ' · ' + esc(detail) : ''}</p></div>
-        ${OWNER ? `<button class="link" data-delw="${w.id}" aria-label="Delete">✕</button>` : ''}</div>`;
-    }).join('')).join('');
-  $$('[data-delw]').forEach(b => b.onclick = () => confirm('Delete this exercise?') && busy(b, async () => {
-    await api('remove', { sheet: 'Workouts', id: b.dataset.delw });
-    renderWorkout(wkList.filter(x => x.id !== b.dataset.delw)); drawCal();
-  }));
-
-  // exercise picker: body parts trained today first, each as its own group
-  const sel = $('#wkForm').code, keep = sel.value;
-  const parts = WK().parts.slice().sort((a, b) => trained.has(b.name) - trained.has(a.name));
-  sel.innerHTML = '<option value="">Choose…</option>' + parts.map(p => `<optgroup label="${esc(p.name)}">` +
-    WK().exercises.filter(e => e[0].slice(0, 2) === p.code).map(e => `<option value="${e[0]}">${esc(e[1])}</option>`).join('') + '</optgroup>').join('');
-  sel.value = keep;
+  $('#wkList').innerHTML = exTiles(ex, OWNER && 'data-delw');
+  $$('[data-delw]').forEach(b => b.onclick = () => {
+    if (!confirm('Delete this exercise?')) return;
+    const id = b.dataset.delw, date = wSel;
+    renderWorkout(wkList.filter(x => x.id !== id)); drawCal();
+    wkSync(date, () => api('remove', { sheet: 'Workouts', id }).then(() => null));
+  });
+  fillExercises($('#wkForm').code, trained);
+  renderDayWorkoutPlan();
 }
 function togglePart(b) {
-  const part = b.dataset.part, date = wSel;
-  if (!b.classList.contains('on')) return busy(b, async () => { const l = await api('addWorkout', { date, part }); if (date === wSel) { renderWorkout(l); drawCal(); } });
-  if (wkList.some(w => w.part === part && w.code)) return toast('Delete the ' + part.toLowerCase() + ' exercises first', true);
-  busy(b, async () => {
-    const ids = wkList.filter(w => w.part === part).map(w => w.id);
-    for (const id of ids) await api('remove', { sheet: 'Workouts', id });
-    if (date === wSel) { renderWorkout(wkList.filter(w => !ids.includes(w.id))); drawCal(); }
-  });
+  const part = b.dataset.part, date = wSel, on = !b.classList.contains('on');
+  if (!on && wkList.some(w => w.part === part && w.code)) return toast('Delete the ' + part.toLowerCase() + ' exercises first', true);
+  renderWorkout(on ? wkList.concat([{ id: 'new' + Date.now(), date, part, code: '' }]) : wkList.filter(w => w.part !== part)); drawCal();
+  wkSync(date, () => api('setWorkoutPart', { date, part, on }));
 }
 $('#wkForm').onsubmit = e => {
-  e.preventDefault(); const f = e.target, date = wSel;
-  if (!f.code.value) return toast('Choose an exercise', true);
-  busy($('button.primary', f), async () => {
-    const list = await api('addWorkout', Object.assign(formObj(f), { date }));
+  e.preventDefault(); const f = e.target, date = wSel, row = formObj(f);
+  if (!row.code) return toast('Choose an exercise', true);
+  busy($('button.primary', f), () => wkSync(date, () => api('addWorkout', Object.assign(row, { date }))).then(ok => {
+    if (!ok) return;
     const code = f.code.value; f.reset(); f.code.value = code; // keep the exercise for the next set
-    if (date === wSel) { renderWorkout(list); drawCal(); }
     toast('Added · ' + nice(date));
+  }));
+};
+$('#wkRepeat').onclick = e => busy(e.target, () => wkSync(wSel, async () => {
+  const r = await api('repeatWorkout', { date: wSel }); toast('Copied from ' + nice(r.from)); return r.list;
+}));
+
+/* the weekly split, shown on Today › Workout with a "+ Log" per line */
+const planFor = dow => (S.workoutPlan || []).filter(r => Number(r.dow) === dow);
+function renderDayWorkoutPlan() {
+  const el = $('#wkPlan'), dow = parse(wSel).getDay(), items = planFor(dow);
+  if (!OWNER) return el.classList.add('hide');
+  el.classList.remove('hide');
+  if (!items.length) { el.innerHTML = `<div class="small muted">No plan for ${DOW[dow]}s. Set your weekly split in the Plan tab.</div>`; return; }
+  const done = x => wkList.some(w => x.code ? w.code === x.code : w.part === x.part);
+  const parts = [...new Set(items.map(x => x.part))].filter(p => !items.some(x => x.part === p && x.code)).map(p => ({ part: p, code: '' }));
+  const lines = parts.concat(items.filter(x => x.code)), left = lines.filter(x => !done(x));
+  const logBtn = x => done(x) ? '<span class="down" style="font-weight:700;padding:0 8px">✓</span>'
+    : `<button class="primary" data-logw="${lines.indexOf(x)}" style="min-height:40px;padding:6px 14px">+ Log</button>`;
+  el.innerHTML = `<div class="row between"><h3 style="margin:0">Plan · ${DOW[dow]}</h3>${left.length > 1 ? '<button class="link" id="wkLogAll">Log all</button>' : ''}</div>` +
+    parts.map(x => { const p = partOf(x.part);
+      return `<div class="item mtile" style="--c:${p.color};--cbg:${p.color}1f"><div class="grow"><b>${esc(p.name)}</b><p>Body part</p></div>${logBtn(x)}</div>`; }).join('') +
+    exTiles(items, null, logBtn);
+  const date = wSel, log = x => api('addWorkout', { date, part: x.part, code: x.code, sets: x.sets, reps: x.reps, weight: x.weight, minutes: x.minutes });
+  $$('[data-logw]', el).forEach(b => b.onclick = () => busy(b, () => wkSync(date, () => log(lines[+b.dataset.logw]))));
+  const all = $('#wkLogAll');
+  if (all) all.onclick = () => busy(all, () => wkSync(date, async () => { let l; for (const x of left) l = await log(x); toast(left.length + ' logged'); return l; }));
+}
+
+/* PLAN › Workout: edit the weekly split. Shows instantly; each weekday saves in the background, in order. */
+let wpDow = new Date().getDay(), wpQ = Promise.resolve();
+const planRows = dow => planFor(dow).map(r => ({ part: r.part, code: r.code, sets: r.sets, reps: r.reps, weight: r.weight, minutes: r.minutes }));
+function setPlanDay(dow, rows) {
+  S.workoutPlan = (S.workoutPlan || []).filter(r => Number(r.dow) !== dow)
+    .concat(rows.map((r, i) => Object.assign({ id: 'p' + dow + '-' + i, dow, name: r.code ? exName(r.code) : '' }, r)));
+  renderWorkoutPlan();
+  wpQ = wpQ.then(() => api('saveWorkoutPlan', { dow, items: planRows(dow) })).catch(() => {});
+}
+function renderWorkoutPlan() {
+  const order = [1, 2, 3, 4, 5, 6, 0];
+  $('#wpDay').innerHTML = order.map(d => `<button data-m="${d}" class="${d === wpDow ? 'on' : ''}">${DOW[d].slice(0, 3)}${planFor(d).length ? '<i class="pdot"></i>' : ''}</button>`).join('');
+  $$('#wpDay button').forEach(b => b.onclick = () => { wpDow = +b.dataset.m; renderWorkoutPlan(); });
+  const rows = planRows(wpDow), on = new Set(rows.map(r => r.part));
+  $('#wpTitle').textContent = DOW[wpDow];
+  $('#wpFormTitle').textContent = 'Add exercise to ' + DOW[wpDow];
+  $('#wpParts').innerHTML = partChips(on, 'data-wpart');
+  $$('[data-wpart]').forEach(b => b.onclick = () => {
+    const part = b.dataset.wpart;
+    if (!on.has(part)) return setPlanDay(wpDow, rows.concat([{ part, code: '' }]));
+    if (rows.some(r => r.part === part && r.code)) return toast('Delete the ' + part.toLowerCase() + ' exercises first', true);
+    setPlanDay(wpDow, rows.filter(r => r.part !== part));
+  });
+  const shown = planFor(wpDow);
+  $('#wpList').innerHTML = exTiles(shown, 'data-delwp') || (rows.length ? '' : '<div class="empty">Rest day</div>');
+  $$('[data-delwp]').forEach(b => b.onclick = () => {
+    const keep = planRows(wpDow); keep.splice(shown.findIndex(r => r.id === b.dataset.delwp), 1); setPlanDay(wpDow, keep);
+  });
+  fillExercises($('#wpForm').code, on);
+  const ef = $('#exForm').part, keep = ef.value;
+  ef.innerHTML = WK().parts.map(p => `<option>${esc(p.name)}</option>`).join(''); if (keep) ef.value = keep;
+}
+$('#wpForm').onsubmit = e => {
+  e.preventDefault(); const f = e.target, row = formObj(f);
+  if (!row.code) return toast('Choose an exercise', true);
+  const part = WK().parts.find(p => p.code === row.code.slice(0, 2)).name;
+  setPlanDay(wpDow, planRows(wpDow).filter(r => r.code || r.part !== part).concat([Object.assign(row, { part })]));
+  f.reset(); toast('Added to ' + DOW[wpDow]);
+};
+$('#exForm').onsubmit = e => {
+  e.preventDefault(); const f = e.target, x = formObj(f);
+  if (!x.name.trim()) return toast('Enter a name', true);
+  busy($('button.primary', f), async () => {
+    S.workoutCatalog = await api('addExercise', x);
+    const added = S.workoutCatalog.exercises[S.workoutCatalog.exercises.length - 1];
+    f.name.value = ''; renderWorkoutPlan(); $('#wpForm').code.value = added[0];
+    toast(added[1] + ' added (' + added[0] + ')');
   });
 };
-$('#wkRepeat').onclick = e => busy(e.target, async () => {
-  const date = wSel, r = await api('repeatWorkout', { date });
-  if (date === wSel) { renderWorkout(r.list); drawCal(); }
-  toast('Copied from ' + nice(r.from));
-});
 
 /* meals for the selected day */
 /** One colour per part of the day, so meals are easy to tell apart at a glance. */
@@ -965,7 +1088,7 @@ const planItems = date => { const f = planStartFor(date || TODAY); return f == n
 const planLabel = date => { const f = planStartFor(date || TODAY); return f ? 'Plan from ' + nice(f, {day:'numeric', month:'short', year:'numeric'}) : 'Current plan'; };
 function renderMealPlan(list) {
   const items = planItems(wSel), el = $('#mPlan');
-  if (!items.length) { el.innerHTML = '<div class="empty">No quick-log meals yet. Set them up in the Meals tab.</div>'; return; }
+  if (!items.length) { el.innerHTML = '<div class="empty">No meal plan yet. Set one up in the Plan tab.</div>'; return; }
   const done = x => list.some(m => m.type === x.type && m.description === x.description);
   const left = items.filter(x => !done(x));
   el.innerHTML = `<div class="row between"><h3 style="margin:0">Your plan <span class="small muted" style="font-weight:500">· ${esc(planLabel(wSel))}</span></h3>${left.length > 1 ? '<button class="link" id="logAllPlan">Log all</button>' : ''}</div>` +
@@ -1000,7 +1123,12 @@ function drawIntake() {
   const kcalPts = Object.keys(S.nutrition).map(d => ({ date: d, v: num(S.nutrition[d].calories) || null }));
   drawTrend('tK', kcalPts, css('--m'), { bar: true, u: ' kcal', d: 0, head: $('#tKHead'), target: num(S.profile.calories), mode: kMode });
 }
+let planKind = 'meals';
 function renderMealsTab() {
+  segment('planKind', planKind, m => { planKind = m; renderMealsTab(); });
+  $('#planMeals').classList.toggle('hide', planKind !== 'meals');
+  $('#planWorkout').classList.toggle('hide', planKind !== 'workout');
+  if (planKind === 'workout') return renderWorkoutPlan();
   segment('mealsMode', mealsMode, m => { mealsMode = m; renderMealsTab(); });
   segment('kMode', kMode, m => { kMode = m; drawIntake(); });
   $('#mealsPlan').classList.toggle('hide', mealsMode !== 'plan');
