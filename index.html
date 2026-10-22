@@ -217,7 +217,6 @@ nav button.on{color:var(--accent)}
     <div class="card"><div class="row between"><h3 style="margin:0">Body fat</h3><div class="thead" id="tFHead"></div></div><div class="chart sm"><canvas id="tF"></canvas></div></div>
     <div class="card"><div class="row between"><h3 style="margin:0">Progress photos</h3><button class="link" data-gallery>Open gallery ›</button></div>
       <div class="strip" id="tStrip" style="margin-top:8px"></div></div>
-    <div class="card"><div class="row between"><h3 style="margin:0">Calorie intake</h3><div class="thead" id="tKHead"></div></div><div class="chart sm"><canvas id="tK"></canvas></div></div>
     <div class="card hide" id="stepsCard"><div class="row between"><h3 style="margin:0">Steps</h3><div class="thead" id="tSHead"></div></div><div class="chart sm"><canvas id="tS"></canvas></div></div>
 
     <div class="card" id="logCard" style="padding:0">
@@ -281,7 +280,11 @@ nav button.on{color:var(--accent)}
 
   <!-- MEALS: set up the quick-log menu -->
   <section id="tab-meals" class="hide">
-    <h2>Meals</h2>
+    <div class="row between" style="margin:6px 0 14px"><h2 style="margin:0">Meals</h2>
+      <div class="seg" id="mealsMode" style="margin:0;width:170px"><button data-m="plan" class="on">Plan</button><button data-m="intake">Intake</button></div></div>
+    <div id="mealsIntake" class="hide">
+      <div class="seg" id="kMode" style="margin:0 0 14px"><button data-m="day" class="on">30d</button><button data-m="week">Weeks</button><button data-m="month">Months</button></div>
+    <div class="card"><div class="row between"><h3 style="margin:0">Calorie intake</h3><div class="thead" id="tKHead"></div></div><div class="chart sm"><canvas id="tK"></canvas></div></div>
     <div class="card"><h3>Daily targets</h3>
       <form id="targetForm" class="grid2" style="display:grid">
         <label>Calories<input type="number" name="calories" inputmode="numeric" placeholder="kcal"></label>
@@ -289,6 +292,8 @@ nav button.on{color:var(--accent)}
         <button class="primary" style="grid-column:1/-1">Save targets</button>
       </form>
     </div>
+    </div>
+    <div id="mealsPlan">
     <div class="card"><h3 style="margin-bottom:2px">Current meal plan</h3>
       <p class="small muted" style="margin:0 0 12px"><span id="planVersion"></span> · <a href="#" id="planFolderLink">plan files</a></p>
       <div id="planList"></div>
@@ -310,6 +315,7 @@ nav button.on{color:var(--accent)}
         <button class="primary" id="planSave">Add to menu</button>
         <button type="button" class="link hide" id="planCancel">Cancel editing</button>
       </form>
+    </div>
     </div>
   </section>
 
@@ -558,29 +564,27 @@ async function renderPhotoStrip() {
 function drawTrends() {
   if ($('#tab-progress').classList.contains('hide')) return;
   const bodyPts = k => S.body.map(r => ({ date: r.date, v: num(r[k]) }));
-  const kcalPts = Object.keys(S.nutrition).map(d => ({ date: d, v: num(S.nutrition[d].calories) || null }));
   drawTrend('tW', bodyPts('weight'), css('--w'), { minSpan: unit() === 'lb' ? 16 : 8, u: ' ' + unit(), head: $('#tWHead') });
   drawTrend('tF', bodyPts('bodyfat'), css('--bf'), { minSpan: 6, u: '%', head: $('#tFHead') });
-  drawTrend('tK', kcalPts, css('--m'), { bar: true, u: ' kcal', d: 0, head: $('#tKHead'), target: num(S.profile.calories) });
   const hp = Object.keys(S.health).map(d => ({ date: d, v: num(S.health[d].steps) || null }));
   $('#stepsCard').classList.toggle('hide', !hp.some(p => p.v));
   if (hp.some(p => p.v)) drawTrend('tS', hp, css('--s'), { bar: true, u: ' steps', d: 0, head: $('#tSHead') });
 }
 const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
 const weekStart = d => addDays(d, -parse(d).getDay()); // Sunday, like FitDays
-function trendSeries(points) {
+function trendSeries(points, M) { // M = 'day' | 'week' | 'month'
   const pts = points.filter(p => p.v != null).sort((a, b) => a.date.localeCompare(b.date));
-  if (tMode === 'month' || tMode === 'week') { // one point per month / week = its average; only periods with data
+  if (M === 'month' || M === 'week') { // one point per month / week = its average; only periods with data
     const g = {};
-    pts.forEach(p => { const k = tMode === 'month' ? p.date.slice(0, 7) : weekStart(p.date); (g[k] = g[k] || []).push(p.v); });
+    pts.forEach(p => { const k = M === 'month' ? p.date.slice(0, 7) : weekStart(p.date); (g[k] = g[k] || []).push(p.v); });
     const ks = Object.keys(g).sort().slice(-12);
     const yrs = ks.length && ks[0].slice(0, 4) !== ks[ks.length - 1].slice(0, 4);
     const label = k => {
-      if (tMode === 'month') return parse(k + '-01').toLocaleDateString(LOCALE, yrs ? {month:'short', year:'2-digit'} : {month:'short'});
+      if (M === 'month') return parse(k + '-01').toLocaleDateString(LOCALE, yrs ? {month:'short', year:'2-digit'} : {month:'short'});
       const e = addDays(k, 6);
       return k.slice(5, 7) === e.slice(5, 7) ? `${+k.slice(8)}–${nice(e)}` : `${nice(k)}–${nice(e)}`;
     };
-    return { labels: ks.map(label), data: ks.map(k => avg(g[k])), ticks: tMode === 'week' ? ks.map(k => nice(k)) : null };
+    return { labels: ks.map(label), data: ks.map(k => avg(g[k])), ticks: M === 'week' ? ks.map(k => nice(k)) : null };
   }
   // 30 days: a smoothed trend (moving average that restarts after a gap of 2+ weeks) plus the raw readings for tooltips.
   // The chart starts at the first reading inside the window, so the curve runs edge to edge.
@@ -617,17 +621,18 @@ function gradientFill(color) {
 }
 const fmtN = (v, dp) => dp === 0 ? Math.round(v).toLocaleString('en-US') : fx(v, dp); // 6,000 not 6000
 function drawTrend(id, points, color, o) {
+  const M = o.mode || tMode; // each chart group can have its own 30d/Weeks/Months switch
   TC[id] && TC[id].destroy();
-  const s = trendSeries(points), idx = s.data.map((v, i) => v == null ? -1 : i).filter(i => i >= 0), dp = o.d == null ? 1 : o.d;
+  const s = trendSeries(points, M), idx = s.data.map((v, i) => v == null ? -1 : i).filter(i => i >= 0), dp = o.d == null ? 1 : o.d;
   const last = idx.length ? s.data[idx[idx.length - 1]] : null, prev = idx.length > 1 ? s.data[idx[idx.length - 2]] : null;
   o.head.innerHTML = last == null ? ''
     : `<b>${fmtN(last, dp)}${o.u}</b>${prev != null ? ` <i class="${(last > prev) !== !!o.bar ? 'up' : 'down'}">${last > prev ? '↑' : '↓'} ${fmtN(Math.abs(last - prev), dp)}</i>` : ''}
-       <small>${tMode === 'day' ? (o.bar ? 'latest day' : 'latest') : s.labels[idx[idx.length - 1]] + ' avg'}${o.target ? ' · target ' + o.target : ''}</small>`;
+       <small>${M === 'day' ? (o.bar ? 'latest day' : 'latest') : s.labels[idx[idx.length - 1]] + ' avg'}${o.target ? ' · target ' + o.target : ''}</small>`;
   const box = $('#' + id).parentNode; // friendly empty state instead of empty axes
   box.classList.toggle('empty-chart', last == null);
   box.dataset.empty = o.bar ? 'Log meals in Today to see your intake here.' : 'No entries in this period yet.';
   if (last == null) return;
-  const smooth = !o.bar && tMode === 'day'; // one smooth trend curve; no dots
+  const smooth = !o.bar && M === 'day'; // one smooth trend curve; no dots
   const tick = css('--muted');
   let y;
   if (o.bar) {
@@ -650,7 +655,7 @@ function drawTrend(id, points, color, o) {
       interaction: { mode: 'index', intersect: false },
       plugins: { legend: { display: false }, tooltip: { displayColors: false, filter: i => !i.dataset.isTarget && i.parsed.y != null,
         callbacks: { label: c => {
-          if (!smooth) return fmtN(c.parsed.y, dp) + o.u + (tMode === 'day' ? '' : ' average');
+          if (!smooth) return fmtN(c.parsed.y, dp) + o.u + (M === 'day' ? '' : ' average');
           const raw = s.data[c.dataIndex];
           return ['Trend ' + fx(c.parsed.y, dp) + o.u].concat(raw != null ? ['Weighed ' + (+raw) + o.u] : []);
         } } } },
@@ -875,7 +880,18 @@ $('#mealForm').onsubmit = e => {
 };
 
 /* ---------- MEALS: quick-log menu + targets ---------- */
+let mealsMode = 'plan', kMode = 'day';
+/** Meals › Intake: calorie intake chart with its own 30d / Weeks / Months switch. */
+function drawIntake() {
+  const kcalPts = Object.keys(S.nutrition).map(d => ({ date: d, v: num(S.nutrition[d].calories) || null }));
+  drawTrend('tK', kcalPts, css('--m'), { bar: true, u: ' kcal', d: 0, head: $('#tKHead'), target: num(S.profile.calories), mode: kMode });
+}
 function renderMealsTab() {
+  segment('mealsMode', mealsMode, m => { mealsMode = m; renderMealsTab(); });
+  segment('kMode', kMode, m => { kMode = m; drawIntake(); });
+  $('#mealsPlan').classList.toggle('hide', mealsMode !== 'plan');
+  $('#mealsIntake').classList.toggle('hide', mealsMode !== 'intake');
+  if (mealsMode === 'intake') drawIntake();
   const ps = planStartFor(TODAY);
   $('#planVersion').textContent = ps ? 'Started ' + nice(ps, {day: 'numeric', month: 'short', year: 'numeric'}) : 'No plan yet';
   // Your Meal Plan folder (Drive, synced to E:\ETC\Fitness App\Meal Plan on the PC)
