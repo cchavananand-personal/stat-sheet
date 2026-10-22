@@ -289,9 +289,8 @@ nav button.on{color:var(--accent)}
         <button class="primary" style="grid-column:1/-1">Save targets</button>
       </form>
     </div>
-    <div class="card"><h3>Quick-log menu</h3>
-      <p class="small muted" style="margin-top:0"><b id="planVersion"></b> · appears under Today › Log meal for one-tap logging. Tap one to edit it.</p>
-      <p class="small muted" style="margin-top:0">New plan? Put it in your <a href="#" id="planFolderLink">Meal Plans folder</a> and ask Claude to load it from its start date.</p>
+    <div class="card"><h3 style="margin-bottom:2px">Current meal plan</h3>
+      <p class="small muted" style="margin:0 0 12px"><span id="planVersion"></span> · <a href="#" id="planFolderLink">plan files</a></p>
       <div id="planList"></div>
     </div>
     <div class="card"><h3 id="planFormTitle">Add to menu</h3>
@@ -877,7 +876,8 @@ $('#mealForm').onsubmit = e => {
 
 /* ---------- MEALS: quick-log menu + targets ---------- */
 function renderMealsTab() {
-  $('#planVersion').textContent = planLabel(TODAY);
+  const ps = planStartFor(TODAY);
+  $('#planVersion').textContent = ps ? 'Started ' + nice(ps, {day: 'numeric', month: 'short', year: 'numeric'}) : 'No plan yet';
   // Your Meal Plan folder (Drive, synced to E:\ETC\Fitness App\Meal Plan on the PC)
   $('#planFolderLink').href = 'https://drive.google.com/drive/folders/1m6SBYvWmjOdZquG5nAPyHh88a8O5cBwm';
   $('#planFolderLink').target = '_blank';
