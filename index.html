@@ -321,17 +321,10 @@ nav button.on{color:var(--accent)}
         <div class="parts" id="wpParts"></div>
         <div id="wpList" style="margin-top:8px"></div>
       </div>
-      <div class="card"><h3 id="wpFormTitle">Add exercise</h3>
+      <div class="card"><h3 id="wpFormTitle" style="margin-bottom:2px">Exercises</h3>
+        <p class="small muted" style="margin:0 0 10px">Only what you plan to do. Sets, reps and kg are logged in Today.</p>
         <form id="wpForm">
           <label>Exercise<select name="code"></select></label>
-          <div class="grid2">
-            <label>Sets<input type="number" name="sets" min="0" inputmode="numeric" placeholder="—"></label>
-            <label>Reps<input type="number" name="reps" min="0" inputmode="numeric" placeholder="—"></label>
-          </div>
-          <div class="grid2">
-            <label>Weight (kg)<input type="number" name="weight" min="0" step="0.5" inputmode="decimal" placeholder="—"></label>
-            <label>Minutes<input type="number" name="minutes" min="0" inputmode="numeric" placeholder="—"></label>
-          </div>
           <button class="primary">Add to plan</button>
         </form>
       </div>
@@ -462,7 +455,7 @@ nav button.on{color:var(--accent)}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261022172634';
+const BUILD = '20261022174520';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -966,22 +959,28 @@ function renderDayWorkoutPlan() {
   if (!items.length) { el.innerHTML = `<div class="small muted">No plan for ${DOW[dow]}s. Set your weekly split in the Plan tab.</div>`; return; }
   const done = x => wkList.some(w => x.code ? w.code === x.code : w.part === x.part);
   const parts = [...new Set(items.map(x => x.part))].filter(p => !items.some(x => x.part === p && x.code)).map(p => ({ part: p, code: '' }));
-  const lines = parts.concat(items.filter(x => x.code)), left = lines.filter(x => !done(x));
+  const lines = parts.concat(items.filter(x => x.code));
+  const partsLeft = [...new Set(items.map(x => x.part))].filter(p => !wkList.some(w => w.part === p));
   const logBtn = x => done(x) ? '<span class="down" style="font-weight:700;padding:0 8px">✓</span>'
     : `<button class="primary" data-logw="${lines.indexOf(x)}" style="min-height:40px;padding:6px 14px">+ Log</button>`;
-  el.innerHTML = `<div class="row between"><h3 style="margin:0">Plan · ${DOW[dow]}</h3>${left.length > 1 ? '<button class="link" id="wkLogAll">Log all</button>' : ''}</div>` +
+  el.innerHTML = `<div class="row between"><h3 style="margin:0">Plan · ${DOW[dow]}</h3>${partsLeft.length ? '<button class="link" id="wkLogAll">✓ Trained these</button>' : ''}</div>` +
     parts.map(x => { const p = partOf(x.part);
       return `<div class="item mtile" style="--c:${p.color};--cbg:${p.color}1f"><div class="grow"><b>${esc(p.name)}</b><p>Body part</p></div>${logBtn(x)}</div>`; }).join('') +
     exTiles(items, null, logBtn);
-  const date = wSel, log = x => api('addWorkout', { date, part: x.part, code: x.code, sets: x.sets, reps: x.reps, weight: x.weight, minutes: x.minutes });
-  $$('[data-logw]', el).forEach(b => b.onclick = () => busy(b, () => wkSync(date, () => log(lines[+b.dataset.logw]))));
+  // a planned body part logs straight away; a planned exercise opens the details form so you enter what you actually did
+  $$('[data-logw]', el).forEach(b => b.onclick = () => {
+    const x = lines[+b.dataset.logw];
+    if (!x.code) return $(`#wkParts [data-part="${x.part}"]`).click();
+    const f = $('#wkForm'); f.reset(); f.code.value = x.code;
+    f.scrollIntoView({ behavior: 'smooth', block: 'center' }); f.sets.focus({ preventScroll: true });
+  });
   const all = $('#wkLogAll');
-  if (all) all.onclick = () => busy(all, () => wkSync(date, async () => { let l; for (const x of left) l = await log(x); toast(left.length + ' logged'); return l; }));
+  if (all) all.onclick = () => partsLeft.forEach(p => $(`#wkParts [data-part="${p}"]:not(.on)`)?.click()); // marks the planned body parts
 }
 
 /* PLAN › Workout: edit the weekly split. Shows instantly; each weekday saves in the background, in order. */
 let wpDow = new Date().getDay(), wpQ = Promise.resolve();
-const planRows = dow => planFor(dow).map(r => ({ part: r.part, code: r.code, sets: r.sets, reps: r.reps, weight: r.weight, minutes: r.minutes }));
+const planRows = dow => planFor(dow).map(r => ({ part: r.part, code: r.code }));
 function setPlanDay(dow, rows) {
   S.workoutPlan = (S.workoutPlan || []).filter(r => Number(r.dow) !== dow)
     .concat(rows.map((r, i) => Object.assign({ id: 'p' + dow + '-' + i, dow, name: r.code ? exName(r.code) : '' }, r)));
@@ -994,7 +993,7 @@ function renderWorkoutPlan() {
   $$('#wpDay button').forEach(b => b.onclick = () => { wpDow = +b.dataset.m; renderWorkoutPlan(); });
   const rows = planRows(wpDow), on = new Set(rows.map(r => r.part));
   $('#wpTitle').textContent = DOW[wpDow];
-  $('#wpFormTitle').textContent = 'Add exercise to ' + DOW[wpDow];
+  $('#wpFormTitle').textContent = 'Exercises for ' + DOW[wpDow];
   $('#wpParts').innerHTML = partChips(on, 'data-wpart');
   $$('[data-wpart]').forEach(b => b.onclick = () => {
     const part = b.dataset.wpart;
@@ -1015,7 +1014,8 @@ $('#wpForm').onsubmit = e => {
   e.preventDefault(); const f = e.target, row = formObj(f);
   if (!row.code) return toast('Choose an exercise', true);
   const part = WK().parts.find(p => p.code === row.code.slice(0, 2)).name;
-  setPlanDay(wpDow, planRows(wpDow).filter(r => r.code || r.part !== part).concat([Object.assign(row, { part })]));
+  if (planRows(wpDow).some(r => r.code === row.code)) return toast('Already planned for ' + DOW[wpDow], true);
+  setPlanDay(wpDow, planRows(wpDow).filter(r => r.code || r.part !== part).concat([{ part, code: row.code }]));
   f.reset(); toast('Added to ' + DOW[wpDow]);
 };
 $('#exForm').onsubmit = e => {
