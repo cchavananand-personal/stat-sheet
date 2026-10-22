@@ -455,7 +455,7 @@ nav button.on{color:var(--accent)}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261022174520';
+const BUILD = '20261022175540';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -763,6 +763,8 @@ async function renderToday() {
   r.body.forEach(b => MD.by[b.date] = b);
   r.photoDays.forEach(d => MD.photos[d] = 1);
   (r.workoutDays || []).forEach(d => MD.wk[d] = 1);
+  // whole month of workouts up front, so switching days shows the right chips instantly
+  if (!wkPending) for (let d = first; d <= last; d = addDays(d, 1)) WKD[d] = (r.workouts || []).filter(w => w.date === d);
   drawCal(); renderEntry();
 }
 function drawCal() {
@@ -895,25 +897,35 @@ function fillExercises(sel, first) {
 /* Changes show on screen straight away; saving runs in the background, one request at a time, in tap order.
    When the last one finishes, the server's list (with real ids) replaces the on-screen one. */
 let wkQ = Promise.resolve(), wkPending = 0;
+const WKD = {}; // date → that day's workout rows, as last known
 function wkSync(date, call) {
   wkPending++;
   return wkQ = wkQ.then(call).then(list => {
-    if (--wkPending === 0 && date === wSel && Array.isArray(list)) { renderWorkout(list); drawCal(); }
+    wkPending--;
+    if (Array.isArray(list) && !wkPending) {
+      WKD[date] = list; if (list.length) MD.wk[date] = 1; else delete MD.wk[date];
+      if (date === wSel && logMode === 'workout') renderWorkout(list);
+      drawCal();
+    }
     return true;
-  }, () => { wkPending--; if (date === wSel) loadWorkout(); return false; });
+  }, () => { wkPending--; delete WKD[date]; if (date === wSel) loadWorkout(); return false; });
 }
 async function loadWorkout() {
   const want = wSel;
-  if (wkList.date !== wSel) { $('#wkList').innerHTML = '<div class="empty">Loading…</div>'; $('#wkSum').textContent = ''; }
-  const list = await api('workouts', { date: wSel });
-  if (want === wSel && logMode === 'workout' && !wkPending) renderWorkout(list);
+  if (WKD[wSel]) renderWorkout(WKD[wSel]); // instant from the month already loaded
+  else { renderWorkout([], true); $('#wkSum').textContent = 'Loading…'; }
+  const list = await api('workouts', { date: want }).catch(() => null);
+  if (!list || wkPending) return;
+  WKD[want] = list;
+  if (want === wSel && logMode === 'workout') renderWorkout(list);
 }
 let wkList = [];
-function renderWorkout(list) {
-  wkList = list; wkList.date = wSel;
-  if (list.length) MD.wk[wSel] = 1; else delete MD.wk[wSel];
+/** loading = this day's data hasn't arrived yet: chips shown off and not tappable. */
+function renderWorkout(list, loading) {
+  wkList = list;
+  if (!loading) { WKD[wSel] = list; if (list.length) MD.wk[wSel] = 1; else delete MD.wk[wSel]; }
   const trained = new Set(list.map(w => w.part));
-  $('#wkParts').innerHTML = partChips(trained, 'data-part', !OWNER);
+  $('#wkParts').innerHTML = partChips(trained, 'data-part', !OWNER || loading);
   $$('[data-part]').forEach(b => b.onclick = () => togglePart(b));
 
   const ex = list.filter(w => w.code);
@@ -1047,6 +1059,10 @@ function macroBars(t, p) {
 }
 async function loadDayMeals() {
   const want = wSel;
+  if (wSel !== TODAY) { // don't leave the previous day's meals on screen while this one loads
+    $('#mTotals').innerHTML = ''; $('#mPlan').innerHTML = '';
+    $('#mList').innerHTML = '<div class="empty">Loading…</div>'; $('#mListCard').classList.remove('hide');
+  }
   const list = wSel === TODAY ? S.meals : await api('meals', { date: wSel });
   if (want === wSel && logMode === 'meal') renderMeals(list);
 }
