@@ -454,7 +454,7 @@ nav button.on{color:var(--accent)}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261022180117';
+const BUILD = '20261022195113';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -585,10 +585,12 @@ const ICONS = {
 const TABS = OWNER ? [['progress','Progress'],['today','Today'],['meals','Plan'],['more','More']] : [['progress','Progress'],['today','Today']];
 $('#nav').innerHTML = TABS.map(([id, label]) => `<button data-t="${id}"><svg viewBox="0 0 24 24">${ICONS[id]}</svg>${label}</button>`).join('');
 if (!OWNER) { document.body.classList.add('ro'); $$('#bodyForm input').forEach(i => i.readOnly = true); $('#roleTag').textContent = 'View only'; $('#roleTag').classList.remove('hide'); }
-function show(id) {
+let curTab = 'progress';
+function show(id, keepScroll) {
+  curTab = id;
   $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.t === id));
   $$('main > section').forEach(s => s.classList.toggle('hide', s.id !== 'tab-' + id));
-  window.scrollTo(0, 0);
+  if (!keepScroll) window.scrollTo(0, 0);
   ({ progress: renderProgress, today: renderToday, meals: renderMealsTab, more: renderMore })[id]();
 }
 $('#nav').onclick = e => { const b = e.target.closest('button'); if (b) show(b.dataset.t); };
@@ -1459,9 +1461,25 @@ function renderWhoop() {
 }
 
 /* start */
+/* Open instantly with the data from last time (saved on this phone), then swap in fresh data from Google. */
+const BOOT_KEY = 'boot-' + ROLE;
+function bootDone() { const b = $('#boot'); if (!b) return; b.classList.add('done'); setTimeout(() => b.remove(), 400); }
+let saved = null;
+try { saved = JSON.parse(localStorage.getItem(BOOT_KEY)); } catch (e) {}
+if (saved && saved.data) {
+  Object.assign(S, saved.data);
+  if (saved.date !== TODAY) { S.meals = []; S.dayPhotos = []; } // those two are for the day it was saved
+  show('progress'); bootDone();
+}
 api('bootstrap', { date: TODAY })
-  .then(d => { Object.assign(S, d); show('progress'); $('#boot').classList.add('done'); setTimeout(() => $('#boot').remove(), 400); })
-  .catch(e => { $('#bootMsg').innerHTML = `Couldn't load your stats.<br><button class="primary" style="margin-top:14px" onclick="location.reload()">Try again</button>`; });
+  .then(d => {
+    try { localStorage.setItem(BOOT_KEY, JSON.stringify({ date: TODAY, data: d })); } catch (e) {}
+    Object.assign(S, d);
+    if (!saved) { show('progress'); bootDone(); return; }
+    // redraw what's on screen with the fresh data, unless you're typing in it
+    if (!/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) show(curTab, true);
+  })
+  .catch(e => { if (!saved) $('#bootMsg').innerHTML = `Couldn't load your stats.<br><button class="primary" style="margin-top:14px" onclick="location.reload()">Try again</button>`; });
 </script>
 </body>
 </html>
