@@ -104,6 +104,7 @@ button.link{background:none;min-height:36px;padding:6px 8px;color:var(--muted);f
 html,body{max-width:100%;overflow-x:hidden}
 main,header{overflow-x:clip}
 .card{overflow:hidden}
+.tag{display:inline-block;font-size:11px;font-weight:600;color:var(--muted);background:var(--soft);border-radius:99px;padding:1px 8px;margin-left:6px;vertical-align:middle}
 .mtile{border-top:0!important;border-left:4px solid var(--c);background:var(--cbg);border-radius:12px;padding:12px;margin-bottom:8px}
 .mtile .mtime{color:var(--c);font-weight:700}
 .hstrip{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:6px;margin-top:10px}
@@ -289,7 +290,8 @@ nav button.on{color:var(--accent)}
       </form>
     </div>
     <div class="card"><h3>Quick-log menu</h3>
-      <p class="small muted" style="margin-top:0">These appear under Today › Log meal for one-tap logging. Tap one to edit it.</p>
+      <p class="small muted" style="margin-top:0"><b id="planVersion"></b> · appears under Today › Log meal for one-tap logging. Tap one to edit it.</p>
+      <p class="small muted" style="margin-top:0">New plan? Put it in your <a href="#" id="planFolderLink">Meal Plans folder</a> and ask Claude to load it from its start date.</p>
       <div id="planList"></div>
     </div>
     <div class="card"><h3 id="planFormTitle">Add to menu</h3>
@@ -820,7 +822,7 @@ function renderMeals(list) {
   $('#mListCard').classList.toggle('hide', !list.length);
   $('#mList').innerHTML = list.map(m => `<div class="item mtile" style="${mealStyle(m)}">
     ${m.thumbId ? imgTag(m.thumbId, m.photoId, 'thumb', m.type + ' · ' + m.description) : `<label class="thumb add">＋<br>photo<input type="file" accept="${IMG_ACCEPT}" data-mid="${m.id}"></label>`}
-    <div class="grow"><b>${esc(m.type)}</b><p>${esc(m.description)}</p><p>${[m.calories && m.calories + ' kcal', m.protein && m.protein + 'g protein'].filter(Boolean).join(' · ')}</p></div>
+    <div class="grow"><b>${esc(m.type)}</b>${m.source === 'plan' ? ' <span class="tag">from plan</span>' : ''}<p>${esc(m.description)}</p><p>${[m.calories && m.calories + ' kcal', m.protein && m.protein + 'g protein'].filter(Boolean).join(' · ')}</p></div>
     <button class="link" data-delm="${m.id}" aria-label="Delete">✕</button></div>`).join('');
   $$('[data-delm]').forEach(b => b.onclick = () => confirm('Delete this meal?') && busy(b, async () => {
     await api('remove', { sheet: 'Meals', id: b.dataset.delm });
@@ -835,13 +837,20 @@ function renderMeals(list) {
   hydrate($('#mList'));
 }
 const PLAN_DAY = 'Daily'; // one plan that repeats every day
-const planItems = () => S.plan.filter(x => x.day === PLAN_DAY).sort((a, b) => String(a.time).localeCompare(String(b.time)));
+/** Plans have versions: each starts on its "from" date and runs until the next one starts. */
+function planStartFor(date) {
+  const starts = [...new Set(S.plan.filter(x => x.day === PLAN_DAY).map(x => String(x.from || '')))].filter(f => f <= date).sort();
+  return starts.length ? starts[starts.length - 1] : null;
+}
+const planItems = date => { const f = planStartFor(date || TODAY); return f == null ? [] :
+  S.plan.filter(x => x.day === PLAN_DAY && String(x.from || '') === f).sort((a, b) => String(a.time).localeCompare(String(b.time))); };
+const planLabel = date => { const f = planStartFor(date || TODAY); return f ? 'Plan from ' + nice(f, {day:'numeric', month:'short', year:'numeric'}) : 'Current plan'; };
 function renderMealPlan(list) {
-  const items = planItems(), el = $('#mPlan');
+  const items = planItems(wSel), el = $('#mPlan');
   if (!items.length) { el.innerHTML = '<div class="empty">No quick-log meals yet. Set them up in the Meals tab.</div>'; return; }
   const done = x => list.some(m => m.type === x.type && m.description === x.description);
   const left = items.filter(x => !done(x));
-  el.innerHTML = `<div class="row between"><h3 style="margin:0">Your plan</h3>${left.length > 1 ? '<button class="link" id="logAllPlan">Log all</button>' : ''}</div>` +
+  el.innerHTML = `<div class="row between"><h3 style="margin:0">Your plan <span class="small muted" style="font-weight:500">· ${esc(planLabel(wSel))}</span></h3>${left.length > 1 ? '<button class="link" id="logAllPlan">Log all</button>' : ''}</div>` +
     items.map(x => `<div class="item mtile" style="${mealStyle(x)}"><div class="grow"><b><span class="mtime">${esc(x.time)}</span> · ${esc(x.type)}</b>
       <p>${esc(x.description)}</p><p>${[x.calories && x.calories + ' kcal', x.protein && x.protein + 'g protein'].filter(Boolean).join(' · ')}</p></div>
       ${done(x) ? '<span class="down" style="font-weight:700;padding:0 8px">✓</span>' : `<button class="primary" data-logp="${x.id}" style="min-height:40px;padding:6px 14px">+ Log</button>`}</div>`).join('');
@@ -868,6 +877,8 @@ $('#mealForm').onsubmit = e => {
 
 /* ---------- MEALS: quick-log menu + targets ---------- */
 function renderMealsTab() {
+  $('#planVersion').textContent = planLabel(TODAY);
+  $('#planFolderLink').onclick = e => { e.preventDefault(); api('planFolder').then(r => window.open(r.url, '_blank')); };
   const t = $('#targetForm'); t.calories.value = S.profile.calories || ''; t.protein.value = S.profile.protein || '';
   renderPlanList();
 }
@@ -889,7 +900,7 @@ function renderPlanList() {
     f.scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
   $$('[data-delpl]').forEach(b => b.onclick = () => confirm('Remove from menu?') && busy(b, async () => {
-    S.plan = await api('savePlanDay', { day: PLAN_DAY, items: items.filter(x => x.id !== b.dataset.delpl) }); renderPlanList();
+    S.plan = await api('savePlanDay', { day: PLAN_DAY, from: planStartFor(TODAY) || '', items: items.filter(x => x.id !== b.dataset.delpl) }); renderPlanList();
   }));
 }
 function resetPlanForm() { $('#planForm').reset(); $('#planForm').id.value = ''; $('#planFormTitle').textContent = 'Add to menu'; $('#planSave').textContent = 'Add to menu'; $('#planCancel').classList.add('hide'); }
@@ -897,7 +908,7 @@ $('#planCancel').onclick = resetPlanForm;
 $('#planForm').onsubmit = e => {
   e.preventDefault(); const f = e.target, x = formObj(f), items = planItems();
   const next = x.id ? items.map(i => i.id === x.id ? Object.assign({}, i, x) : i) : items.concat([x]);
-  busy($('#planSave'), async () => { S.plan = await api('savePlanDay', { day: PLAN_DAY, items: next }); toast(x.id ? 'Updated' : 'Added'); resetPlanForm(); renderPlanList(); });
+  busy($('#planSave'), async () => { S.plan = await api('savePlanDay', { day: PLAN_DAY, from: planStartFor(TODAY) || '', items: next }); toast(x.id ? 'Updated' : 'Added'); resetPlanForm(); renderPlanList(); });
 };
 /* ---------- PROGRESS GALLERY: scrub the filmstrip to flip through days ---------- */
 const G = { list: [], i: 0, mode: 'one', base: 0, timer: 0, raf: 0, obs: null };
