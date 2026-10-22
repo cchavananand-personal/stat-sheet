@@ -86,6 +86,7 @@ button.link{background:none;min-height:36px;padding:6px 8px;color:var(--muted);f
 .parts button.on{background:var(--c);color:#fff}
 .parts button:disabled{opacity:1}
 .parts button:disabled:not(.on){opacity:.35}
+.tick{color:var(--accent);font-size:22px;font-weight:800;padding:0 10px;min-height:40px}
 .setrow{display:grid;grid-template-columns:40px 1fr 1fr 32px;gap:8px;align-items:center;margin-bottom:8px}
 .setrow.head{margin:12px 0 4px}.setrow b{text-align:center}.setrow input{margin:0}
 .setrow .link{padding:0;min-height:0}
@@ -285,9 +286,9 @@ nav button.on{color:var(--accent)}
 
     <div id="logMeal" class="hide">
       <div class="card" id="mTotals"></div>
-      <div class="card owner-only" id="mPlan"></div>
-      <div class="card" id="mListCard"><h3>Logged</h3><div id="mList"></div></div>
-      <div class="card owner-only"><h3>Something else</h3>
+      <div class="card" id="mPlan"></div>
+      <div class="card" id="mListCard"><h3>Extras</h3><div id="mList"></div></div>
+      <div class="card owner-only"><h3>Add extra</h3>
         <form id="mealForm">
           <div class="grid2">
             <label>Meal<select name="type"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option></select></label>
@@ -454,7 +455,7 @@ nav button.on{color:var(--accent)}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261022195113';
+const BUILD = '20261022195244';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1106,8 +1107,10 @@ function renderMeals(list) {
   mList = list;
   renderMealPlan(list);
   $('#mTotals').innerHTML = `<div style="display:grid;gap:6px">${macroBars(sumMeals(list), S.profile)}</div>`;
-  $('#mListCard').classList.toggle('hide', !list.length);
-  $('#mList').innerHTML = list.map(m => `<div class="item mtile" style="${mealStyle(m)}">
+  // plan meals show as a tick on the plan card; only what's not on the plan is listed here
+  const plan = planItems(wSel), extras = list.filter(m => !plan.some(x => sameMeal(x, m)));
+  $('#mListCard').classList.toggle('hide', !extras.length);
+  $('#mList').innerHTML = extras.map(m => `<div class="item mtile" style="${mealStyle(m)}">
     ${m.thumbId ? imgTag(m.thumbId, m.photoId, 'thumb', m.type + ' · ' + m.description) : `<label class="thumb add">＋<br>photo<input type="file" accept="${IMG_ACCEPT}" data-mid="${m.id}"></label>`}
     <div class="grow"><b>${esc(m.type)}</b>${m.source === 'plan' ? ' <span class="tag">from plan</span>' : ''}<p>${esc(m.description)}</p><p>${[m.calories && m.calories + ' kcal', m.protein && m.protein + 'g protein'].filter(Boolean).join(' · ')}</p></div>
     <button class="link" data-delm="${m.id}" aria-label="Delete">✕</button></div>`).join('');
@@ -1132,16 +1135,24 @@ function planStartFor(date) {
 const planItems = date => { const f = planStartFor(date || TODAY); return f == null ? [] :
   S.plan.filter(x => x.day === PLAN_DAY && String(x.from || '') === f).sort((a, b) => String(a.time).localeCompare(String(b.time))); };
 const planLabel = date => { const f = planStartFor(date || TODAY); return f ? 'Plan from ' + nice(f, {day:'numeric', month:'short', year:'numeric'}) : 'Current plan'; };
+const sameMeal = (x, m) => m.type === x.type && m.description === x.description; // a logged meal that is this plan item
 function renderMealPlan(list) {
   const items = planItems(wSel), el = $('#mPlan');
   if (!items.length) { el.innerHTML = '<div class="empty">No meal plan yet. Set one up in the Plan tab.</div>'; return; }
-  const done = x => list.some(m => m.type === x.type && m.description === x.description);
-  const left = items.filter(x => !done(x));
-  el.innerHTML = `<div class="row between"><h3 style="margin:0">Your plan <span class="small muted" style="font-weight:500">· ${esc(planLabel(wSel))}</span></h3>${left.length > 1 ? '<button class="link" id="logAllPlan">Log all</button>' : ''}</div>` +
-    items.map(x => `<div class="item mtile" style="${mealStyle(x)}"><div class="grow"><b><span class="mtime">${esc(x.time)}</span> · ${esc(x.type)}</b>
-      <p>${esc(x.description)}</p><p>${[x.calories && x.calories + ' kcal', x.protein && x.protein + 'g protein'].filter(Boolean).join(' · ')}</p></div>
-      ${done(x) ? '<span class="down" style="font-weight:700;padding:0 8px">✓</span>' : `<button class="primary" data-logp="${x.id}" style="min-height:40px;padding:6px 14px">+ Log</button>`}</div>`).join('');
+  const eaten = x => list.find(m => sameMeal(x, m)), left = items.filter(x => !eaten(x));
+  const mark = x => { const m = eaten(x);
+    if (m) return OWNER ? `<button class="link tick" data-unlog="${m.id}" aria-label="Eaten · tap to undo">✓</button>` : '<span class="tick">✓</span>';
+    return OWNER ? `<button class="primary" data-logp="${x.id}" style="min-height:40px;padding:6px 14px">+ Log</button>` : ''; };
+  el.innerHTML = `<div class="row between"><h3 style="margin:0">Your plan <span class="small muted" style="font-weight:500">· ${esc(planLabel(wSel))}</span></h3>${OWNER && left.length > 1 ? '<button class="link" id="logAllPlan">Log all</button>' : ''}</div>` +
+    items.map(x => { const m = eaten(x);
+      return `<div class="item mtile" style="${mealStyle(x)}">${m && m.thumbId ? imgTag(m.thumbId, m.photoId, 'thumb', x.type) : ''}<div class="grow"><b><span class="mtime">${esc(x.time)}</span> · ${esc(x.type)}</b>
+      <p>${esc(x.description)}</p><p>${[x.calories && x.calories + ' kcal', x.protein && x.protein + 'g protein'].filter(Boolean).join(' · ')}</p></div>${mark(x)}</div>`; }).join('');
+  hydrate(el);
   const date = wSel;
+  $$('[data-unlog]', el).forEach(b => b.onclick = () => confirm('Mark as not eaten?') && busy(b, async () => {
+    await api('remove', { sheet: 'Meals', id: b.dataset.unlog });
+    const rest = mList.filter(x => x.id !== b.dataset.unlog); mealsChanged(date, rest); if (date === wSel) renderMeals(rest);
+  }));
   const log = x => api('addMeal', { date, type: x.type, time: x.time, description: x.description, calories: x.calories, protein: x.protein, carbs: x.carbs, fat: x.fat });
   const after = l => { mealsChanged(date, l); if (date === wSel) renderMeals(l); };
   $$('[data-logp]', el).forEach(b => b.onclick = () => busy(b, async () => { after(await log(items.find(x => x.id === b.dataset.logp))); toast('Logged'); }));
