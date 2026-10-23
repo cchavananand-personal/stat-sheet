@@ -729,7 +729,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023212421';
+const BUILD = '20261023212634';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -792,12 +792,12 @@ const PHOTOS = {};
 const IMG_ACCEPT = "image/" + String.fromCharCode(42); // = "image/" + star
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
-function toast(msg, err) {
+function toast(msg, err, ms) {
   // on the sign-in screen, errors stay in the card until you edit a field
   if (err && msg === 'Please sign in.' && !$('#who').classList.contains('hide')) return; // background loads before signing in
   if (err && !$('#who').classList.contains('hide')) { const w = $('#whoErr'); w.textContent = msg; w.classList.remove('hide'); return; }
   const t = $('#toast'); t.textContent = msg; t.className = 'show' + (err ? ' err' : '');
-  clearTimeout(t._h); t._h = setTimeout(() => t.className = '', 2600);
+  clearTimeout(t._h); t._h = setTimeout(() => t.className = '', ms || 2600);
 }
 const READ_ONLY = new Set(['bootstrap', 'month', 'day', 'meals', 'entries', 'gallery', 'photos', 'notesFor', 'workouts', 'dashboard', 'bodyRange', 'shareInfo', 'healthStatus', 'whoopStatus']); // safe to retry
 /** Calls the Apps Script API. text/plain keeps it a "simple" request (no CORS preflight). Retries once on a network blip. */
@@ -2262,8 +2262,9 @@ $('#whoNew').onclick = () => {
   $('#whoErr').classList.add('hide');
   const signing = $('#signForm').classList.toggle('hide') === false;
   $('#whoPin').classList.toggle('hide', signing);
-  $('#whoTitle').textContent = signing ? 'Create account' : 'Welcome back';
-  $('#whoSub').textContent = signing ? 'Pick your name and a PIN' : 'Sign in to Stat Sheet';
+  const jn = store('pendingCoach') && store('pendingCoachName'); // opened from a trainer's invite link
+  $('#whoTitle').textContent = jn ? 'Join ' + jn : signing ? 'Create account' : 'Welcome back';
+  $('#whoSub').textContent = jn ? (signing ? 'Create your account to train with ' : 'Sign in to join ') + jn : signing ? 'Pick your name and a PIN' : 'Sign in to Stat Sheet';
   $('#whoNew').textContent = signing ? 'Have an account? Sign in' : 'New here? Create an account';
 };
 $('#signForm').onsubmit = e => {
@@ -2584,7 +2585,10 @@ api('bootstrap', { date: TODAY })
     if (d.me && d.target && AS && d.target.id !== AS) store('as', d.target.id);
     const pc = store('pendingCoach'); // opened from a trainer's link: pair once signed in
     if (pc && d.me) { store('pendingCoach', null); setTimeout(() => store('pendingCoachName', null), 2000);
-      if (!d.me.trainer && !d.coach) setTimeout(() => confirm('Join ' + (store('pendingCoachName') || 'trainer ' + pc) + ' as your trainer?') && api('pairTrainer', { code: pc }).then(w => { Object.assign(S, w); toast('Paired with ' + S.coach.name); }), 600); }
+      // opening the invite link is the yes: join straight away (only switching from another trainer asks first)
+      const nm = store('pendingCoachName') || 'this trainer', same = d.coach && d.coach.code === String(pc).toUpperCase();
+      if (!d.me.trainer && !same && (!d.coach || confirm('Move from ' + d.coach.name + ' to ' + nm + ' as your trainer?')))
+        api('pairTrainer', { code: pc }).then(w => { Object.assign(S, w); if (curTab === 'more') renderMore(); toast("You're now training with " + S.coach.name, false, 5000); }).catch(() => {}); }
     renderRoleTag();
     if (!saved) { show('progress'); bootDone(); return; }
     // redraw what's on screen with the fresh data, unless you're typing in it
