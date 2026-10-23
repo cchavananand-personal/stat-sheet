@@ -86,6 +86,7 @@ button.link{background:none;min-height:36px;padding:6px 8px;color:var(--muted);f
 .parts button.on{background:var(--c);color:#fff}
 .parts button:disabled{opacity:1}
 .parts button:disabled:not(.on){opacity:.35}
+.mv{display:flex;flex-direction:column;gap:2px}.mv .link{padding:2px 10px;min-height:26px;font-size:17px;font-weight:700}.mv .link:disabled{opacity:.2}
 .tick,button.link.tick{color:var(--accent);font-size:22px;font-weight:800;padding:0 10px;min-height:40px}
 .setrow{display:grid;grid-template-columns:40px 1fr 1fr 32px;gap:8px;align-items:center;margin-bottom:8px}
 .setrow.head{margin:12px 0 4px}.setrow b{text-align:center}.setrow input{margin:0}
@@ -464,7 +465,7 @@ nav button.on{color:var(--accent)}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023132040';
+const BUILD = '20261023133839';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -899,16 +900,23 @@ const setCount = rows => rows.filter(w => num(w.reps) || num(w.weight)).length;
 const partChips = (on, attr, off) => WK().parts.map(p =>
   `<button style="--c:${p.color}" ${attr}="${esc(p.name)}" class="${on.has(p.name) ? 'on' : ''}" ${off ? 'disabled' : ''}>${esc(p.name)}</button>`).join('');
 /** One tile per exercise (all its sets together), in body-part order. del = data attribute for ✕ (gets the code); btn = custom button. */
-const exTiles = (rows, del, btn) => WK().parts.map(p => {
-  const groups = {};
-  rows.filter(w => w.code && w.part === p.name).forEach(w => (groups[w.code] = groups[w.code] || []).push(w));
-  return Object.values(groups).map(g => {
-    const n = setCount(g), s = setsText(g);
-    return `<div class="item mtile" style="--c:${p.color};--cbg:${p.color}1f"><div class="grow"><b>${esc(g[0].name || exName(g[0].code))}</b>
+/* day = a logged day: exercises in the order you did them (saved "ord", else the order logged), with ↑ ↓ for the owner;
+   otherwise (plans) grouped by body part. */
+const exTiles = (rows, del, btn, day) => {
+  const groups = {}, seen = [];
+  rows.filter(w => w.code).forEach(w => { if (!groups[w.code]) { groups[w.code] = []; seen.push(w.code); } groups[w.code].push(w); });
+  const ord = c => Math.min(...groups[c].map(w => num(w.ord) || 1e9));
+  const codes = day ? seen.slice().sort((a, b) => ord(a) - ord(b)) // stable sort keeps logged order for ties
+    : WK().parts.flatMap(p => seen.filter(c => groups[c][0].part === p.name));
+  return codes.map((c, i) => {
+    const g = groups[c], p = partOf(g[0].part), n = setCount(g), s = setsText(g);
+    const arrows = day && OWNER && codes.length > 1 ? `<div class="mv"><button class="link" data-mv="${c}" data-by="-1" aria-label="Move up" ${i ? '' : 'disabled'}>↑</button>
+      <button class="link" data-mv="${c}" data-by="1" aria-label="Move down" ${i < codes.length - 1 ? '' : 'disabled'}>↓</button></div>` : '';
+    return `<div class="item mtile" style="--c:${p.color};--cbg:${p.color}1f" data-code="${c}"><div class="grow"><b>${esc(g[0].name || exName(c))}</b>
       <p>${esc(p.name)}${n ? ' · ' + n + (n > 1 ? ' sets' : ' set') : ''}</p>${s ? `<p class="sets">${esc(s)}</p>` : ''}</div>
-      ${btn ? btn(g[0]) : del ? `<button class="link" ${del}="${g[0].code}" aria-label="Delete">✕</button>` : ''}</div>`;
+      ${arrows}${btn ? btn(g[0]) : del ? `<button class="link" ${del}="${c}" aria-label="Delete">✕</button>` : ''}</div>`;
   }).join('');
-}).join('');
+};
 /** Exercise picker with one group per body part; the parts given come first. */
 function fillExercises(sel, first) {
   const keep = sel.value, parts = WK().parts.slice().sort((a, b) => first.has(b.name) - first.has(a.name));
@@ -955,7 +963,13 @@ function renderWorkout(list, loading) {
   const vol = ex.reduce((t, w) => t + (num(w.reps) || 0) * (num(w.weight) || 0), 0);
   $('#wkSum').textContent = !list.length ? (OWNER ? 'Tap the body parts you trained. Details are optional.' : `No workout logged for ${wSel === TODAY ? 'today' : 'this day'}.`)
     : [nEx && nEx + (nEx > 1 ? ' exercises' : ' exercise'), nSets && nSets + (nSets > 1 ? ' sets' : ' set'), vol && fmtN(vol, 0) + ' kg lifted'].filter(Boolean).join(' · ');
-  $('#wkList').innerHTML = exTiles(ex, OWNER && 'data-delw');
+  $('#wkList').innerHTML = exTiles(ex, OWNER && 'data-delw', null, true);
+  $$('[data-mv]', $('#wkList')).forEach(b => b.onclick = () => {
+    const codes = $$('#wkList [data-code]').map(t => t.dataset.code), i = codes.indexOf(b.dataset.mv), j = i + Number(b.dataset.by), date = wSel;
+    [codes[i], codes[j]] = [codes[j], codes[i]];
+    renderWorkout(wkList.map(w => w.code ? Object.assign({}, w, { ord: codes.indexOf(w.code) + 1 }) : w));
+    wkSync(date, () => api('reorderWorkout', { date, codes }));
+  });
   $$('[data-delw]').forEach(b => b.onclick = () => {
     if (!confirm('Delete this exercise and all its sets?')) return;
     const code = b.dataset.delw, date = wSel;
