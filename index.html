@@ -29,7 +29,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background:var(--bg);padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 #viewBar{position:sticky;top:0;z-index:20;display:block;width:100%;border:0;border-radius:0;background:#4f8df2;color:#fff;
-  font-weight:700;font-size:14px;min-height:38px;padding:9px 16px;text-align:center}
+  font-weight:700;font-size:14px;min-height:36px;padding:8px 16px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px;max-width:680px;margin:auto}
 .brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:.05em;font-size:14px;min-width:0}.brand b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.brand span{color:var(--accent)}
 .role{font-size:12px;color:var(--muted);background:var(--soft);padding:5px 10px;border-radius:99px}
@@ -124,7 +124,9 @@ button.link{background:none;min-height:36px;padding:6px 8px;color:var(--muted);f
 html,body{max-width:100%;overflow-x:hidden}
 main,header{overflow-x:clip}
 .card{overflow:hidden}
-.tag.by{color:#fff;background:#4f8df2}
+.mb{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;font-size:11px;font-weight:800;color:#fff;margin-left:8px;vertical-align:2px}
+.mb.t{background:#4f8df2}.mb.c{background:#3fb58a}
+#roleTag{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42vw}#roleTag .mb{margin:0 6px 0 0;vertical-align:1px}
 .tag{display:inline-block;font-size:11px;font-weight:600;color:var(--muted);background:var(--soft);border-radius:99px;padding:1px 8px;margin-left:6px;vertical-align:middle}
 .mtile{border-top:0!important;border-left:4px solid var(--c);background:var(--cbg);border-radius:12px;padding:12px;margin-bottom:8px}
 .mtile .mtime{color:var(--c);font-weight:700}
@@ -232,7 +234,8 @@ nav button.on{color:var(--accent)}
 #switcher .sheet{position:absolute;top:56px;right:12px;width:260px;max-width:calc(100vw - 24px);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px;box-shadow:0 10px 30px #0004}
 #switcher .sheet b{display:block;font-size:12px;color:var(--muted);padding:8px 10px 4px;letter-spacing:.04em}
 #switcher .sheet small{display:block;color:var(--muted);font-size:12px;padding:6px 10px 8px}
-#swList button{display:flex;justify-content:space-between;width:100%;text-align:left;background:none;min-height:46px;padding:10px;font-weight:600}
+#swList .mb{margin:0 10px 0 0}
+#swList button{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;background:none;min-height:46px;padding:10px;font-weight:600}
 #swList button.on{color:var(--accent)}
 .conn{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
 .crow{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.crow b{flex:1}
@@ -528,7 +531,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023152648';
+const BUILD = '20261023152819';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -682,20 +685,21 @@ $$('#bodyForm input').forEach(i => i.readOnly = true); }
 if (ROLE === 'guest') $('#noteForm').classList.add('hide');
 function renderRoleTag() {
   const t = $('#roleTag');
-  t.textContent = ROLE === 'guest' ? 'Viewing · Sign in'
-    : S.me && S.me.trainer ? (viewingClient() ? '👤 ' + S.target.name : S.me.name + ' (me)') + ' ▾'
-    : S.me && S.pinsOn ? S.me.name : '';
+  // C = your own stats (client mode) · T = a client's stats (trainer mode)
+  t.innerHTML = ROLE === 'guest' ? 'Sign in'
+    : S.me && S.me.trainer ? '<span class="mb ' + (viewingClient() ? 't">T' : 'c">C') + '</span>' + esc(S.target.name) + ' ▾'
+    : S.me && S.pinsOn ? esc(S.me.name) : '';
   t.classList.toggle('hide', !t.textContent);
   const bar = $('#viewBar'); // trainer mode: always visible whose data you're changing
   bar.classList.toggle('hide', !viewingClient());
-  if (viewingClient()) bar.textContent = 'Viewing ' + S.target.name + '\'s stats · tap to switch';
+  if (viewingClient()) bar.textContent = 'Viewing ' + S.target.name + ' · Switch';
 }
 $('#viewBar').onclick = () => showSwitch();
 $('#roleTag').onclick = () => ROLE === 'guest' ? showWho() : S.me && S.me.trainer ? showSwitch() : WHO && confirm('Sign out of this phone?') && setWho(null);
 /** Trainer: switch between your own stats and each client's. */
 function showSwitch() {
-  const cur = S.target && S.target.id, rows = [{ id: S.me.id, name: S.me.name + ' (me)' }].concat(S.clients || []);
-  $('#swList').innerHTML = rows.map(r => `<button data-as="${r.id}" class="${r.id === cur ? 'on' : ''}">${esc(r.name)}${r.id === cur ? '<span>✓</span>' : ''}</button>`).join('');
+  const cur = S.target && S.target.id, rows = [{ id: S.me.id, name: S.me.name, me: true }].concat(S.clients || []);
+  $('#swList').innerHTML = rows.map(r => `<button data-as="${r.id}" class="${r.id === cur ? 'on' : ''}"><span><span class="mb ${r.me ? 'c">C' : 't">T'}</span>${esc(r.name)}</span>${r.id === cur ? '<span>✓</span>' : ''}</button>`).join('');
   $$('#swList [data-as]').forEach(b => b.onclick = () => b.dataset.as === cur ? $('#switcher').classList.add('hide') : switchTo(b.dataset.as));
   $('#switcher').classList.remove('hide');
 }
@@ -1022,7 +1026,7 @@ const exTiles = (rows, del, btn, day) => {
     : WK().parts.flatMap(p => seen.filter(c => groups[c][0].part === p.name));
   return codes.map((c, i) => {
     const g = groups[c], p = partOf(g[0].part), n = setCount(g), s = setLines(g);
-    return `<div class="item mtile${day && OWNER ? ' edt' : ''}" style="--c:${p.color};--cbg:${p.color}1f" data-code="${c}"><div class="grow"><b>${esc(g[0].name || exName(c))}</b>${day && g.some(w => w.by) ? '<span class="tag by">by ' + esc(g.find(w => w.by).by) + '</span>' : ''}
+    return `<div class="item mtile${day && OWNER ? ' edt' : ''}" style="--c:${p.color};--cbg:${p.color}1f" data-code="${c}"><div class="grow"><b>${esc(g[0].name || exName(c))}</b>${day && S.hasCoach ? (g.some(w => w.by) ? '<span class="mb t" title="Logged by ' + esc(g.find(w => w.by).by) + '">T</span>' : '<span class="mb c" title="Logged by ' + esc(clientName()) + '">C</span>') : ''}
       <p>${esc(p.name)}${n ? ' · ' + n + (n > 1 ? ' sets' : ' set') : ''}</p>${s}</div>
       ${btn ? btn(g[0]) : del ? `<button class="link" ${del}="${c}" aria-label="Delete">✕</button>` : ''}</div>`;
   }).join('');
