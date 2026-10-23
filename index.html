@@ -317,7 +317,7 @@ button.loading img,button.loading svg{opacity:0}
 #tab-clients #clientList .crow:nth-last-child(2){border-bottom:0}#newClientCard #clientForm{margin-top:0!important}
 #newClientCard #clientForm{align-items:center!important}#newClientCard #clientForm label{margin:0}#newClientCard #clientForm .cnum{color:var(--accent);font-weight:800;min-width:26px}.addway b{font-size:15px}.addway p{margin:2px 0 10px}
 #newClientCard .row.between{flex-direction:column;align-items:stretch;gap:10px}#newClientCard .row.between>.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}#newClientCard .row.between button{white-space:nowrap;min-height:44px!important}
-.codeline{display:flex;align-items:center;gap:10px}.codeline button.link.link{min-height:32px;padding:4px 10px;font-size:13px}
+.codeline{display:flex;align-items:center;gap:10px}#newClientCard .codeline button{min-height:32px!important}.codeline button.link.link{min-height:32px;padding:4px 10px;font-size:13px}
 .addor{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:13px}.addor::before{content:"";flex:1;height:1px;background:var(--line)}
 .crow b{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.crow .small{white-space:nowrap}
 .crow .link{font-size:20px;padding:4px 10px;min-height:0}
@@ -730,7 +730,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023212819';
+const BUILD = '20261023212946';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
