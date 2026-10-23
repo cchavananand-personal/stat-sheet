@@ -293,7 +293,7 @@ button.loading img,button.loading svg{opacity:0}
 #myTrainer .row{gap:12px;align-items:center}#myTrainer b{font-size:16px}
 #pairForm{display:flex;gap:8px;align-items:flex-end;margin-top:6px}#pairForm label{flex:1;margin:0}#pairForm input{text-transform:uppercase;letter-spacing:.05em}
 /* buttons read as titles (e.g. "Add To Quick Menu"), not sentences */
-button,.plink{text-transform:capitalize}
+button,.plink,.addtile span,.pick span{text-transform:capitalize}
 .plink{color:var(--accent);text-decoration:none;font-weight:600;white-space:nowrap}
 .minilink{min-height:0;padding:6px 4px 2px;font-size:14px;color:var(--accent);font-weight:600}
 #ciBox{margin-top:6px;border-top:1px solid var(--line);padding-top:4px}
@@ -641,7 +641,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023163749';
+const BUILD = '20261023164047';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
