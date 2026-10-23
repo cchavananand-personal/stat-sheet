@@ -317,6 +317,7 @@ button.loading img,button.loading svg{opacity:0}
 #tab-clients #clientList .crow:nth-last-child(2){border-bottom:0}#newClientCard #clientForm{margin-top:0!important}
 #newClientCard #clientForm{align-items:center!important}#newClientCard #clientForm label{margin:0}#newClientCard #clientForm .cnum{color:var(--accent);font-weight:800;min-width:26px}.addway b{font-size:15px}.addway p{margin:2px 0 10px}
 #newClientCard .row.between{flex-direction:column;align-items:stretch;gap:10px}#newClientCard .row.between>.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}#newClientCard .row.between button{white-space:nowrap;min-height:44px!important}
+.codeline{display:flex;align-items:center;gap:10px}.codeline button.link.link{min-height:32px;padding:4px 10px;font-size:13px}
 .addor{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:13px}.addor::before{content:"";flex:1;height:1px;background:var(--line)}
 .crow b{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.crow .small{white-space:nowrap}
 .crow .link{font-size:20px;padding:4px 10px;min-height:0}
@@ -615,7 +616,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
   <!-- MORE -->
   <!-- CLIENTS (trainer mode): the clients card and "Open the app on" move here when the page starts -->
   <section id="tab-clients" class="hide"><h2>My Clients</h2>
-    <div class="card" id="codeCard"><div class="row between"><div><div class="small muted">Your code</div><b id="tCode" style="font-size:20px;letter-spacing:.06em">…</b></div>
+    <div class="card" id="codeCard"><div class="row between"><div><div class="small muted">Your code</div><span class="codeline"><b id="tCode" style="font-size:20px;letter-spacing:.06em">…</b><button type="button" class="link" data-copycode="#tCode">Copy</button></span></div>
       <div class="row" style="gap:6px"><button id="codeShare" class="primary" style="min-height:40px">Share Invite</button><button id="codeNew" class="link">New Code</button></div></div>
       <p class="small muted" style="margin:8px 0 0">People who already use Stat Sheet enter it in More › My Trainer to become your client.</p></div>
     <div class="card" id="clientRankCard"><div id="clientRankBox" class="small"></div></div>
@@ -729,7 +730,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023212634';
+const BUILD = '20261023212819';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2070,7 +2071,7 @@ function renderTrainerMode() {
 async function renderPeers() {
   const box = $('#peersCard'), list = S.peers || [];
   box.classList.toggle('hide', !S.me); if (!S.me) return;
-  box.innerHTML = `<div class="row between"><div><div class="small muted">Your code</div><b id="pCode" style="font-size:18px;letter-spacing:.05em">…</b></div>
+  box.innerHTML = `<div class="row between"><div><div class="small muted">Your code</div><span class="codeline"><b id="pCode" style="font-size:18px;letter-spacing:.05em">…</b><button type="button" class="link" data-copycode="#pCode">Copy</button></span></div>
       <button class="primary" id="pShare" style="min-height:40px">Share</button></div>
     <p class="small muted" style="margin:8px 0 10px">Share your code to compare stats and rankings.</p>
     ${list.map(x => `<div class="crow" style="cursor:default"><span class="avatar" data-pav="${x.id}"></span><b>${esc(x.name)}</b>
@@ -2256,6 +2257,11 @@ function setWho(w) {
   clearSaved();
   location.replace(location.pathname); // drop any old ?view=trainer&k=… so everyone ends up on the same link
 }
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-copycode]'); if (!b) return;
+  const code = ($(b.dataset.copycode) || {}).textContent || ''; if (!code || code === '…') return;
+  (navigator.clipboard ? navigator.clipboard.writeText(code) : Promise.reject()).then(() => toast('Copied ' + code), () => prompt('Your code', code));
+});
 $('#peerBack').onclick = () => switchTo(S.me.id);
 $('#who').addEventListener('input', () => $('#whoErr').classList.add('hide'));
 $('#whoNew').onclick = () => {
