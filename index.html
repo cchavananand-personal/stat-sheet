@@ -287,6 +287,7 @@ button.loading img,button.loading svg{opacity:0}
 .ndot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#e8664a;margin-left:7px;vertical-align:2px}
 .nbadge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:#e8664a;color:#fff;font-size:11px;font-weight:800;font-style:normal;margin-left:8px}
 .nbadge.hide{display:none}.newtag{color:#e8664a;font-weight:700;white-space:nowrap}
+.grp{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--muted);margin:20px 4px 8px}
 .cnum{font-size:13px;font-weight:800;opacity:.55;margin-right:6px;font-variant-numeric:tabular-nums}
 .cacts{display:flex;gap:16px;padding:6px 0 12px}.cacts .link{padding:0;min-height:0}
 #inviteOut{margin-top:12px;padding:12px;border-radius:12px;background:#4f8df21f;border:1px solid #4f8df255}
@@ -512,6 +513,13 @@ button.primary.trn{background:#4f8df2;color:#fff}
 
   <section id="tab-more" class="hide">
     <h2>More</h2>
+    <p class="grp">YOUR DATA</p>
+    <details class="card" id="histCard"><summary>Full history · for AI</summary><div class="small">
+      <p style="margin-top:0">Every day in one file: weight, body fat, meals, workouts (every set), activity, and notes from you and your trainer, plus your goals, meal plan and training rotation. Paste it into ChatGPT, Claude or another AI and ask for advice.</p>
+      <button class="primary" id="histCopy" style="width:100%">Copy all</button>
+      <div class="grid2" style="margin-top:8px"><button data-x="history">Download .md</button><button data-x="historycsv">Download .csv</button></div>
+      <textarea id="histText" class="hide" readonly style="width:100%;height:160px;margin-top:10px;font:12px/1.4 ui-monospace,monospace"></textarea>
+    </div></details>
 
     <details class="card"><summary>Import past weights</summary><div>
       <p class="small muted" style="margin-top:0">Paste one line per day: <b>date, weight, body fat</b>. You can copy straight from Excel, Google Sheets or a scale app. <code>2025-03-14</code> or <code>14/03/2025</code> both work. Body fat is optional.</p>
@@ -530,8 +538,10 @@ button.primary.trn{background:#4f8df2;color:#fff}
       <p class="small muted" style="margin-bottom:0">Clients set their own PIN from the invite link. You never see it.</p>
     </div></details>
 
+    <p class="grp">DEVICES</p>
     <details class="card" id="connDetails"><summary>Connections · Garmin, WHOOP, Fitbit…</summary><div id="connBox" class="small"></div></details>
 
+    <p class="grp">APP</p>
     <details class="card"><summary>Home-screen icon</summary><div>
       <div class="row" style="align-items:flex-start;gap:14px">
         <img id="appIcon" alt="App icon" style="width:84px;height:84px;border-radius:19px;background:var(--soft);flex:none">
@@ -541,6 +551,17 @@ button.primary.trn{background:#4f8df2;color:#fff}
           <li>It gets this icon and opens full-screen, like a normal app.</li>
         </ol>
       </div>
+    </div></details>
+    <details class="card"><summary>How to use</summary><div class="small" style="line-height:1.55">
+      <p style="margin-top:0"><b>Progress</b>: your weight and body fat trends, photos and every entry.</p>
+      <p><b>Today</b>: pick a day on the calendar, then log <b>Weight</b>, <b>Meals</b> (tick what you ate from your plan) or <b>Workout</b> (body parts, then sets). Notes with your trainer are at the bottom.</p>
+      <p><b>Plan</b>: your meal plan, workout rotation and goals.</p>
+      <p><b>Your photo</b> (top right): edit your profile, dark mode, share or export, change PIN, sign out.</p>
+      <p style="margin-bottom:0">Everything saves by itself; there is no Save button to forget.</p>
+    </div></details>
+    <details class="card" id="aboutCard"><summary>About</summary><div class="small">
+      <p style="margin-top:0">Stat Sheet · version <b id="buildNo"></b></p>
+      <button id="updBtn" style="width:100%">Check for updates</button>
     </div></details>
   </section>
 </main>
@@ -556,6 +577,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <button data-x="body">📊 Body data · CSV</button>
     <button data-x="meals">🍽️ Meal log · CSV</button>
     <button data-x="plan">🗒️ Meal plan · PDF</button>
+    <button data-x="history">🤖 Full history · for AI</button>
     <small id="menuNote" class="hide"></small>
   </div>
   <button id="mPin">🔑 Change PIN</button>
@@ -591,7 +613,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023161718';
+const BUILD = '20261023162158';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -812,7 +834,7 @@ function chartPng(c) { // chart on a white background, for the PDF
   const x = cv.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, cv.width, cv.height); x.drawImage(src, 0, 0);
   return cv.toDataURL('image/png');
 }
-$$('#menu [data-x]').forEach(b => b.onclick = () => busy(b, async () => {
+$$('[data-x]').forEach(b => b.onclick = () => busy(b, async () => {
   const kind = b.dataset.x;
   const charts = kind === 'report' ? [['tW', 'Weight'], ['tF', 'Body fat'], ['tK', 'Calorie intake']].filter(([id]) => TC[id]).map(([id, title]) => ({ title, png: chartPng(TC[id]) })) : [];
   toast('Preparing export…');
@@ -1958,6 +1980,24 @@ function renderMenu() {
 }
 $('#mPin').onclick = () => { $('#pinForm').classList.toggle('hide'); $('#pinForm').pin.focus(); };
 const isDark = () => (document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark';
+/* Full history: copy to paste into an AI tool. The copy is started inside the tap (iPhone requires that). */
+$('#histCopy').onclick = e => busy(e.target, async () => {
+  const text = api('historyText');
+  try {
+    if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write)
+      await navigator.clipboard.write([new ClipboardItem({ 'text/plain': text.then(t => new Blob([t], { type: 'text/plain' })) })]);
+    else await navigator.clipboard.writeText(await text);
+    toast('Copied · paste it into your AI app');
+  } catch (x) { // no clipboard access: show it to select by hand
+    const t = $('#histText'); t.value = await text; t.classList.remove('hide'); t.select(); toast('Select all and copy', true);
+  }
+});
+$('#buildNo').textContent = BUILD === 'dev' ? 'dev' : BUILD.slice(0, 4) + '-' + BUILD.slice(4, 6) + '-' + BUILD.slice(6, 8) + ' ' + BUILD.slice(8, 10) + ':' + BUILD.slice(10, 12);
+$('#updBtn').onclick = e => busy(e.target, async () => {
+  const html = await (await fetch(location.pathname + '?check=' + Date.now(), { cache: 'no-store' })).text();
+  const live = (html.match(/const BUILD = '([^']+)'/) || [])[1];
+  if (live && live !== BUILD) { toast('Updating…'); checkForUpdate(); } else toast('You have the latest version');
+});
 $('#mTheme').onclick = () => {
   const t = isDark() ? 'light' : 'dark'; document.documentElement.dataset.theme = t; store('theme', t);
   renderMenu(); show(curTab, true); // charts pick up the new colours
