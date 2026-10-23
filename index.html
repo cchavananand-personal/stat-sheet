@@ -213,6 +213,11 @@ nav button.on{color:var(--accent)}
 .ent .add svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8}
 .ent .add input{position:absolute;inset:0;opacity:0;min-height:0;height:100%}
 /* first-load screen */
+#who{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
+.whobox{width:100%;max-width:340px;display:grid;gap:12px;text-align:center}.whobox img{width:72px;height:72px;border-radius:18px;margin:0 auto}
+#whoPick,#whoPin{display:grid;gap:10px}#whoPin input{text-align:center;font-size:26px;letter-spacing:.35em}
+button.primary.trn{background:#4f8df2;color:#fff}
+#roleTag{cursor:pointer}
 #boot{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:var(--muted);font-size:15px;transition:opacity .25s}
 #boot img{width:84px;height:84px;border-radius:20px;animation:pulse 1.4s ease-in-out infinite}
 #boot.done{opacity:0;pointer-events:none}
@@ -222,6 +227,22 @@ nav button.on{color:var(--accent)}
 </head>
 <body>
 <div id="boot"><img src="icon-180.png" alt=""><div id="bootMsg">Loading your stats…</div></div>
+<div id="who" class="hide"><div class="whobox">
+  <img src="icon-180.png" alt="">
+  <h2 style="margin:4px 0">Who's using this?</h2>
+  <div id="whoPick">
+    <button class="primary" data-who="owner">I'm the client</button>
+    <button class="primary trn" data-who="trainer">I'm the trainer</button>
+    <button class="link" data-who="guest">Just looking</button>
+  </div>
+  <form id="whoPin" class="hide">
+    <p class="muted" id="whoAs" style="margin:0"></p>
+    <input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="PIN" required>
+    <button class="primary">Sign in</button>
+    <button type="button" class="link" id="whoBack">Back</button>
+  </form>
+  <p class="small muted" style="margin:6px 0 0">You only do this once on this phone.</p>
+</div></div>
 <header>
   <div class="brand"><svg width="30" height="30" viewBox="0 0 1024 1024" aria-hidden="true" style="border-radius:8px;flex:none">
     <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#062a22"/><stop offset=".5" stop-color="#0d6a50"/><stop offset="1" stop-color="#3a2a9e"/></linearGradient></defs>
@@ -421,8 +442,19 @@ nav button.on{color:var(--accent)}
       <button class="primary" id="impBtn" disabled style="width:100%">Import</button>
     </div></details>
 
+    <details class="card"><summary>Sign-in PINs</summary><div>
+      <p class="small muted" id="pinState" style="margin-top:0"></p>
+      <form id="pinForm" class="grid2" style="display:grid">
+        <label>Your PIN<input name="ownerPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits"></label>
+        <label>Trainer PIN<input name="trainerPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits"></label>
+        <button class="primary" style="grid-column:1/-1">Save PINs</button>
+      </form>
+      <button class="link hide" id="signOut" style="width:100%;margin-top:8px">Sign out of this phone</button>
+      <button class="link hide" id="pinsOff" style="width:100%">Turn sign-in off</button>
+    </div></details>
+
     <details class="card"><summary>Share</summary><div>
-      <label>App link (anyone can open it, no login)<input id="appUrl" readonly onclick="this.select()"></label>
+      <label>App link (one link for everyone)<input id="appUrl" readonly onclick="this.select()"></label>
       <button class="primary" id="copyApp" style="width:100%;margin:10px 0 18px">Copy app link</button>
       <p class="small muted" style="margin-top:0"><b>Trainer link</b>: view-only plus notes, if you want someone to look without editing.</p>
       <form id="shareForm">
@@ -472,7 +504,7 @@ nav button.on{color:var(--accent)}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023140758';
+const BUILD = '20261023143015';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -490,8 +522,13 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 // The app is a static page (GitHub Pages); data lives in Google Sheets/Drive behind this Apps Script JSON API.
 const API_URL = 'https://script.google.com/macros/s/AKfycbzLggqhy0TH8zRjU1ow5gf0O0UfVh8EBTnvWkcvOYOSZXo4vvcKeMZb-gLKymSr-28/exec';
 const QS = new URLSearchParams(location.search);
-// Open access: no key needed. The trainer link adds ?view=trainer&k=<trainer key> (the server enforces read-only).
-const KEY = QS.get('k') || '', ROLE = QS.get('view') === 'trainer' ? 'trainer' : 'owner', OWNER = ROLE === 'owner';
+/* Who is using the app. One link for everyone: once PINs are set, each phone signs in once (client or trainer, or just
+   looks) and remembers it here until "Sign out". Old trainer links (?view=trainer&k=…) still work. The server enforces all of it. */
+const store = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} };
+const WHO = (() => { try { return JSON.parse(store('who')) || null; } catch (e) { return null; } })();
+const PINS_ON = store('pinsOn') === '1';
+const KEY = QS.get('k') || (WHO && WHO.key) || '';
+const ROLE = QS.get('view') === 'trainer' ? 'trainer' : WHO ? WHO.role : PINS_ON ? 'guest' : 'owner', OWNER = ROLE === 'owner';
 const $ = (s, el) => (el || document).querySelector(s);
 const $$ = (s, el) => [...(el || document).querySelectorAll(s)];
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -603,7 +640,9 @@ const ICONS = {
 const TABS = OWNER ? [['progress','Progress'],['today','Today'],['meals','Plan'],['more','More']] : [['progress','Progress'],['today','Today']];
 $('#nav').innerHTML = TABS.map(([id, label]) => `<button data-t="${id}"><svg viewBox="0 0 24 24">${ICONS[id]}</svg>${label}</button>`).join('');
 if (!OWNER) { document.body.classList.add('ro');
-$$('#bodyForm input').forEach(i => i.readOnly = true); $('#roleTag').textContent = 'View only'; $('#roleTag').classList.remove('hide'); }
+$('#bodyForm input').forEach(i => i.readOnly = true); $('#roleTag').textContent = ROLE === 'trainer' ? 'Trainer' : 'Viewing · Sign in'; $('#roleTag').classList.remove('hide'); }
+if (ROLE === 'guest') $('#noteForm').classList.add('hide');
+$('#roleTag').onclick = () => ROLE === 'guest' ? showWho() : WHO && confirm('Sign out of this phone?') && setWho(null);
 let curTab = 'progress';
 function show(id, keepScroll) {
   curTab = id;
@@ -827,7 +866,7 @@ function renderDayNotes(list) {
   const sec = (cls, title, notes, none) => `<div class="nsec ${cls}"><h4>${title}</h4>` +
     (notes.map(n => `<div class="nitem">${esc(n.text)}<small>${esc(time(n))}</small></div>`).join('') || `<div class="nnone">${none}</div>`) + '</div>';
   const tr = list.filter(n => n.author === 'Trainer'), me = list.filter(n => n.author !== 'Trainer');
-  $('#notes').innerHTML = sec('tr', OWNER ? 'Trainer' : 'You (trainer)', tr, 'No notes from the trainer.')
+  $('#notes').innerHTML = sec('tr', ROLE === 'trainer' ? 'You (trainer)' : 'Trainer', tr, 'No notes from the trainer.')
     + sec('me', OWNER ? 'You' : esc(S.profile.name || 'Client'), me, OWNER ? 'No notes from you.' : 'No notes from the client.');
 }
 $('#noteForm').onsubmit = e => {
@@ -1499,6 +1538,11 @@ function renderEntries() {
 
 /* ---------- MORE ---------- */
 function renderMore() {
+  $('#pinState').textContent = S.pinsOn
+    ? 'On. Anyone opening the app picks client, trainer or just looking, and enters their PIN once. Notes show who wrote them. Saving here changes both PINs.'
+    : 'Off: the app is fully open and every note shows as yours. Set a PIN for you and one for your trainer; each of you signs in once.';
+  $('#signOut').classList.toggle('hide', !WHO);
+  $('#pinsOff').classList.toggle('hide', !S.pinsOn);
   const f = $('#profileForm');
   [...f.elements].forEach(el => { if (el.name && S.profile[el.name] != null) el.value = S.profile[el.name]; });
   renderWhoop();
@@ -1606,6 +1650,39 @@ function renderWhoop() {
 }
 
 /* start */
+/* Sign-in: pick who you are once; the phone keeps the key the server hands back. */
+function setWho(w) {
+  store('who', w ? JSON.stringify(w) : null);
+  try { Object.keys(localStorage).filter(k => k.startsWith('boot-')).forEach(k => localStorage.removeItem(k)); } catch (e) {}
+  location.replace(location.pathname); // drop any old ?view=trainer&k=… so everyone ends up on the same link
+}
+function showWho() {
+  $('#who').classList.remove('hide'); $('#whoPick').classList.remove('hide'); $('#whoPin').classList.add('hide');
+}
+$$('#whoPick [data-who]').forEach(b => b.onclick = () => {
+  const who = b.dataset.who;
+  if (who === 'guest') { if (ROLE === 'guest') { store('who', JSON.stringify({ role: 'guest', key: '' })); $('#who').classList.add('hide'); } else setWho({ role: 'guest', key: '' }); return; }
+  const f = $('#whoPin'); f.dataset.who = who; f.reset();
+  $('#whoAs').textContent = who === 'trainer' ? 'Trainer PIN' : 'Client PIN';
+  $('#whoPick').classList.add('hide'); f.classList.remove('hide'); f.pin.focus();
+});
+$('#whoBack').onclick = showWho;
+$('#whoPin').onsubmit = e => {
+  e.preventDefault(); const f = e.target;
+  busy($('button.primary', f), async () => {
+    try { setWho(await api('login', { who: f.dataset.who, pin: f.pin.value })); } catch (x) { f.pin.value = ''; f.pin.focus(); }
+  });
+};
+$('#pinForm').onsubmit = e => {
+  e.preventDefault(); const f = e.target;
+  if (!confirm('Save these PINs? You and your trainer will each sign in once with them.')) return;
+  busy($('button', f), async () => { setWho(await api('setPins', formObj(f))); });
+};
+$('#signOut').onclick = () => confirm('Sign out of this phone?') && setWho(null);
+$('#pinsOff').onclick = e => confirm('Turn sign-in off? The app becomes fully open again and new notes all show as yours.')
+  && busy(e.target, async () => { await api('pinsOff'); store('pinsOn', '0'); S.pinsOn = false; renderMore(); toast('Sign-in is off'); });
+if (PINS_ON && !WHO && !QS.get('k')) showWho();
+
 /* Open instantly with the data from last time (saved on this phone), then swap in fresh data from Google. */
 const BOOT_KEY = 'boot-' + ROLE;
 function bootDone() { const b = $('#boot'); if (!b) return; b.classList.add('done'); setTimeout(() => b.remove(), 400); }
@@ -1620,6 +1697,10 @@ api('bootstrap', { date: TODAY })
   .then(d => {
     try { localStorage.setItem(BOOT_KEY, JSON.stringify({ date: TODAY, data: d })); } catch (e) {}
     Object.assign(S, d);
+    // sign-in was switched on (or off) since this phone last looked
+    store('pinsOn', d.pinsOn ? '1' : '0');
+    if (d.pinsOn && !WHO && !QS.get('k') && !PINS_ON) return setWho(null);
+    if (!d.pinsOn && ROLE === 'guest') return setWho(null);
     if (!saved) { show('progress'); bootDone(); return; }
     // redraw what's on screen with the fresh data, unless you're typing in it
     if (!/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) show(curTab, true);
