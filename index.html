@@ -204,6 +204,9 @@ nav button.on{color:var(--accent)}
 .nsec h4{margin:0 0 4px;font-size:13px;font-weight:800;color:var(--c);text-transform:uppercase;letter-spacing:.04em}
 .nitem{font-size:15px;padding:5px 0;overflow-wrap:anywhere}.nitem+.nitem{border-top:1px solid var(--line)}
 .nitem small{color:var(--muted);font-size:12px;margin-left:8px}
+.nitem{display:flex;align-items:baseline;gap:8px}.nitem .ntext{flex:1;min-width:0}
+.nacts{display:flex;gap:2px;margin-left:auto}.nacts .link{min-height:0;padding:2px 6px;font-size:14px;color:var(--muted)}
+.nedit{display:flex;gap:6px;width:100%;align-items:center}.nedit input{flex:1;min-width:0;margin:0}.nedit .primary{min-height:40px;padding:0 14px}.nedit .link{min-height:0;padding:0 4px}
 .nnone{font-size:14px;color:var(--muted)}
 .enote.tr{border-left:3px solid #4f8df2}.enote.tr span{color:#4f8df2}
 .enote.me{border-left:3px solid #3fb58a}.enote.me span{color:#3fb58a}
@@ -287,6 +290,8 @@ button.loading img,button.loading svg{opacity:0}
 .ndot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#e8664a;margin-left:7px;vertical-align:2px}
 .nbadge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:#e8664a;color:#fff;font-size:11px;font-weight:800;font-style:normal;margin-left:8px}
 .nbadge.hide{display:none}.newtag{color:#e8664a;font-weight:700;white-space:nowrap}
+#myTrainer .row{gap:12px;align-items:center}#myTrainer b{font-size:16px}
+#pairForm{display:flex;gap:8px;align-items:flex-end;margin-top:6px}#pairForm label{flex:1;margin:0}#pairForm input{text-transform:uppercase;letter-spacing:.05em}
 .grp{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--muted);margin:20px 4px 8px}
 .cnum{font-size:13px;font-weight:800;opacity:.55;margin-right:6px;font-variant-numeric:tabular-nums}
 .cacts{display:flex;gap:16px;padding:6px 0 12px}.cacts .link{padding:0;min-height:0}
@@ -483,13 +488,15 @@ button.primary.trn{background:#4f8df2;color:#fff}
       <p class="small muted" style="margin:0 0 12px"><span id="planVersion"></span> · <a href="#" id="planFolderLink">plan files</a></p>
       <div id="planList"></div>
     </div>
-    <div class="card"><h3 id="planFormTitle">Add to menu</h3>
+    <div class="card"><h3 id="planFormTitle">Add to quick menu</h3>
+      <p class="small muted" style="margin:-4px 0 10px">Becomes a card above, ready to tick in Today.</p>
       <form id="planForm">
         <input type="hidden" name="id">
         <div class="grid2">
-          <label>Name<input name="type" maxlength="40" required placeholder="e.g. Meal 1"></label>
-          <label>Time<input type="time" name="time"></label>
+          <label>Time<input type="time" name="time" value="12:00" required></label>
+          <label>Name<input name="name" maxlength="30" required placeholder="e.g. Meal 1"></label>
         </div>
+        <label>Label <span class="muted">(optional)</span><input name="label" maxlength="30" placeholder="e.g. After work"></label>
         <label>Food<input name="description" maxlength="300" required placeholder="e.g. Whey 1 scoop, oats, banana"></label>
         <div class="grid2">
           <label>Calories<input type="number" name="calories" min="0" inputmode="numeric" placeholder="kcal"></label>
@@ -497,7 +504,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
           <label>Carbs (g)<input type="number" name="carbs" min="0" inputmode="numeric"></label>
           <label>Fat (g)<input type="number" name="fat" min="0" inputmode="numeric"></label>
         </div>
-        <button class="primary" id="planSave">Add to menu</button>
+        <button class="primary" id="planSave">Add to quick menu</button>
         <button type="button" class="link hide" id="planCancel">Cancel editing</button>
       </form>
     </div>
@@ -508,11 +515,16 @@ button.primary.trn{background:#4f8df2;color:#fff}
   <!-- MORE -->
   <!-- CLIENTS (trainer mode): the clients card and "Open the app on" move here when the page starts -->
   <section id="tab-clients" class="hide"><h2>Clients</h2>
+    <div class="card" id="codeCard"><div class="row between"><div><div class="small muted">Your trainer code</div><b id="tCode" style="font-size:20px;letter-spacing:.06em">…</b></div>
+      <div class="row" style="gap:6px"><button id="codeShare" class="primary" style="min-height:40px">Share</button><button id="codeNew" class="link" style="min-height:0">New code</button></div></div>
+      <p class="small muted" style="margin:8px 0 0">People who already use Stat Sheet enter it in More › Trainer to become your client.</p></div>
     <div class="card" id="openOnCard"><label id="openOnRow" style="margin:0">Open the app on<select id="openOn"></select></label></div>
   </section>
 
   <section id="tab-more" class="hide">
     <h2>More</h2>
+    <p class="grp">TRAINER</p>
+    <div class="card" id="myTrainer"></div>
     <p class="grp">YOUR DATA</p>
     <details class="card" id="histCard"><summary>Full history · for AI</summary><div class="small">
       <p style="margin-top:0">Every day in one file: weight, body fat, meals, workouts (every set), activity, and notes from you and your trainer, plus your goals, meal plan and training rotation. Paste it into ChatGPT, Claude or another AI and ask for advice.</p>
@@ -613,7 +625,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023162459';
+const BUILD = '20261023162750';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -822,7 +834,7 @@ function show(id, keepScroll) {
   $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.t === id));
   $$('main > section').forEach(s => s.classList.toggle('hide', s.id !== 'tab-' + id));
   if (!keepScroll) window.scrollTo(0, 0);
-  ({ progress: renderProgress, today: renderToday, meals: renderMealsTab, more: renderMore, clients: renderAccount })[id]();
+  ({ progress: renderProgress, today: renderToday, meals: renderMealsTab, more: renderMore, clients: () => { renderAccount(); renderCode(); } })[id]();
 }
 $('#nav').onclick = e => { const b = e.target.closest('button'); if (b) show(b.dataset.t); };
 
@@ -1048,13 +1060,25 @@ async function loadDayNotes() {
   }
 }
 /** Two separate sections: the trainer's notes (blue) and the client's (green). You write into your own. */
+/** Did I write this note? (Older notes: the trainer's are marked "Trainer", the rest are the client's own.) */
+const myNote = n => !!S.me && (n.byId ? n.byId === S.me.id : n.author === 'Trainer' ? viewingClient() : !viewingClient());
 function renderDayNotes(list) {
   const time = n => String(n.date).length > 10 ? String(n.date).slice(11) : '';
   const sec = (cls, title, notes, none) => `<div class="nsec ${cls}"><h4>${title}</h4>` +
-    (notes.map(n => `<div class="nitem">${esc(n.text)}<small>${esc(time(n))}</small></div>`).join('') || `<div class="nnone">${none}</div>`) + '</div>';
+    (notes.map(n => `<div class="nitem" data-nid="${n.id}"><span class="ntext">${esc(n.text)}</span><small>${esc(time(n))}</small>${myNote(n) ? '<span class="nacts"><button class="link" data-nedit aria-label="Edit">✎</button><button class="link" data-ndel aria-label="Delete">✕</button></span>' : ''}</div>`).join('') || `<div class="nnone">${none}</div>`) + '</div>';
   const tr = list.filter(n => n.author === 'Trainer'), me = list.filter(n => n.author !== 'Trainer');
   $('#notes').innerHTML = sec('tr', esc(trainerName()) + (viewingClient() ? ' · you' : ' · trainer'), tr, 'No notes from ' + esc(trainerName()) + '.')
     + sec('me', esc(clientName()) + (OWNER && !viewingClient() ? ' · you' : ' · client'), me, 'No notes from ' + esc(clientName()) + '.');
+  const date = wSel, after = l => { NTD[date] = l; if (date === wSel) renderDayNotes(l); };
+  $$('#notes [data-ndel]').forEach(b => b.onclick = () => confirm('Delete this note?') &&
+    busy(b, async () => after(await api('deleteNote', { id: b.closest('[data-nid]').dataset.nid }))));
+  $$('#notes [data-nedit]').forEach(b => b.onclick = () => {
+    const item = b.closest('[data-nid]'), old = list.find(n => n.id === item.dataset.nid);
+    item.innerHTML = `<form class="nedit"><input name="text" maxlength="1000" value="${esc(old.text)}"><button class="primary">Save</button><button type="button" class="link" data-cancel>Cancel</button></form>`;
+    const f = $('form', item); f.text.focus();
+    $('[data-cancel]', f).onclick = () => renderDayNotes(list);
+    f.onsubmit = e => { e.preventDefault(); busy($('.primary', f), async () => after(await api('editNote', { id: old.id, text: f.text.value }))); };
+  });
 }
 $('#noteForm').onsubmit = e => {
   e.preventDefault(); const f = e.target, date = wSel;
@@ -1577,7 +1601,8 @@ function renderPlanList() {
   $$('[data-edit]').forEach(r => r.onclick = e => {
     if (e.target.closest('[data-delpl]')) return;
     const x = items.find(i => i.id === r.dataset.edit), f = $('#planForm');
-    ['id','type','time','description','calories','protein','carbs','fat'].forEach(k => f[k].value = x[k] == null ? '' : x[k]);
+    ['id','time','description','calories','protein','carbs','fat'].forEach(k => f[k].value = x[k] == null ? '' : x[k]);
+    const [nm, ...lb] = String(x.type || '').split(' · '); f.name.value = nm; f.label.value = lb.join(' · ');
     $('#planFormTitle').textContent = 'Edit ' + x.type; $('#planSave').textContent = 'Save changes'; $('#planCancel').classList.remove('hide');
     f.scrollIntoView({ behavior: 'smooth', block: 'center' });
   });
@@ -1585,10 +1610,11 @@ function renderPlanList() {
     S.plan = await api('savePlanDay', { day: PLAN_DAY, from: planStartFor(TODAY) || '', items: items.filter(x => x.id !== b.dataset.delpl) }); renderPlanList();
   }));
 }
-function resetPlanForm() { $('#planForm').reset(); $('#planForm').id.value = ''; $('#planFormTitle').textContent = 'Add to menu'; $('#planSave').textContent = 'Add to menu'; $('#planCancel').classList.add('hide'); }
+function resetPlanForm() { $('#planForm').reset(); $('#planForm').id.value = ''; $('#planFormTitle').textContent = 'Add to quick menu'; $('#planSave').textContent = 'Add to quick menu'; $('#planCancel').classList.add('hide'); }
 $('#planCancel').onclick = resetPlanForm;
 $('#planForm').onsubmit = e => {
   e.preventDefault(); const f = e.target, x = formObj(f), items = planItems();
+  x.type = [x.name.trim(), x.label.trim()].filter(Boolean).join(' · '); delete x.name; delete x.label;
   const next = x.id ? items.map(i => i.id === x.id ? Object.assign({}, i, x) : i) : items.concat([x]);
   busy($('#planSave'), async () => { S.plan = await api('savePlanDay', { day: PLAN_DAY, from: planStartFor(TODAY) || '', items: next }); toast(x.id ? 'Updated' : 'Added'); resetPlanForm(); renderPlanList(); });
 };
@@ -1730,7 +1756,24 @@ function renderEntries() {
 }
 
 /* ---------- MORE ---------- */
+/** More › Trainer: who your trainer is, or pair with one by their code. */
+function renderMyTrainer() {
+  const box = $('#myTrainer'), c = S.coach;
+  box.innerHTML = c
+    ? `<div class="row"><span class="avatar big t" id="coachAv"></span><div class="grow"><b>${esc(c.name)}</b>
+         <div class="small muted">Your trainer${c.since ? ' · since ' + nice(c.since, { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</div></div>
+         <button class="link" id="leaveCoach" style="min-height:0;color:var(--muted)">Leave</button></div>
+       <p class="small muted" style="margin:10px 0 0">${esc(c.name)} can see and update your stats, plans and goals, and writes notes to you.</p>`
+    : `<b>No trainer yet</b><p class="small muted" style="margin:4px 0 8px">Ask your trainer for their code, then enter it here.</p>
+       <form id="pairForm"><label>Trainer code<input name="code" maxlength="20" autocapitalize="characters" placeholder="e.g. KENG-4821"></label><button class="primary">Pair</button></form>`;
+  if (c) { paintAvatar($('#coachAv'), c, 'big t');
+    $('#leaveCoach').onclick = e => confirm('Leave ' + c.name + '? They will no longer see your stats. Your data stays yours.') &&
+      busy(e.target, async () => { Object.assign(S, await api('leaveTrainer')); renderMyTrainer(); toast('You left ' + c.name); }); }
+  else $('#pairForm').onsubmit = e => { e.preventDefault(); const f = e.target;
+    busy($('button', f), async () => { Object.assign(S, await api('pairTrainer', { code: f.code.value })); renderMyTrainer(); toast('Paired with ' + S.coach.name); }); };
+}
 function renderMore() {
+  renderMyTrainer();
   renderAccount();
   const f = $('#profileForm');
   [...f.elements].forEach(el => { if (el.name && S.profile[el.name] != null) el.value = S.profile[el.name]; });
@@ -1913,6 +1956,10 @@ function renderAccount() {
     if (confirm('Take ' + c.name + ' off your clients? Their data stays in Drive.')) busy(b, async () => { S.clients = await api('removeClient', { id: c.id }); renderAccount(); });
   });
 }
+async function renderCode(renew) { $('#tCode').textContent = await api('myTrainerCode', renew ? { renew: true } : {}); }
+$('#codeShare').onclick = () => { const c = $('#tCode').textContent, t = 'My Stat Sheet trainer code: ' + c + ' (More › Trainer). App: ' + location.origin + location.pathname;
+  navigator.share ? navigator.share({ text: t }).catch(() => {}) : (navigator.clipboard && navigator.clipboard.writeText(t), toast('Copied')); };
+$('#codeNew').onclick = e => confirm('Make a new code? The old one stops working.') && busy(e.target, () => renderCode(true));
 /** Show the invite link to send (copy or share sheet). */
 function showInvite(r) {
   const box = $('#inviteOut');
