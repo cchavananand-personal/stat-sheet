@@ -200,6 +200,7 @@ nav button.on{color:var(--accent)}
 #lightbox img{max-width:100%;max-height:82vh;border-radius:12px}
 #toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--bg);padding:12px 18px;
   border-radius:12px;font-size:15px;z-index:100;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+#whoErr{color:#ff8a7a;font-weight:600;font-size:14px;margin:8px 0 0}#whoErr.hide{display:none}
 #toast.show{opacity:1}#toast.err{background:var(--bad);color:#fff}
 /* progress gallery */
 #gallery{position:fixed;inset:0;z-index:15;background:#15181f;color:#e8ebf0;display:flex;flex-direction:column}
@@ -379,7 +380,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <div id="boot"><img src="icon-180.png" alt=""><div class="spinner"></div><div id="bootMsg">Loading your stats…</div></div>
 <div id="who" class="hide"><div class="whobox">
   <img src="icon-180.png" alt="">
-  <div><h2 id="whoTitle">Welcome back</h2><p class="muted" id="whoSub">Sign in to Stat Sheet</p></div>
+  <div><h2 id="whoTitle">Welcome back</h2><p class="muted" id="whoSub">Sign in to Stat Sheet</p><p id="whoErr" class="hide"></p></div>
   <form id="whoPin">
     <label>Name<input name="name" autocomplete="username" autocapitalize="words" placeholder="Your name" required></label>
     <label>PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" placeholder="4–6 digits" required></label>
@@ -729,7 +730,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023201401';
+const BUILD = '20261023201524';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -792,6 +793,8 @@ const IMG_ACCEPT = "image/" + String.fromCharCode(42); // = "image/" + star
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
 function toast(msg, err) {
+  // on the sign-in screen, errors stay in the card until you edit a field
+  if (err && !$('#who').classList.contains('hide')) { const w = $('#whoErr'); w.textContent = msg; w.classList.remove('hide'); return; }
   const t = $('#toast'); t.textContent = msg; t.className = 'show' + (err ? ' err' : '');
   clearTimeout(t._h); t._h = setTimeout(() => t.className = '', 2600);
 }
@@ -2255,7 +2258,9 @@ function setWho(w) {
   location.replace(location.pathname); // drop any old ?view=trainer&k=… so everyone ends up on the same link
 }
 $('#peerBack').onclick = () => switchTo(S.me.id);
+$('#who').addEventListener('input', () => $('#whoErr').classList.add('hide'));
 $('#whoNew').onclick = () => {
+  $('#whoErr').classList.add('hide');
   const signing = $('#signForm').classList.toggle('hide') === false;
   $('#whoPin').classList.toggle('hide', signing);
   $('#whoTitle').textContent = signing ? 'Create account' : 'Welcome back';
