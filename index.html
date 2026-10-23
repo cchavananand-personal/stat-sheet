@@ -86,7 +86,11 @@ button.link{background:none;min-height:36px;padding:6px 8px;color:var(--muted);f
 .parts button.on{background:var(--c);color:#fff}
 .parts button:disabled{opacity:1}
 .parts button:disabled:not(.on){opacity:.35}
-.mv{display:flex;flex-direction:column;gap:2px}.mv .link{padding:2px 10px;min-height:26px;font-size:17px;font-weight:700}.mv .link:disabled{opacity:.2}
+.sl{display:grid;grid-template-columns:22px auto 1fr;column-gap:10px;row-gap:2px;margin-top:6px;font-size:15px;font-variant-numeric:tabular-nums}
+.sl span:nth-child(3n+1){color:var(--muted);text-align:right}
+.edt{cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:pan-y}
+.edt.dragging{position:relative;z-index:5;box-shadow:0 10px 28px #000a;transform-origin:center;transition:box-shadow .15s}
+.edt.editing{outline:2px solid var(--c);outline-offset:-2px}
 .tick,button.link.tick{color:var(--accent);font-size:22px;font-weight:800;padding:0 10px;min-height:40px}
 .setrow{display:grid;grid-template-columns:40px 1fr 1fr 32px;gap:8px;align-items:center;margin-bottom:8px}
 .setrow.head{margin:12px 0 4px}.setrow b{text-align:center}.setrow input{margin:0}
@@ -281,14 +285,16 @@ nav button.on{color:var(--accent)}
         <div class="parts" id="wkParts"></div>
         <div class="small muted" id="wkSum" style="margin:6px 0 4px"></div>
         <div id="wkList" style="margin-top:8px"></div>
+        <div class="small muted hide" id="wkHint" style="text-align:center;margin-top:2px">Tap an exercise to edit · hold and drag to reorder</div>
       </div>
-      <div class="card owner-only"><h3>Add details <span class="small muted">(optional)</span></h3>
+      <div class="card owner-only"><h3 id="wkFormTitle">Add details <span class="small muted">(optional)</span></h3>
         <form id="wkForm">
           <label>Exercise<select name="code"></select></label>
           <div class="setrow head small muted"><span>Set</span><span>Reps</span><span>kg</span><span></span></div>
           <div id="wkSets"></div>
           <button type="button" class="link" id="wkAddSet" style="margin:2px 0 10px">+ Add set</button>
-          <button class="primary">Save exercise</button>
+          <button class="primary" id="wkSave">Save exercise</button>
+          <button type="button" class="link hide" id="wkCancel" style="width:100%;margin-top:6px">Cancel editing</button>
         </form>
       </div>
     </div>
@@ -466,7 +472,7 @@ nav button.on{color:var(--accent)}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023135655';
+const BUILD = '20261023140758';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -903,8 +909,8 @@ const DOW = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', '
 const exName = code => (WK().exercises.find(e => e[0] === code) || [, code])[1];
 const partOf = name => WK().parts.find(p => p.name === name) || { name, code: '', color: '#7f8c86' };
 /** Each logged set is its own row; this lists them in order, e.g. "60 kg × 8 · 55 kg × 10 · 50 kg × 12". */
-const setsText = rows => rows.filter(w => num(w.reps) || num(w.weight)).sort((a, b) => (num(a.set) || 0) - (num(b.set) || 0))
-  .map(w => (num(w.weight) ? w.weight + ' kg × ' : '× ') + (num(w.reps) || '–')).join(' · ');
+const setLines = rows => { const l = rows.filter(w => num(w.reps) || num(w.weight)).sort((a, b) => (num(a.set) || 0) - (num(b.set) || 0));
+  return l.length ? '<div class="sl">' + l.map((w, i) => `<span>${i + 1}</span><b>${num(w.weight) ? esc(w.weight) + ' kg' : '–'}</b><span>× ${num(w.reps) || '–'}</span>`).join('') + '</div>' : ''; };
 const setCount = rows => rows.filter(w => num(w.reps) || num(w.weight)).length;
 const partChips = (on, attr, off) => WK().parts.map(p =>
   `<button style="--c:${p.color}" ${attr}="${esc(p.name)}" class="${on.has(p.name) ? 'on' : ''}" ${off ? 'disabled' : ''}>${esc(p.name)}</button>`).join('');
@@ -918,12 +924,10 @@ const exTiles = (rows, del, btn, day) => {
   const codes = day ? seen.slice().sort((a, b) => ord(a) - ord(b)) // stable sort keeps logged order for ties
     : WK().parts.flatMap(p => seen.filter(c => groups[c][0].part === p.name));
   return codes.map((c, i) => {
-    const g = groups[c], p = partOf(g[0].part), n = setCount(g), s = setsText(g);
-    const arrows = day && OWNER && codes.length > 1 ? `<div class="mv"><button class="link" data-mv="${c}" data-by="-1" aria-label="Move up" ${i ? '' : 'disabled'}>↑</button>
-      <button class="link" data-mv="${c}" data-by="1" aria-label="Move down" ${i < codes.length - 1 ? '' : 'disabled'}>↓</button></div>` : '';
-    return `<div class="item mtile" style="--c:${p.color};--cbg:${p.color}1f" data-code="${c}"><div class="grow"><b>${esc(g[0].name || exName(c))}</b>
-      <p>${esc(p.name)}${n ? ' · ' + n + (n > 1 ? ' sets' : ' set') : ''}</p>${s ? `<p class="sets">${esc(s)}</p>` : ''}</div>
-      ${arrows}${btn ? btn(g[0]) : del ? `<button class="link" ${del}="${c}" aria-label="Delete">✕</button>` : ''}</div>`;
+    const g = groups[c], p = partOf(g[0].part), n = setCount(g), s = setLines(g);
+    return `<div class="item mtile${day && OWNER ? ' edt' : ''}" style="--c:${p.color};--cbg:${p.color}1f" data-code="${c}"><div class="grow"><b>${esc(g[0].name || exName(c))}</b>
+      <p>${esc(p.name)}${n ? ' · ' + n + (n > 1 ? ' sets' : ' set') : ''}</p>${s}</div>
+      ${btn ? btn(g[0]) : del ? `<button class="link" ${del}="${c}" aria-label="Delete">✕</button>` : ''}</div>`;
   }).join('');
 };
 /** Exercise picker with one group per body part; the parts given come first. */
@@ -973,12 +977,8 @@ function renderWorkout(list, loading) {
   $('#wkSum').textContent = !list.length ? (OWNER ? 'Tap the body parts you trained. Details are optional.' : `No workout logged for ${wSel === TODAY ? 'today' : 'this day'}.`)
     : [nEx && nEx + (nEx > 1 ? ' exercises' : ' exercise'), nSets && nSets + (nSets > 1 ? ' sets' : ' set'), vol && fmtN(vol, 0) + ' kg lifted'].filter(Boolean).join(' · ');
   $('#wkList').innerHTML = exTiles(ex, OWNER && 'data-delw', null, true);
-  $$('[data-mv]', $('#wkList')).forEach(b => b.onclick = () => {
-    const codes = $$('#wkList [data-code]').map(t => t.dataset.code), i = codes.indexOf(b.dataset.mv), j = i + Number(b.dataset.by), date = wSel;
-    [codes[i], codes[j]] = [codes[j], codes[i]];
-    renderWorkout(wkList.map(w => w.code ? Object.assign({}, w, { ord: codes.indexOf(w.code) + 1 }) : w));
-    wkSync(date, () => api('reorderWorkout', { date, codes }));
-  });
+  $('#wkHint').classList.toggle('hide', !OWNER || !ex.length);
+  if (wkEdit && (wkEdit.date !== wSel || !ex.some(w => w.code === wkEdit.code))) endEdit();
   $$('[data-delw]').forEach(b => b.onclick = () => {
     if (!confirm('Delete this exercise and all its sets?')) return;
     const code = b.dataset.delw, date = wSel;
@@ -1015,11 +1015,81 @@ $('#wkAddSet').onclick = () => { // new set starts as a copy of the last one; ch
   drawSets(s.concat([Object.assign({}, last)]));
   const r = $$('#wkSets [data-k=reps]').pop(); r.focus(); r.select();
 };
+/* Edit: tap a logged exercise → its sets load into the form; "Save changes" replaces them (same place in the order). */
+let wkEdit = null;
+function startEdit(code) {
+  const rows = wkList.filter(w => w.code === code).sort((a, b) => (num(a.set) || 0) - (num(b.set) || 0));
+  if (!rows.length) return;
+  wkEdit = { date: wSel, code };
+  const f = $('#wkForm'); f.code.value = code;
+  drawSets(rows.map(w => ({ reps: w.reps == null ? '' : w.reps, weight: w.weight == null ? '' : w.weight })));
+  $('#wkFormTitle').innerHTML = 'Edit ' + esc(exName(code));
+  $('#wkSave').textContent = 'Save changes'; $('#wkCancel').classList.remove('hide');
+  $$('#wkList [data-code]').forEach(t => t.classList.toggle('editing', t.dataset.code === code));
+  f.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function endEdit() {
+  wkEdit = null; $('#wkForm').reset(); resetSets();
+  $('#wkFormTitle').innerHTML = 'Add details <span class="small muted">(optional)</span>';
+  $('#wkSave').textContent = 'Save exercise'; $('#wkCancel').classList.add('hide');
+  $$('#wkList .editing').forEach(t => t.classList.remove('editing'));
+}
+$('#wkCancel').onclick = endEdit;
+
+/* Reorder: press and hold an exercise (about half a second), then drag it up or down. A quick tap edits it. */
+(function dragToReorder(list) {
+  let el = null, timer = 0, startY = 0, sy = 0, pid = 0, justDragged = false;
+  list.addEventListener('pointerdown', e => {
+    const t = e.target.closest('.edt'); if (!t || e.target.closest('button')) return;
+    startY = e.clientY; pid = e.pointerId; clearTimeout(timer);
+    timer = setTimeout(() => {
+      if (list.querySelectorAll('.edt').length < 2) return;
+      el = t; sy = startY; el.classList.add('dragging'); try { el.setPointerCapture(pid); } catch (x) {}
+      if (navigator.vibrate) navigator.vibrate(10);
+    }, 400);
+  });
+  list.addEventListener('pointermove', e => {
+    if (!el) { if (Math.abs(e.clientY - startY) > 8) clearTimeout(timer); return; } // moved first = scrolling
+    let dy = e.clientY - sy;
+    const next = el.nextElementSibling, prev = el.previousElementSibling, top = el.offsetTop;
+    if (next && dy > next.offsetHeight / 2) list.insertBefore(next, el);
+    else if (prev && -dy > prev.offsetHeight / 2) list.insertBefore(el, prev);
+    sy += el.offsetTop - top; // keep the tile under the finger after it swaps places
+    el.style.transform = `translateY(${e.clientY - sy}px)`;
+  });
+  const drop = () => {
+    clearTimeout(timer); if (!el) return;
+    el.style.transform = ''; el.classList.remove('dragging'); el = null; justDragged = true; setTimeout(() => justDragged = false, 50);
+    const codes = $$('[data-code]', list).map(t => t.dataset.code), date = wSel;
+    if (codes.join() === [...new Set(wkList.filter(w => w.code).sort((a, b) => (num(a.ord) || 1e9) - (num(b.ord) || 1e9)).map(w => w.code))].join()) return;
+    renderWorkout(wkList.map(w => w.code ? Object.assign({}, w, { ord: codes.indexOf(w.code) + 1 }) : w));
+    wkSync(date, () => api('reorderWorkout', { date, codes }));
+  };
+  list.addEventListener('pointerup', drop);
+  list.addEventListener('pointercancel', drop);
+  list.addEventListener('touchmove', e => { if (el) e.preventDefault(); }, { passive: false }); // no page scroll while dragging
+  list.addEventListener('contextmenu', e => { if (e.target.closest('.edt')) e.preventDefault(); });
+  list.addEventListener('click', e => {
+    const t = e.target.closest('.edt');
+    if (!t || justDragged || e.target.closest('button')) return;
+    startEdit(t.dataset.code);
+  });
+})($('#wkList'));
+
 $('#wkForm').onsubmit = e => {
   e.preventDefault(); const f = e.target, date = wSel, code = f.code.value;
   if (!code) return toast('Choose an exercise', true);
   const sets = readSets().filter(s => s.reps !== '' || s.weight !== '');
   if (!sets.length) return toast('Enter reps or kg for at least one set', true);
+  if (wkEdit) { // replace the exercise's sets, keeping its place in the order
+    const old = wkEdit.code, part = WK().parts.find(p => p.code === code.slice(0, 2)).name;
+    const ord = Math.min(...wkList.filter(w => w.code === old).map(w => num(w.ord) || 1e9));
+    const fresh = sets.map((s, i) => ({ id: 'new' + i + Date.now(), date, part, code, name: exName(code), reps: s.reps, weight: s.weight, set: i + 1, ord: ord < 1e9 ? ord : '' }));
+    const at = wkList.findIndex(w => w.code === old), rest = wkList.filter(w => w.code !== old);
+    rest.splice(Math.min(at, rest.length), 0, ...fresh);
+    endEdit(); renderWorkout(rest); toast(exName(code) + ' updated');
+    return wkSync(date, () => api('replaceWorkoutExercise', { date, oldCode: old, code, sets }));
+  }
   const part = WK().parts.find(p => p.code === code.slice(0, 2)).name, k = Math.max(0, ...wkList.filter(w => w.code === code).map(w => num(w.set) || 0));
   // show it straight away; the server numbers the sets the same way and replaces these when it answers
   renderWorkout(wkList.concat(sets.map((s, i) => ({ id: 'new' + i + Date.now(), date, part, code, name: exName(code), reps: s.reps, weight: s.weight, set: k + i + 1 }))));
