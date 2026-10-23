@@ -142,6 +142,10 @@ main,header{overflow-x:clip}
 .tplbar{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;margin:0 0 12px;border-radius:12px;border:1.5px dashed var(--line);font-size:14px;color:var(--muted)}
 .tpl .parts button{border-style:dashed}.tpl .parts button.on{border-style:dashed;background:transparent;color:var(--c);box-shadow:inset 0 0 0 99px color-mix(in srgb,var(--c) 18%,transparent)}
 .tpltag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--muted);border:1px dashed var(--muted);border-radius:6px;padding:1px 6px;margin-left:8px;vertical-align:3px;text-transform:uppercase}
+/* outline icons in the app's green (current colour inside filled buttons) */
+.ic{width:20px;height:20px;fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-4px;margin-right:8px;flex:none}
+.seg button.on .ic,.primary .ic,.danger .ic{stroke:currentColor}
+summary .ic{margin-right:12px;width:22px;height:22px;vertical-align:-5px}
 .mb{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;font-size:11px;font-weight:800;color:#fff;margin-left:8px;vertical-align:2px}
 .mb.t{background:#4f8df2}.mb.c{background:#3fb58a}
 #roleTag{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42vw}#roleTag .mb{margin:0 6px 0 0;vertical-align:1px}
@@ -300,6 +304,7 @@ button.loading img,button.loading svg{opacity:0}
 /* buttons read as titles (e.g. "Add To Quick Menu"), not sentences */
 button,.plink,.addtile span,.pick span,summary,.card h3,h2,.psheet b{text-transform:capitalize}
 .plink{color:var(--accent);text-decoration:none;font-weight:600;white-space:nowrap}
+.gcust{display:grid;grid-template-columns:1fr 1fr 28px;gap:8px;align-items:end;margin-top:8px}.gcust input{margin:0}.gcust .link{min-height:0;padding:0 0 14px}
 .minilink{min-height:0;padding:6px 4px 2px;font-size:14px;color:var(--accent);font-weight:600}
 #ciBox{margin-top:6px;border-top:1px solid var(--line);padding-top:4px}
 .ci{margin:12px 0 0}.ci>span{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px}
@@ -386,7 +391,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
       <div class="small muted" id="calInfo" style="margin-top:10px;text-align:center"></div>
     </div>
     <h3 id="entryTitle" style="margin:4px 2px 10px"></h3>
-    <div class="seg go" id="logMode"><button data-m="weight" class="on">⚖️ Weight</button><button data-m="meal">🍽️ Meals</button><button data-m="workout">🏋️ Workout</button></div>
+    <div class="seg go" id="logMode"><button data-m="weight" class="on"><i data-ic="scale"></i>Weight</button><button data-m="meal"><i data-ic="meal"></i>Meals</button><button data-m="workout"><i data-ic="dumbbell"></i>Workout</button></div>
 
     <div id="logWeight">
       <div class="card">
@@ -441,7 +446,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
             <label>Calories<input type="number" name="calories" min="0" inputmode="numeric" placeholder="kcal"></label>
             <label>Protein<input type="number" name="protein" min="0" inputmode="numeric" placeholder="g"></label>
           </div>
-          <label class="pick" id="mealPick"><span>📷 Add photo</span><input type="file" name="file" accept="image/*"></label>
+          <label class="pick" id="mealPick"><span><i data-ic="camera"></i>Add photo</span><input type="file" name="file" accept="image/*"></label>
           <button class="primary">Add meal</button>
         </form>
       </div>
@@ -455,7 +460,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
   <!-- PLAN: meal plan + intake, and the weekly workout split -->
   <section id="tab-meals" class="hide">
     <h2 style="margin:6px 0 12px">Plan</h2>
-    <div class="seg go" id="planKind"><button data-m="meals" class="on">🍽️ Meals</button><button data-m="workout">🏋️ Workout</button><button data-m="goals">🎯 Goals</button></div>
+    <div class="seg go" id="planKind"><button data-m="meals" class="on"><i data-ic="meal"></i>Meals</button><button data-m="workout"><i data-ic="dumbbell"></i>Workout</button><button data-m="goals"><i data-ic="target"></i>Goals</button></div>
     <div id="planGoals" class="hide">
       <div class="card"><h3 id="goalsTitle">Goals</h3>
         <form id="goalsForm">
@@ -466,12 +471,26 @@ button.primary.trn{background:#4f8df2;color:#fff}
             <label>Daily protein<input type="number" name="protein" inputmode="numeric" placeholder="g"></label>
           </div>
           <label>Goal date<input type="date" name="goalDate"></label>
+          <div style="text-align:center"><button type="button" class="link minilink" id="goalsMore">More goals ›</button></div>
+          <div id="goalsExtra" class="hide">
+            <div class="grid2">
+              <label>Waist (cm)<input type="number" name="goalWaist" step="0.5" inputmode="decimal"></label>
+              <label>Daily steps<input type="number" name="goalSteps" inputmode="numeric"></label>
+              <label>Daily water (L)<input type="number" name="goalWater" step="0.1" inputmode="decimal"></label>
+              <label>Sleep (h)<input type="number" name="goalSleep" step="0.5" inputmode="decimal"></label>
+              <label>Workouts / week<input type="number" name="goalWorkouts" inputmode="numeric"></label>
+              <label>Strength goal<input name="goalLift" maxlength="60" placeholder="e.g. Bench 100 kg"></label>
+            </div>
+            <label>Why this matters<textarea name="goalWhy" rows="2" maxlength="400" placeholder="e.g. Stage-ready by March"></textarea></label>
+            <div id="goalsCustom"></div>
+            <button type="button" class="link minilink" id="goalAdd" style="padding-left:0">+ Add custom goal</button>
+          </div>
           <button class="primary" style="width:100%;margin-top:10px">Save goals</button>
         </form>
       </div>
     </div>
     <div id="planWorkout" class="hide tpl">
-      <div class="tplbar">📋 <span><b>Template</b> · repeats in order. Log what you actually did in <b>Today</b>.</span></div>
+      <div class="tplbar"><i data-ic="clipboard"></i><span><b>Template</b> · repeats in order. Log what you actually did in <b>Today</b>.</span></div>
       <div class="seg" id="wpDay"></div>
       <div class="card"><h3 id="wpTitle" style="margin-bottom:2px"></h3>
         <p class="small muted" style="margin:0">Tap the body parts for this day.</p>
@@ -547,10 +566,10 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <div class="card" id="myTrainer"></div>
     <div class="card" id="trainerMode"></div>
     <p class="grp">CUSTOMIZE</p>
-    <details class="card" id="chartsCard"><summary>Progress graphs</summary><div id="chartsBox" class="small"></div></details>
-    <details class="card" id="ciDefsCard"><summary>Daily details</summary><div id="ciDefs" class="small"></div></details>
+    <details class="card" id="chartsCard"><summary><i data-ic="chart"></i>Progress graphs</summary><div id="chartsBox" class="small"></div></details>
+    <details class="card" id="ciDefsCard"><summary><i data-ic="sliders"></i>Daily details</summary><div id="ciDefs" class="small"></div></details>
     <p class="grp">YOUR DATA</p>
-    <details class="card" id="histCard"><summary>Full history · for AI</summary><div class="small">
+    <details class="card" id="histCard"><summary><i data-ic="sparkle"></i>Full history · for AI</summary><div class="small">
       <p style="margin-top:0">Every day in one file: weight, body fat, meals, workouts (every set), activity, and notes from you and your trainer, plus your goals, meal plan and training rotation. Paste it into ChatGPT, Claude or another AI and ask for advice.</p>
       <button class="primary" id="histCopy" style="width:100%">Copy all</button>
       <div class="grid2" style="margin-top:8px"><button data-x="history">Download MD</button><button data-x="historycsv">Download CSV</button></div>
@@ -558,14 +577,14 @@ button.primary.trn{background:#4f8df2;color:#fff}
       <textarea id="histText" class="hide" readonly style="width:100%;height:160px;margin-top:10px;font:12px/1.4 ui-monospace,monospace"></textarea>
     </div></details>
 
-    <details class="card"><summary>Import past weights</summary><div>
+    <details class="card"><summary><i data-ic="upload"></i>Import past weights</summary><div>
       <p class="small muted" style="margin-top:0">Paste one line per day: <b>date, weight, body fat</b>. You can copy straight from Excel, Google Sheets or a scale app. <code>2025-03-14</code> or <code>14/03/2025</code> both work. Body fat is optional.</p>
       <textarea id="impText" placeholder="2025-01-01, 82.4, 24.1&#10;2025-01-02, 82.1"></textarea>
       <div id="impPreview" class="small muted" style="margin:8px 0"></div>
       <button class="primary" id="impBtn" disabled style="width:100%">Import</button>
     </div></details>
 
-    <details class="card hide" id="clientsCard"><summary>Clients</summary><div>
+    <details class="card hide" id="clientsCard"><summary><i data-ic="users"></i>Clients</summary><div>
       <div id="clientList"></div>
       <form id="clientForm" style="display:flex;gap:8px;align-items:flex-end;margin-top:12px">
         <label class="grow">New client<input name="name" maxlength="40" autocapitalize="words" placeholder="Name, e.g. Mint"></label>
@@ -576,10 +595,10 @@ button.primary.trn{background:#4f8df2;color:#fff}
     </div></details>
 
     <p class="grp">DEVICES</p>
-    <details class="card" id="connDetails"><summary>Devices &amp; apps</summary><div id="connBox" class="small"></div></details>
+    <details class="card" id="connDetails"><summary><i data-ic="watch"></i>Devices &amp; apps</summary><div id="connBox" class="small"></div></details>
 
     <p class="grp">APP</p>
-    <details class="card"><summary>Home-screen icon</summary><div>
+    <details class="card"><summary><i data-ic="phone"></i>Home-screen icon</summary><div>
       <div class="row" style="align-items:flex-start;gap:14px">
         <img id="appIcon" alt="App icon" style="width:84px;height:84px;border-radius:19px;background:var(--soft);flex:none">
         <ol class="small" style="margin:0;padding-left:18px;line-height:1.55">
@@ -589,14 +608,14 @@ button.primary.trn{background:#4f8df2;color:#fff}
         </ol>
       </div>
     </div></details>
-    <details class="card"><summary>How to use</summary><div class="small" style="line-height:1.55">
+    <details class="card"><summary><i data-ic="help"></i>How to use</summary><div class="small" style="line-height:1.55">
       <p style="margin-top:0"><b>Progress</b>: your weight and body fat trends, photos and every entry.</p>
       <p><b>Today</b>: pick a day on the calendar, then log <b>Weight</b>, <b>Meals</b> (tick what you ate from your plan) or <b>Workout</b> (body parts, then sets). Notes with your trainer are at the bottom.</p>
       <p><b>Plan</b>: your meal plan, workout rotation and goals.</p>
       <p><b>Your photo</b> (top right): edit your profile, dark mode, share or export, change PIN, sign out.</p>
       <p style="margin-bottom:0">Everything saves by itself; there is no Save button to forget.</p>
     </div></details>
-    <details class="card" id="aboutCard"><summary>About</summary><div class="small">
+    <details class="card" id="aboutCard"><summary><i data-ic="info"></i>About</summary><div class="small">
       <p style="margin-top:0">Stat Sheet · version <b id="buildNo"></b></p>
       <button id="updBtn" style="width:100%">Check for updates</button>
     </div></details>
@@ -605,21 +624,21 @@ button.primary.trn{background:#4f8df2;color:#fff}
 
 <div id="menu" class="hide"><div class="sheet">
   <div class="me"><span class="avatar big" id="meAv"></span><div class="grow"><div id="meName"></div><small id="meRole"></small></div><button class="link" id="mEdit">✎ Edit</button></div>
-  <button id="mTheme"><span id="themeLabel">🌙 Dark mode</span><span class="sw" id="themeSw"></span></button>
-  <button id="mShare"><span>📤 Share</span><span class="chev">›</span></button>
+  <button id="mTheme"><span id="themeLabel"><i data-ic="moon"></i>Dark mode</span><span class="sw" id="themeSw"></span></button>
+  <button id="mShare"><span><i data-ic="share"></i>Share</span><span class="chev">›</span></button>
   <div id="shareSub" class="sub hide">
-    <button id="mLink">🔗 App link</button>
+    <button id="mLink"><i data-ic="link"></i>App link</button>
     <b id="exportTitle">EXPORT</b>
-    <button data-x="report">📄 Progress report · PDF</button>
-    <button data-x="body">📊 Body data · CSV</button>
-    <button data-x="meals">🍽️ Meal log · CSV</button>
-    <button data-x="plan">🗒️ Meal plan · PDF</button>
-    <button data-x="history">🤖 Full history · for AI</button>
+    <button data-x="report"><i data-ic="file"></i>Progress report · PDF</button>
+    <button data-x="body"><i data-ic="bars"></i>Body data · CSV</button>
+    <button data-x="meals"><i data-ic="meal"></i>Meal log · CSV</button>
+    <button data-x="plan"><i data-ic="notes"></i>Meal plan · PDF</button>
+    <button data-x="history"><i data-ic="sparkle"></i>Full history · for AI</button>
     <small id="menuNote" class="hide"></small>
   </div>
-  <button id="mPin">🔑 Change PIN</button>
+  <button id="mPin"><i data-ic="key"></i>Change PIN</button>
   <form id="pinForm" class="hide"><input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="New PIN · 4–6 digits"><button class="primary">Save</button></form>
-  <button id="signOut" class="danger">Sign out · switch account</button>
+  <button id="signOut" class="danger"><i data-ic="logout"></i>Sign out · switch account</button>
   <button id="mSignIn">Sign in</button>
 </div></div>
 <div id="profSheet" class="hide"><div class="psheet">
@@ -650,7 +669,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023165009';
+const BUILD = '20261023165520';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1664,7 +1683,7 @@ function renderMealPlan(list) {
 const mealFile = () => $('#mealForm').file;
 mealFile().onchange = () => {
   const f = mealFile().files[0];
-  $('#mealPick span').innerHTML = f ? `<img src="${URL.createObjectURL(f)}" style="vertical-align:middle;margin-right:6px">Photo added · tap to change` : '📷 Add photo';
+  $('#mealPick span').innerHTML = f ? `<img src="${URL.createObjectURL(f)}" style="vertical-align:middle;margin-right:6px">Photo added · tap to change` : ic('camera') + 'Add photo';
 };
 $('#mealForm').onsubmit = e => {
   e.preventDefault(); const f = e.target, date = wSel;
@@ -1704,12 +1723,26 @@ function renderMealsTab() {
 }
 function renderGoals() {
   const f = $('#goalsForm');
-  ['goalWeight', 'goalBodyfat', 'calories', 'protein', 'goalDate'].forEach(k => f[k].value = S.profile[k] == null ? '' : S.profile[k]);
+  ['goalWeight', 'goalBodyfat', 'calories', 'protein', 'goalDate', 'goalWaist', 'goalSteps', 'goalWater', 'goalSleep', 'goalWorkouts', 'goalLift', 'goalWhy']
+    .forEach(k => f[k].value = S.profile[k] == null ? '' : S.profile[k]);
+  let custom = []; try { custom = JSON.parse(S.profile.goalsCustom || '[]') || []; } catch (e) {}
+  drawCustomGoals(custom);
+  const extras = ['goalWaist', 'goalSteps', 'goalWater', 'goalSleep', 'goalWorkouts', 'goalLift', 'goalWhy'].filter(k => S.profile[k]).length + custom.length;
+  $('#goalsMore').textContent = $('#goalsExtra').classList.contains('hide') ? 'More goals' + (extras ? ' · ' + extras + ' set' : '') + ' ›' : 'Fewer goals ‹';
   $('#goalsTitle').textContent = viewingClient() ? S.target.name + "'s goals" : 'Your goals';
 }
+/* custom goals: any name + value, e.g. "Body weight squat: 30 reps" */
+function drawCustomGoals(list) {
+  $('#goalsCustom').innerHTML = list.map(g => `<div class="gcust"><label>Goal<input data-gn value="${esc(g.name)}" maxlength="30"></label><label>Target<input data-gv value="${esc(g.value)}" maxlength="30"></label><button type="button" class="link" data-gx aria-label="Remove">✕</button></div>`).join('');
+  $$('#goalsCustom [data-gx]').forEach(b => b.onclick = () => { b.parentNode.remove(); });
+}
+const readCustomGoals = () => $$('#goalsCustom .gcust').map(r => ({ name: $('[data-gn]', r).value.trim(), value: $('[data-gv]', r).value.trim() })).filter(g => g.name);
+$('#goalAdd').onclick = () => { drawCustomGoals(readCustomGoals().concat([{ name: '', value: '' }])); $$('#goalsCustom [data-gn]').pop().focus(); };
+$('#goalsMore').onclick = () => { $('#goalsExtra').classList.toggle('hide'); renderGoals(); };
 $('#goalsForm').onsubmit = e => {
   e.preventDefault(); const f = e.target;
-  busy($('button', f), async () => { S.profile = await api('saveProfile', formObj(f)); toast(viewingClient() ? 'Saved · ' + S.target.name + ' sees it too' : 'Goals saved'); });
+  const data = Object.assign(formObj(f), { goalsCustom: JSON.stringify(readCustomGoals()) });
+  busy($('button.primary', f), async () => { S.profile = await api('saveProfile', data); renderGoals(); toast(viewingClient() ? 'Saved · ' + S.target.name + ' sees it too' : 'Goals saved'); });
 };
 function renderPlanList() {
   const items = planItems(), t = sumMeals(items);
@@ -1981,7 +2014,7 @@ async function renderConnections() {
   const c = await api('connections'), a = c.apple;
   const svc = (pv, what) => {
     const x = c.providers[pv];
-    const status = x.connected ? (x.error ? '⚠️ ' + esc(x.error) : '✅ Connected · synced ' + when(x.last))
+    const status = x.connected ? (x.error ? ic('alert') + esc(x.error) : ic('check') + 'Connected · synced ' + when(x.last))
       : x.available ? 'Not connected' : 'Not switched on yet — the app admin turns it on below.';
     const btns = x.connected ? `<button class="primary" data-sync="${pv}">Sync now</button>${c.self ? `<button data-off="${pv}">Disconnect</button>` : ''}`
       : x.available && c.self ? `<button class="primary" data-on="${pv}" style="grid-column:1/-1">Connect ${x.name}</button>` : '';
@@ -2042,7 +2075,7 @@ function adminBox(ad) {
     <p style="margin:6px 0">Do this once per service; then everyone can tap Connect. Use this <b>Redirect URL</b> when you register:</p>
     ${copyBtn('Redirect URL', ad.redirect)}
     ${ad.services.map(x => `<form data-setup="${x.id}" style="margin-top:14px">
-      <b>${x.name}</b> ${x.ready ? '✅ on' : ''}
+      <b>${x.name}</b> ${x.ready ? ic('check') + 'On' : ''}
       <p style="margin:4px 0">Register a free app at <a href="${x.register}" target="_blank">${x.register.replace('https://', '')}</a>. ${tips[x.id] || ''} Then paste:</p>
       <div class="grid2"><label>Client ID<input name="clientId" autocomplete="off"></label><label>Client secret<input name="clientSecret" type="password" autocomplete="off"></label></div>
       <button class="primary" style="width:100%;margin-top:8px">${x.ready ? 'Replace keys' : 'Switch on ' + x.name}</button>${x.ready ? `<button type="button" class="link" data-svcoff="${x.id}" style="width:100%">Switch ${x.name} off</button>` : ''}</form>`).join('')}
@@ -2114,6 +2147,37 @@ $('#pinForm').onsubmit = e => {
   busy($('button', f), async () => { await api('changePin', { pin: f.pin.value }); f.reset(); f.classList.add('hide'); toast('PIN changed'); });
 };
 /** A round avatar: the person's photo if they have one, otherwise their initial. */
+/** Outline icons (24-unit grid, drawn with strokes). */
+const ICONS_UI = {
+  scale: '<path d="M12 3v18M7 21h10M5 7h14M5 7l-3 6.5a3 3 0 0 0 6 0zM19 7l-3 6.5a3 3 0 0 0 6 0z"/>',
+  meal: '<path d="M7 3v8M4.5 3v5a2.5 2.5 0 0 0 5 0V3M7 11v10"/><path d="M18 21V3c-2.2 1.2-3.5 4-3.5 7.5V13H18"/>',
+  dumbbell: '<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11M1.5 12h2M20.5 12h2"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/>',
+  camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  clipboard: '<rect x="5.5" y="4" width="13" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/>',
+  moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  share: '<path d="M12 15V3M8 7l4-4 4 4"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  file: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 13h6M9 17h6"/>',
+  bars: '<path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/>',
+  notes: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/>',
+  sparkle: '<path d="M12 3l1.8 4.7 4.7 1.8-4.7 1.8L12 16l-1.8-4.7-4.7-1.8 4.7-1.8z"/><path d="M19 15l.8 2.2 2.2.8-2.2.8L19 21l-.8-2.2-2.2-.8 2.2-.8z"/>',
+  key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3M14 9l2 2"/>',
+  logout: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11"/>',
+  chart: '<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/>',
+  sliders: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+  upload: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
+  users: '<circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 13.6c2.9.1 5 1.9 5 4.9"/>',
+  watch: '<rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 6l1-3h4l1 3M9 18l1 3h4l1-3M12 9.5V12l1.5 1.5"/>',
+  phone: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+  help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17h0"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h0"/>',
+  check: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.5"/>',
+  alert: '<path d="M12 3l9.5 17h-19z"/><path d="M12 10v4.5M12 17.5h0"/>'
+};
+const ic = n => '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS_UI[n] || '') + '</svg>';
+$$('[data-ic]').forEach(e => { e.outerHTML = ic(e.dataset.ic); });
 function paintAvatar(el, person, extra) {
   const ph = person && person.photo;
   el.className = 'avatar ' + (extra || '') + (ph ? ' photo' : '');
@@ -2159,7 +2223,7 @@ function renderMenu() {
   $('#meRole').textContent = !me ? 'Viewing only' : me.trainer ? (viewingClient() ? 'Trainer · viewing ' + S.target.name : 'Trainer · personal profile') : 'Client';
   $('#exportTitle').textContent = viewingClient() ? 'EXPORT ' + S.target.name.toUpperCase() + "'S DATA" : 'EXPORT';
   $$('#menu [data-x], #exportTitle').forEach(b => b.classList.toggle('hide', !OWNER));
-  $('#themeSw').classList.toggle('on', isDark()); $('#themeLabel').textContent = isDark() ? '🌙 Dark mode' : '☀️ Light mode';
+  $('#themeSw').classList.toggle('on', isDark()); $('#themeLabel').innerHTML = isDark() ? ic('moon') + 'Dark mode' : ic('sun') + 'Light mode';
   $('#mPin').classList.toggle('hide', !me || viewingClient()); // your own PIN, from your own profile
   $('#signOut').classList.toggle('hide', !WHO || ROLE === 'guest');
   $('#mSignIn').classList.toggle('hide', ROLE !== 'guest');
