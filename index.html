@@ -307,6 +307,7 @@ button.loading img,button.loading svg{opacity:0}
 button,.plink,.addtile span,.pick span,summary,.card h3,h2,.psheet b{text-transform:capitalize}
 .plink{color:var(--accent);text-decoration:none;font-weight:600;white-space:nowrap}
 .gcust{display:grid;grid-template-columns:1fr 1fr 28px;gap:8px;align-items:end;margin-top:8px}.gcust input{margin:0}.gcust .link{min-height:0;padding:0 0 14px}
+#ciToggle,#goalsMore{color:var(--accent)!important} /* coloured so it reads as something to tap */
 .minilink{min-height:0;padding:6px 4px 2px;font-size:14px;color:var(--accent);font-weight:600}
 #ciBox{margin-top:6px;border-top:1px solid var(--line);padding-top:4px}
 .ci{margin:12px 0 0}.ci>span{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px}
@@ -381,7 +382,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 
 
     <div class="card" id="logCard" style="padding:0">
-      <div class="row between" style="padding:16px 16px 12px"><h3 style="margin:0">Log</h3>
+      <div class="row between" style="padding:16px 16px 12px"><h3 style="margin:0">Log History</h3>
         <div class="seg" id="eMetric" style="margin:0;width:170px"><button data-m="weight" class="on">Weight</button><button data-m="bodyfat">Body fat</button></div></div>
       <div class="sum" id="eSum"></div>
       <div id="eList"></div>
@@ -407,7 +408,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
           </div>
         </form>
         <div class="small muted" id="saveState" style="text-align:center;min-height:18px;margin-top:8px"></div>
-        <div style="text-align:center"><button class="link minilink" id="ciToggle">Custom parameters ›</button></div>
+        <div style="text-align:center"><button class="link minilink" id="ciToggle">More parameters ›</button></div>
         <div id="ciBox" class="hide"></div>
         <div class="hstrip hide" id="dayHealth"></div>
         <div class="photos" id="dayPhotos"></div>
@@ -464,7 +465,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 
   <!-- PLAN: meal plan + intake, and the weekly workout split -->
   <section id="tab-meals" class="hide">
-    <h2 style="margin:6px 0 12px">Plan</h2>
+    <h2 style="margin:6px 0 12px">Planner</h2>
     <div class="seg go" id="planKind"><button data-m="meals" class="on"><i data-ic="meal"></i>Meals</button><button data-m="workout"><i data-ic="dumbbell"></i>Workout</button><button data-m="goals"><i data-ic="target"></i>Goals</button></div>
     <div id="planGoals" class="hide">
       <div class="card"><h3 id="goalsTitle">Goals</h3>
@@ -616,7 +617,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <details class="card"><summary><i data-ic="help"></i>How to use</summary><div class="small" style="line-height:1.55">
       <p style="margin-top:0"><b>Progress</b>: your weight and body fat trends, photos and every entry.</p>
       <p><b>Today</b>: pick a day on the calendar, then log <b>Weight</b>, <b>Meals</b> (tick what you ate from your plan) or <b>Workout</b> (body parts, then sets). Notes with your trainer are at the bottom.</p>
-      <p><b>Plan</b>: your meal plan, workout rotation and goals.</p>
+      <p><b>Planner</b>: your meal plan, workout rotation and goals.</p>
       <p><b>Your photo</b> (top right): edit your profile, dark mode, share or export, change PIN, sign out.</p>
       <p style="margin-bottom:0">Everything saves by itself; there is no Save button to forget.</p>
     </div></details>
@@ -674,7 +675,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023170355';
+const BUILD = '20261023170658';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -828,8 +829,8 @@ const ICONS = {
   clients: '<circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 13.6c2.9.1 5 1.9 5 4.9"/>'
 };
 const TABS = !OWNER ? [['progress','Progress'],['today','Today']]
-  : ROLE === 'trainer' ? [['progress','Progress'],['today','Today'],['meals','Plan'],['clients','Clients']] // trainer mode
-  : [['progress','Progress'],['today','Today'],['meals','Plan'],['more','More']];
+  : ROLE === 'trainer' ? [['progress','Progress'],['today','Today'],['meals','Planner'],['clients','Clients']] // trainer mode
+  : [['progress','Progress'],['today','Today'],['meals','Planner'],['more','More']];
 $('#nav').innerHTML = TABS.map(([id, label]) => `<button data-t="${id}"><svg viewBox="0 0 24 24">${ICONS[id]}</svg>${label}</button>`).join('');
 if (ROLE === 'trainer') document.body.classList.add('tmode'); // colour from the first paint
 if (ROLE === 'trainer') { // trainer mode: the Clients tab holds the client list and where the app opens
@@ -1188,7 +1189,7 @@ const CI = {}; // date → {key: value}
 let ciOpen = false;
 async function renderCheckins() {
   const date = wSel, box = $('#ciBox'), v = CI[date], n = v ? Object.keys(v).length : 0;
-  $('#ciToggle').textContent = ciOpen ? 'Hide custom parameters ‹' : 'Custom parameters' + (n ? ' · ' + n + ' logged' : '') + ' ›';
+  $('#ciToggle').textContent = ciOpen ? 'Hide parameters ‹' : 'More parameters' + (n ? ' · ' + n + ' logged' : '') + ' ›';
   box.classList.toggle('hide', !ciOpen);
   if (!ciOpen) return;
   if (!v) {
@@ -1525,7 +1526,7 @@ function renderDayWorkoutPlan() {
   if (!OWNER) return el.classList.add('hide');
   el.classList.remove('hide');
   const step = nextStep(wSel), steps = rotSteps().filter(s => stepParts(s).length);
-  if (step == null) { el.innerHTML = `<div class="small muted">Set your training rotation in the Plan tab and this shows which day is next.</div>`; return; }
+  if (step == null) { el.innerHTML = `<div class="small muted">Set your training rotation in the Planner tab and this shows which day is next.</div>`; return; }
   const parts = stepParts(step), items = stepItems(step);
   const partsLeft = parts.filter(p => !wkList.some(w => w.part === p));
   const logBtn = x => wkList.some(w => w.code === x.code) ? '<span class="tick">✓</span>'
@@ -1667,7 +1668,7 @@ const planLabel = date => { const f = planStartFor(date || TODAY); return f ? 'P
 const sameMeal = (x, m) => m.type === x.type && m.description === x.description; // a logged meal that is this plan item
 function renderMealPlan(list) {
   const items = planItems(wSel), el = $('#mPlan');
-  if (!items.length) { el.innerHTML = '<div class="empty">No meal plan yet. Set one up in the Plan tab.</div>'; return; }
+  if (!items.length) { el.innerHTML = '<div class="empty">No meal plan yet. Set one up in the Planner tab.</div>'; return; }
   const eaten = x => list.find(m => sameMeal(x, m)), left = items.filter(x => !eaten(x));
   const mark = x => { const m = eaten(x);
     if (m) return OWNER ? `<button class="link tick" data-unlog="${m.id}" aria-label="Eaten · tap to undo">✓</button>` : '<span class="tick">✓</span>';
