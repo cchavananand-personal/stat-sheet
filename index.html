@@ -213,9 +213,18 @@ nav button.on{color:var(--accent)}
 .ent .add svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8}
 .ent .add input{position:absolute;inset:0;opacity:0;min-height:0;height:100%}
 /* first-load screen */
-#who{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
-.whobox{width:100%;max-width:340px;display:grid;gap:12px;text-align:center}.whobox img{width:72px;height:72px;border-radius:18px;margin:0 auto}
-#whoPin{display:grid;gap:10px}#whoPin input{text-align:center;font-size:20px}#whoPin input[name=pin]{font-size:26px;letter-spacing:.35em}
+/* sign-in screen: --who-bg can be swapped for a photo, e.g. url(signin-bg.jpg) center/cover */
+#who{--who-bg:radial-gradient(900px 520px at 15% -5%,#0d6a5059,transparent 70%),radial-gradient(800px 560px at 105% 105%,#3a2a9e55,transparent 70%),linear-gradient(160deg,#0a1110,#0b0d14);
+  position:fixed;inset:0;z-index:60;background:var(--who-bg);background-color:#0b0f0e;display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto}
+.whobox{width:100%;max-width:360px;display:grid;gap:18px;text-align:center;padding:30px 22px 22px;border-radius:24px;
+  background:#121917cc;border:1px solid #ffffff14;box-shadow:0 24px 60px #0009;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.whobox img{width:76px;height:76px;border-radius:20px;margin:0 auto;box-shadow:0 10px 30px #0d6a5066}
+.whobox h2{margin:0;font-size:24px;letter-spacing:-.01em}.whobox h2+p{margin:4px 0 0;font-size:15px}
+#whoPin{display:grid;gap:12px;text-align:left}
+#whoPin label{font-size:13px;font-weight:600;color:var(--muted)}
+#whoPin input{font-size:17px;margin-top:6px;min-height:50px} /* same font for name and PIN */
+#whoPin button{margin-top:6px;min-height:52px;font-size:17px}
+#whoGuest{color:var(--muted)}
 #switcher{position:fixed;inset:0;z-index:25;background:#0005}
 #switcher .sheet{position:absolute;top:56px;right:12px;width:260px;max-width:calc(100vw - 24px);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px;box-shadow:0 10px 30px #0004}
 #switcher .sheet b{display:block;font-size:12px;color:var(--muted);padding:8px 10px 4px;letter-spacing:.04em}
@@ -237,14 +246,14 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <div id="boot"><img src="icon-180.png" alt=""><div id="bootMsg">Loading your stats…</div></div>
 <div id="who" class="hide"><div class="whobox">
   <img src="icon-180.png" alt="">
-  <h2 style="margin:4px 0">Sign in</h2>
+  <div><h2>Welcome back</h2><p class="muted">Sign in to Stat Sheet</p></div>
   <form id="whoPin">
-    <input name="name" autocomplete="username" autocapitalize="words" placeholder="Your name" required>
-    <input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" placeholder="PIN" required>
+    <label>Name<input name="name" autocomplete="username" autocapitalize="words" placeholder="Your name" required></label>
+    <label>PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" placeholder="4–6 digits" required></label>
     <button class="primary">Sign in</button>
   </form>
-  <button class="link" id="whoGuest">Just looking</button>
-  <p class="small muted" style="margin:6px 0 0">You only do this once on this phone.</p>
+  <button class="link" id="whoGuest">Continue without signing in</button>
+  <p class="small muted" style="margin:0">You stay signed in on this phone until you sign out.</p>
 </div></div>
 <div id="switcher" class="hide"><div class="sheet"><b>SHOW STATS FOR</b><div id="swList"></div><small>Add or manage clients in More › Clients.</small></div></div>
 <header>
@@ -514,7 +523,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023151304';
+const BUILD = '20261023151511';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
