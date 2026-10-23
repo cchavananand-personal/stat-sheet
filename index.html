@@ -449,11 +449,11 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <main>
   <!-- PROGRESS (first tab): trend graphs on top, analytics below -->
   <section id="tab-progress">
-    <div class="card hide" id="startCard"></div>
     <div class="row between" style="margin:6px 0 12px">
       <div><b style="font-size:20px" id="hello"></b><div class="small muted" id="todayLbl"></div></div>
       <div class="seg" id="tMode" style="margin:0;width:200px"><button data-m="day" class="on">30d</button><button data-m="week">Weeks</button><button data-m="month">Months</button></div>
     </div>
+    <div class="card hide" id="startCard"></div>
     <div class="card"><div class="row between"><div><h3 style="margin:0">Weight</h3><button class="lk-open" data-entries style="padding:4px 0">All entries ›</button></div><div class="thead" id="tWHead"></div></div><div class="chart sm"><canvas id="tW"></canvas></div></div>
     <div class="card"><div class="row between"><h3 style="margin:0">Body fat</h3><div class="thead" id="tFHead"></div></div><div class="chart sm"><canvas id="tF"></canvas></div></div>
     <div id="extraCharts"></div>
@@ -759,7 +759,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024010229';
+const BUILD = '20261024010350';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1045,7 +1045,7 @@ async function renderPhotoStrip() {
   if (!el.children.length) { el.innerHTML = '<div class="empty ld">Loading photos…</div>'; el._html = null; }
   const list = await api('gallery');
   hasPhoto = list.length > 0; renderStart();
-  if (!list.length) { setHTML(el, `<div class="empty">No progress photos yet.</div>${OWNER ? '<div class="ecta"><button class="primary" data-go="log:photo">Add Photo</button></div>' : ''}`); return; }
+  if (!list.length) { setHTML(el, `<div style="width:100%"><div class="empty">No progress photos yet.</div>${OWNER ? '<div class="ecta"><button class="primary" data-go="log:photo">Add Photo</button></div>' : ''}</div>`); return; }
   const from = Math.max(0, list.length - 12);
   if (setHTML(el, list.slice(from).map((p, k) => `<figure data-gi="${from + k}"><img data-pid="${esc(p.thumbId)}" alt="">${nice(p.date)}${p.weight !== '' ? '<br>' + fx(num(p.weight)) : ''}</figure>`).join(''))) {
     el.scrollLeft = el.scrollWidth; // newest on the right, like the gallery
