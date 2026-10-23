@@ -523,7 +523,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023151511';
+const BUILD = '20261023151636';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -551,7 +551,7 @@ const KEY = QS.get('k') || (WHO && WHO.key) || '';
 const I_TRAIN = QS.get('view') === 'trainer' || !!(WHO && (WHO.trainer || WHO.role === 'trainer'));
 const AS = I_TRAIN ? store('as') || '' : '';
 const ROLE = !KEY ? (PINS_ON || (WHO && WHO.role === 'guest') ? 'guest' : 'owner')
-  : I_TRAIN && AS !== (WHO && WHO.id) ? 'trainer' : 'owner';
+  : I_TRAIN && AS && AS !== (WHO && WHO.id) ? 'trainer' : 'owner'; // a trainer starts on their own stats
 const OWNER = ROLE !== 'guest'; // signed in = full access to the stats on screen (a trainer has full access to clients)
 const clientName = () => (typeof S !== 'undefined' && S.target && S.target.name) || (typeof S !== 'undefined' && S.profile && S.profile.name) || 'Client';
 const trainerName = () => (typeof S !== 'undefined' && S.trainerName) || 'Trainer';
@@ -672,14 +672,14 @@ if (ROLE === 'guest') $('#noteForm').classList.add('hide');
 function renderRoleTag() {
   const t = $('#roleTag');
   t.textContent = ROLE === 'guest' ? 'Viewing · Sign in'
-    : S.me && S.me.trainer ? (viewingClient() ? S.target.name : 'My stats') + ' ▾'
+    : S.me && S.me.trainer ? (viewingClient() ? '👤 ' + S.target.name : S.me.name + ' (me)') + ' ▾'
     : S.me && S.pinsOn ? S.me.name : '';
   t.classList.toggle('hide', !t.textContent);
 }
 $('#roleTag').onclick = () => ROLE === 'guest' ? showWho() : S.me && S.me.trainer ? showSwitch() : WHO && confirm('Sign out of this phone?') && setWho(null);
 /** Trainer: switch between your own stats and each client's. */
 function showSwitch() {
-  const cur = S.target && S.target.id, rows = [{ id: S.me.id, name: 'My stats' }].concat(S.clients || []);
+  const cur = S.target && S.target.id, rows = [{ id: S.me.id, name: S.me.name + ' (me)' }].concat(S.clients || []);
   $('#swList').innerHTML = rows.map(r => `<button data-as="${r.id}" class="${r.id === cur ? 'on' : ''}">${esc(r.name)}${r.id === cur ? '<span>✓</span>' : ''}</button>`).join('');
   $$('#swList [data-as]').forEach(b => b.onclick = () => b.dataset.as === cur ? $('#switcher').classList.add('hide') : switchTo(b.dataset.as));
   $('#switcher').classList.remove('hide');
@@ -722,7 +722,7 @@ let tMode = 'day', progressLoaded = false; // 30 days by default
 const TC = {};
 function renderProgress() {
   const p = S.profile;
-  $('#hello').textContent = p.name ? 'Hi ' + p.name : 'Progress';
+  $('#hello').textContent = typeof S !== 'undefined' && viewingClient() ? S.target.name + '\x27s stats' : p.name ? 'Hi ' + p.name : 'Progress';
   $('#todayLbl').textContent = nice(TODAY, {weekday:'long', day:'numeric', month:'long'});
   segment('tMode', tMode, m => { tMode = m; drawTrends(); });
   drawTrends(); renderPhotoStrip(); loadLog();
