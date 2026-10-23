@@ -523,7 +523,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023151636';
+const BUILD = '20261023151718';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1770,7 +1770,8 @@ $('#signOut').onclick = () => confirm('Sign out of this phone?') && setWho(null)
 if (PINS_ON && !WHO && !QS.get('k')) showWho();
 
 /* Open instantly with the data from last time (saved on this phone), then swap in fresh data from Google. */
-const BOOT_KEY = 'boot-' + ((WHO && WHO.id) || ROLE) + '-' + AS;
+const BOOT_KEY = 'boot-v2-' + ((WHO && WHO.id) || ROLE) + '-' + AS; // v2: trainers now open on their own stats
+try { Object.keys(localStorage).filter(k => k.startsWith('boot-') && !k.startsWith('boot-v2-')).forEach(k => localStorage.removeItem(k)); } catch (e) {}
 function bootDone() { const b = $('#boot'); if (!b) return; b.classList.add('done'); setTimeout(() => b.remove(), 400); }
 let saved = null;
 try { saved = JSON.parse(localStorage.getItem(BOOT_KEY)); } catch (e) {}
