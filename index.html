@@ -718,7 +718,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023175014';
+const BUILD = '20261023175501';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2034,7 +2034,7 @@ async function renderPeers() {
     <p class="small muted" style="margin:8px 0 10px">Peers see each other's stats and rankings. They can't change anything.</p>
     ${list.map(x => `<div class="crow" style="cursor:default"><span class="avatar" data-pav="${x.id}"></span><b>${esc(x.name)}</b>
       <button class="lk-nav" data-peer="${x.id}">Open</button><button class="link" data-unpeer="${x.id}" style="font-size:13px;color:var(--muted)">Remove</button></div>`).join('')}
-    <form id="peerForm" style="display:flex;gap:8px;align-items:flex-end;margin-top:10px"><label class="grow" style="margin:0">Add a peer<input name="code" maxlength="24" autocapitalize="characters" placeholder="Their code, e.g. P-MINT-4821" style="text-transform:uppercase"></label><button class="primary">Add</button></form>`;
+    <form id="peerForm" style="display:flex;gap:8px;align-items:flex-end;margin-top:10px"><label class="grow" style="margin:0">Add a peer<input name="code" maxlength="24" autocapitalize="characters" placeholder="e.g. P-MINT-4821" style="text-transform:uppercase"></label><button class="primary">Add</button></form>`;
   list.forEach(x => paintAvatar($(`[data-pav="${x.id}"]`, box), x, ''));
   $$('[data-peer]', box).forEach(b => b.onclick = () => switchTo(b.dataset.peer, 'peer'));
   $$('[data-unpeer]', box).forEach(b => b.onclick = () => confirm('Stop being peers? Neither of you will see the other\'s stats.') && busy(b, async () => { Object.assign(S, await api('removePeer', { id: b.dataset.unpeer })); renderPeers(); }));
@@ -2046,10 +2046,10 @@ async function renderPeers() {
 }
 /* Rankings over the last 30 days. Progress: you + your peers. My Clients: a trainer's clients. */
 const RANK_METRICS = [
-  { k: 'workouts', label: 'Workouts', unit: ' d', hint: 'workout days in the last 30', better: 1 },
-  { k: 'streak', label: 'Streak', unit: ' d', hint: 'days in a row with a weigh-in', better: 1 },
-  { k: 'weighIns', label: 'Weigh-ins', unit: '', hint: 'weigh-ins in the last 30 days', better: 1 },
-  { k: 'bfChange', label: 'Body fat', unit: '%', hint: 'body-fat change over 30 days (a drop ranks first)', better: -1 }];
+  { k: 'workouts', label: 'Workouts', short: 'Workout days', unit: ' d', hint: 'workout days in the last 30', better: 1 },
+  { k: 'streak', label: 'Streak', short: 'Weigh-in streak', unit: ' d', hint: 'days in a row with a weigh-in', better: 1 },
+  { k: 'weighIns', label: 'Weigh-ins', short: 'Weigh-ins', unit: '', hint: 'weigh-ins in the last 30 days', better: 1 },
+  { k: 'bfChange', label: 'Body fat', short: 'Body fat change', unit: '%', hint: 'body-fat change over 30 days (a drop ranks first)', better: -1 }];
 let rankMetric = 'workouts';
 async function renderRanking(box, group) {
   const title = group === 'clients' ? 'Client Rankings' : 'Rankings';
@@ -2061,8 +2061,8 @@ async function renderRanking(box, group) {
   if (group === 'peers' && rows.length <= 1) { // only you so far: your numbers, and how to compare
     const r = rows[0] || {};
     box.innerHTML = `<h3>${title}</h3><p class="small muted" style="margin:0">Your last 30 days</p>
-      <div class="rk-tiles">${RANK_METRICS.map(x => `<div><b>${x.k === 'bfChange' && r[x.k] > 0 ? '+' : ''}${r[x.k] == null ? '–' : fmtN(r[x.k], x.k === 'bfChange' ? 1 : 0) + x.unit}</b><small>${x.hint}</small></div>`).join('')}</div>
-      <div class="lkrow" style="text-align:left;margin:0"><button class="lk-nav" data-go="more:peersCard">Add peers in More › My Peers to see how you compare</button></div>`;
+      <div class="rk-tiles">${RANK_METRICS.map(x => `<div><b>${x.k === 'bfChange' && r[x.k] > 0 ? '+' : ''}${r[x.k] == null ? '–' : fmtN(r[x.k], x.k === 'bfChange' ? 1 : 0) + x.unit}</b><small>${x.short}</small></div>`).join('')}</div>
+      <div class="lkrow" style="text-align:left;margin:0"><button class="lk-nav" data-go="more:peersCard">Add peers to compare</button></div>`;
     return;
   }
   if (!rows.length) { box.innerHTML = `<h3>${title}</h3><p class="small muted" style="margin:0">Invite clients to see them ranked here.</p>`; return; }
