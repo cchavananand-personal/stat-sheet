@@ -222,6 +222,7 @@ nav button.on{color:var(--accent)}
 #switcher .sheet small{display:block;color:var(--muted);font-size:12px;padding:6px 10px 8px}
 #swList button{display:flex;justify-content:space-between;width:100%;text-align:left;background:none;min-height:46px;padding:10px;font-weight:600}
 #swList button.on{color:var(--accent)}
+.conn{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
 .crow{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.crow b{flex:1}
 button.primary.trn{background:#4f8df2;color:#fff}
 #roleTag{cursor:pointer}
@@ -476,9 +477,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
       <div class="grid2" style="margin-top:10px"><button id="copyLink">Copy link</button><button id="rotateLink">Reset link</button></div>
     </div></details>
 
-    <details class="card" id="healthDetails"><summary>Scale &amp; Garmin (free, via Apple Health)</summary><div id="healthBox" class="small"></div></details>
-
-    <details class="card"><summary>WHOOP</summary><div id="whoopBox" class="small"></div></details>
+    <details class="card" id="connDetails"><summary>Connections · Garmin, WHOOP, Fitbit…</summary><div id="connBox" class="small"></div></details>
 
     <details class="card"><summary>Home-screen icon</summary><div>
       <div class="row" style="align-items:flex-start;gap:14px">
@@ -515,7 +514,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023145325';
+const BUILD = '20261023151223';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1576,7 +1575,6 @@ function renderMore() {
   renderAccount();
   const f = $('#profileForm');
   [...f.elements].forEach(el => { if (el.name && S.profile[el.name] != null) el.value = S.profile[el.name]; });
-  renderWhoop();
   if (!$('#appIcon').src) $('#appIcon').src = 'icon-512.png';
   api('shareInfo').then(i => { $('#trainerUrl').value = i.url; $('#appUrl').value = i.appUrl; if (i.email) $('#shareForm').email.value = i.email; });
 }
@@ -1633,51 +1631,86 @@ $('#copyLink').onclick = () => { const i = $('#trainerUrl'); i.select(); documen
 $('#rotateLink').onclick = e => confirm('Make a new trainer link? The old one stops working.') &&
   busy(e.target, async () => { $('#trainerUrl').value = (await api('rotateTrainerKey')).url; toast('New link made'); });
 
-/* garmin → apple health → health auto export → google drive → this app */
-$('#healthDetails').addEventListener('toggle', e => { if (e.target.open) renderHealthBox(); });
-async function renderHealthBox() {
-  const box = $('#healthBox');
-  box.innerHTML = '<p class="muted" style="margin-top:0">Loading…</p>';
-  const s = await api('healthStatus');
-  const when = t => t ? new Date(t).toLocaleString(LOCALE, {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}) : 'never';
-  box.innerHTML = `
-    <p style="margin-top:0">Free: Garmin → Apple Health → iPhone <b>Shortcuts</b> → this app.<br>
-      <span class="muted">Last import: <b>${when(s.lastImport)}</b> · ${s.days} day${s.days === 1 ? '' : 's'} stored</span></p>
-    <ol style="padding-left:18px;line-height:1.6;margin:10px 0">
-      <li><b>Garmin Connect</b> → More → Settings → Connected Apps → <b>Apple Health</b> → allow all.</li>
-      <li><b>Shortcuts</b> app → Automation → <b>+</b> → Time of Day <b>23:50</b>, Daily, <b>Run Immediately</b> → New Blank Automation.</li>
-      <li>Add <b>Find Health Samples</b>: Type <b>Steps</b>, Start Date <b>is today</b> → <b>Calculate Statistics</b>: Sum.</li>
-      <li>Same for <b>Active Energy</b> (Sum) and <b>Resting Heart Rate</b> (Average).</li>
-      <li>Add <b>Dictionary</b> with: <code>k</code> = your key, <code>action</code> = <code>healthDay</code>, <code>steps</code>, <code>activeKcal</code>, <code>restingHR</code> = the three results.</li>
-      <li>Add <b>Get Contents of URL</b>: the URL below, Method <b>POST</b>, Request Body <b>JSON</b> = Dictionary.</li>
-    </ol>
-    <p style="margin:14px 0 6px"><b>FitDays scale → weight &amp; body fat (fills in by itself)</b></p>
-    <ol style="padding-left:18px;line-height:1.6;margin:0 0 10px">
-      <li><b>FitDays</b> → Me → Settings → <b>Apple Health</b> → turn on Weight and Body Fat.</li>
-      <li><b>Shortcuts</b> → Automation → <b>+</b> → <b>App</b> → FitDays → <b>Is Closed</b> → <b>Run Immediately</b>.</li>
-      <li><b>Find Health Samples</b>: Type <b>Weight</b>, Start Date <b>is today</b>, Sort <b>Latest First</b>, Limit <b>1</b>. Repeat for <b>Body Fat Percentage</b>.</li>
-      <li><b>Dictionary</b>: <code>action</code> = <code>healthDay</code>, <code>weight</code> and <code>bodyfat</code> = the two samples.</li>
-      <li><b>Get Contents of URL</b>: URL below, <b>POST</b>, Request Body <b>JSON</b> = Dictionary.</li>
-    </ol>
-    <p class="muted" style="margin:0 0 10px">Weigh in → close FitDays → your weight appears in Stat Sheet.</p>
-    <label>URL<input readonly value="${esc(s.postUrl)}" onclick="this.select()"></label>
-    <label style="margin-top:8px">Your key (keep private)<input readonly value="${esc(s.ownerKey)}" onclick="this.select()"></label>
-    <button id="hSync" class="link" style="margin-top:8px;padding-left:0">Refresh status</button>`;
-  $('#hSync').onclick = e => busy(e.target, async () => { const r = await api('bootstrap', { date: TODAY }); S.health = r.health; renderHealthBox(); });
+/* Connections: link WHOOP / Fitbit (their sign-in page), or send Apple Health data (Garmin, FitDays scale, Oura…)
+   from an iPhone Shortcut with your own key. The app admin switches each service on once (box at the bottom). */
+const when = t => t ? new Date(t).toLocaleString(LOCALE, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'never';
+const copyBtn = (label, value) => `<label style="margin-top:8px">${label}<span class="row" style="gap:6px"><input readonly value="${esc(value)}" class="grow"><button type="button" class="link" data-copy="${esc(value)}">Copy</button></span></label>`;
+$('#connDetails').addEventListener('toggle', e => { if (e.target.open) renderConnections(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && $('#connDetails').open) renderConnections(); });
+async function renderConnections() {
+  const box = $('#connBox');
+  if (!box.innerHTML) box.innerHTML = '<p class="muted" style="margin-top:0">Loading…</p>';
+  const c = await api('connections'), a = c.apple;
+  const svc = (pv, what) => {
+    const x = c.providers[pv];
+    const status = x.connected ? (x.error ? '⚠️ ' + esc(x.error) : '✅ Connected · synced ' + when(x.last))
+      : x.available ? 'Not connected' : 'Not switched on yet — the app admin turns it on below.';
+    const btns = x.connected ? `<button class="primary" data-sync="${pv}">Sync now</button>${c.self ? `<button data-off="${pv}">Disconnect</button>` : ''}`
+      : x.available && c.self ? `<button class="primary" data-on="${pv}" style="grid-column:1/-1">Connect ${x.name}</button>` : '';
+    return `<div class="conn"><div class="row between"><b>${x.name}</b><span class="muted">${what}</span></div>
+      <p style="margin:4px 0 8px">${status}</p>${btns ? '<div class="grid2">' + btns + '</div>' : ''}</div>`;
+  };
+  const steps = a.shortcutUrl
+    ? `<ol style="padding-left:18px;line-height:1.6;margin:8px 0">
+        <li><a href="${esc(a.shortcutUrl)}" target="_blank"><b>Get the Stat Sheet Shortcut</b></a> and tap <b>Add Shortcut</b>.</li>
+        <li>When it asks for your key, paste the key below.</li>
+        <li><b>Shortcuts</b> → Automation → <b>+</b> → Time of Day <b>23:50</b>, Daily, <b>Run Immediately</b> → pick the Stat Sheet shortcut.</li>
+      </ol>`
+    : `<ol style="padding-left:18px;line-height:1.6;margin:8px 0">
+        <li><b>Shortcuts</b> → Automation → <b>+</b> → Time of Day <b>23:50</b>, Daily, <b>Run Immediately</b> → New Blank Automation.</li>
+        <li><b>Find Health Samples</b>: Steps, today → <b>Calculate Statistics</b>: Sum. Same for <b>Active Energy</b> (Sum) and <b>Resting Heart Rate</b> (Average).</li>
+        <li><b>Dictionary</b>: <code>k</code> = your key, <code>action</code> = <code>healthDay</code>, <code>steps</code>, <code>activeKcal</code>, <code>restingHR</code>.</li>
+        <li><b>Get Contents of URL</b>: the URL below, <b>POST</b>, Request Body <b>JSON</b> = Dictionary.</li>
+        <li>Smart scale: a second automation when <b>FitDays</b> (or your scale app) <b>Is Closed</b>, sending <code>weight</code> and <code>bodyfat</code> the same way.</li>
+      </ol>`;
+  box.innerHTML = `<p class="muted" style="margin-top:0">Link your apps once. Data syncs every morning, or tap Sync now.</p>
+    ${svc('whoop', 'recovery · HRV · sleep')}
+    ${svc('fitbit', 'steps · heart · sleep · scale')}
+    <div class="conn"><div class="row between"><b>Apple Health</b><span class="muted">Garmin · scales · Oura · Watch</span></div>
+      <p style="margin:4px 0 0">Last data received: <b>${when(a.lastImport)}</b></p>
+      <p class="muted" style="margin:6px 0 0"><b>Garmin:</b> Garmin Connect app → Settings → Connected Apps → <b>Apple Health</b> → allow all. (Garmin only lets approved companies connect directly, so Apple Health is the way in — it's free.)</p>
+      <details style="margin-top:8px"><summary style="padding:6px 0;font-weight:600">Set up the iPhone Shortcut</summary>
+        ${steps}${copyBtn('URL', a.postUrl)}${copyBtn('Your key (keep it private)', a.key)}</details>
+    </div>
+    ${c.admin ? adminBox(c.admin) : ''}`;
+  $$('[data-copy]', box).forEach(b => b.onclick = () => { navigator.clipboard ? navigator.clipboard.writeText(b.dataset.copy) : b.previousElementSibling.select(); toast('Copied'); });
+  $$('[data-on]', box).forEach(b => b.onclick = () => {
+    const w = window.open('', '_blank'); // open now, while it still counts as a tap (iPhone blocks pop-ups opened later)
+    busy(b, async () => {
+      try { const url = await api('connectStart', { provider: b.dataset.on }); if (w) w.location = url; else location.href = url; }
+      catch (e) { if (w) w.close(); }
+    });
+  });
+  $$('[data-sync]', box).forEach(b => b.onclick = () => busy(b, async () => {
+    const r = await api('syncNow', { provider: b.dataset.sync, days: 7 }); toast(r.days + ' days updated');
+    const d = await api('bootstrap', { date: TODAY }); S.health = d.health; renderConnections();
+  }));
+  $$('[data-off]', box).forEach(b => b.onclick = () => confirm('Disconnect? Data already synced stays.') &&
+    busy(b, async () => { await api('disconnect', { provider: b.dataset.off }); renderConnections(); }));
+  $$('[data-setup]', box).forEach(f => f.onsubmit = e => {
+    e.preventDefault();
+    busy($('button', f), async () => { await api('setupService', Object.assign({ provider: f.dataset.setup }, formObj(f))); toast('Switched on'); renderConnections(); });
+  });
+  const sf = $('#shortcutForm', box);
+  if (sf) sf.onsubmit = e => { e.preventDefault(); busy($('button', sf), async () => { await api('setShortcutUrl', formObj(sf)); toast('Saved'); renderConnections(); }); };
 }
-
-/* whoop */
-function renderWhoop() {
-  const s = S.whoopStatus, box = $('#whoopBox');
-  if (!s.configured) { box.innerHTML = '<p class="muted" style="margin-top:0">Not connected yet. WHOOP needs a one-time developer setup before it can sync.</p>'; return; }
-  box.innerHTML = s.connected
-    ? `<p style="margin-top:0">✅ Connected${s.lastSync ? ' · synced ' + new Date(s.lastSync).toLocaleString(LOCALE) : ''}</p><div class="grid2"><button class="primary" id="wSync">Sync now</button><button id="wOff">Disconnect</button></div>`
-    : `<div class="grid2"><button class="primary" id="wOn">Connect WHOOP</button><button id="wCheck">Refresh</button></div>`;
-  const on = $('#wOn'), sync = $('#wSync'), off = $('#wOff'), chk = $('#wCheck');
-  if (on) on.onclick = () => busy(on, async () => window.open(await api('whoopConnect'), '_blank'));
-  if (chk) chk.onclick = () => busy(chk, async () => { S.whoopStatus = await api('whoopStatus'); renderWhoop(); });
-  if (sync) sync.onclick = () => busy(sync, async () => { const r = await api('whoopSync', { days: 30 }); S.whoopStatus = r.status; toast(r.days + ' days imported'); renderWhoop(); });
-  if (off) off.onclick = () => confirm('Disconnect WHOOP?') && busy(off, async () => { S.whoopStatus = await api('whoopDisconnect'); renderWhoop(); });
+/** One-time setup per service, for the app admin. Everything here is free. */
+function adminBox(ad) {
+  const tips = { whoop: 'Scopes: read:recovery, read:cycles, read:sleep, read:body_measurement, offline.',
+    fitbit: 'Application type <b>Server</b>, access <b>Read Only</b>.' };
+  return `<details class="conn" style="border-style:dashed"><summary style="padding:6px 0;font-weight:700">App admin: switch services on</summary>
+    <p style="margin:6px 0">Do this once per service; then everyone can tap Connect. Use this <b>Redirect URL</b> when you register:</p>
+    ${copyBtn('Redirect URL', ad.redirect)}
+    ${ad.services.map(x => `<form data-setup="${x.id}" style="margin-top:14px">
+      <b>${x.name}</b> ${x.ready ? '✅ on' : ''}
+      <p style="margin:4px 0">Register a free app at <a href="${x.register}" target="_blank">${x.register.replace('https://', '')}</a>. ${tips[x.id] || ''} Then paste:</p>
+      <div class="grid2"><label>Client ID<input name="clientId" autocomplete="off"></label><label>Client secret<input name="clientSecret" type="password" autocomplete="off"></label></div>
+      <button class="primary" style="width:100%;margin-top:8px">${x.ready ? 'Replace keys' : 'Switch on ' + x.name}</button></form>`).join('')}
+    <form id="shortcutForm" style="margin-top:14px"><b>Apple Health Shortcut link</b> (optional)
+      <p style="margin:4px 0">Build the Shortcut once on your iPhone (steps above, with the key as an <i>Import Question</i>), share it, and paste the iCloud link: everyone else then sets up in one tap.</p>
+      <label>iCloud link<input name="url" value="${esc(ad.shortcutUrl)}" placeholder="https://www.icloud.com/shortcuts/…"></label>
+      <button class="primary" style="width:100%;margin-top:8px">Save link</button></form>
+  </details>`;
 }
 
 /* start */
