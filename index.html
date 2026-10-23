@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <script>try { var th = localStorage.getItem('theme'); if (th) document.documentElement.dataset.theme = th; } catch (e) {}</script>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Keng X Yoon · Stat Sheet</title>
 <meta name="description" content="Weight, body fat, meals and progress photos in one simple stat sheet.">
 <meta property="og:type" content="website">
@@ -30,6 +30,7 @@
 :root[data-theme=dark]{--bg:#0f1312;--card:#171c1a;--text:#e6ece9;--muted:#93a09a;--line:#2a322f;
   --soft:#1f2724;--tint:#173a2d;--accent:#3fb58a;--accent-ink:#06120d;--w:#3fb58a;--bf:#e5a24a;--m:#8f9bf0;--s:#4fb0f2}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body,button,a,label,input,select,textarea{touch-action:manipulation} /* no double-tap zoom */
 /* trainer looking at a client: blue accent everywhere, so it never looks like your own profile */
 body.tmode{--accent:#4f8df2;--accent-ink:#fff;--tint:#4f8df226}
 body.tmode #trainerBar{background:linear-gradient(#4f8df21a,#4f8df20d),var(--bg);border-bottom-color:#4f8df255}
@@ -360,9 +361,10 @@ button.primary.trn{background:#4f8df2;color:#fff}
     </div>
     <div class="card"><div class="row between"><div><h3 style="margin:0">Weight</h3><button class="link" data-entries style="padding:4px 0;min-height:30px">All entries ›</button></div><div class="thead" id="tWHead"></div></div><div class="chart sm"><canvas id="tW"></canvas></div></div>
     <div class="card"><div class="row between"><h3 style="margin:0">Body fat</h3><div class="thead" id="tFHead"></div></div><div class="chart sm"><canvas id="tF"></canvas></div></div>
+    <div id="extraCharts"></div>
     <div class="card"><div class="row between"><h3 style="margin:0">Progress photos</h3><button class="link" data-gallery>Open gallery ›</button></div>
       <div class="strip" id="tStrip" style="margin-top:8px"></div></div>
-    <div class="card hide" id="stepsCard"><div class="row between"><h3 style="margin:0">Steps</h3><div class="thead" id="tSHead"></div></div><div class="chart sm"><canvas id="tS"></canvas></div></div>
+
 
     <div class="card" id="logCard" style="padding:0">
       <div class="row between" style="padding:16px 16px 12px"><h3 style="margin:0">Log</h3>
@@ -539,7 +541,9 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <h2>More</h2>
     <p class="grp">TRAINER</p>
     <div class="card" id="myTrainer"></div>
+    <div class="card" id="trainerMode"></div>
     <p class="grp">CUSTOMIZE</p>
+    <details class="card" id="chartsCard"><summary>Progress graphs</summary><div id="chartsBox" class="small"></div></details>
     <details class="card" id="ciDefsCard"><summary>Daily details</summary><div id="ciDefs" class="small"></div></details>
     <p class="grp">YOUR DATA</p>
     <details class="card" id="histCard"><summary>Full history · for AI</summary><div class="small">
@@ -641,7 +645,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023164047';
+const BUILD = '20261023164413';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -883,6 +887,7 @@ function renderProgress() {
   $('#hello').textContent = typeof S !== 'undefined' && viewingClient() ? S.target.name + '\x27s stats' : p.name ? 'Hi ' + p.name : 'Progress';
   $('#todayLbl').textContent = nice(TODAY, {weekday:'long', day:'numeric', month:'long'});
   segment('tMode', tMode, m => { tMode = m; drawTrends(); });
+  CD = null; // graphs pick up workouts and details logged since last time
   drawTrends(); renderPhotoStrip(); loadLog();
 }
 /** Latest progress photos under the body-fat chart; tap one to open the gallery on that day. */
@@ -897,14 +902,35 @@ async function renderPhotoStrip() {
   hydrate(el);
 }
 
+/* Optional graphs, chosen in More › Customize › Progress graphs (saved per person as Profile.charts):
+   'volume' · 'steps' · 'kcal' · 'e1rm:<exercise code>' · 'check:<daily detail key>' */
+const chartList = () => { try { const c = JSON.parse(S.profile.charts || '[]'); return Array.isArray(c) ? c : []; } catch (e) { return []; } };
+let CD = null, cdLoading = false; // chart data (workouts and daily details), loaded when a graph needs it
+function chartSpec(id) {
+  const [kind, arg] = id.split(':');
+  if (kind === 'volume') return { title: 'Training volume', pts: () => CD && CD.volume, color: css('--s'), o: { bar: true, u: ' kg', d: 0, empty: 'Log workout sets (kg × reps) to see this.' }, needs: true };
+  if (kind === 'steps') return { title: 'Steps', pts: () => Object.keys(S.health).map(d => ({ date: d, v: num(S.health[d].steps) || null })), color: css('--s'), o: { bar: true, u: ' steps', d: 0, empty: 'Connect a device in More › Devices & apps.' } };
+  if (kind === 'kcal') return { title: 'Calories eaten', pts: () => Object.keys(S.nutrition).map(d => ({ date: d, v: num(S.nutrition[d].calories) || null })), color: css('--m'), o: { bar: true, u: ' kcal', d: 0, target: num(S.profile.calories) } };
+  if (kind === 'e1rm') { const ex = CD && CD.exercises.find(e => e[0] === arg);
+    return { title: (ex ? ex[1] : exName(arg)) + ' · est. max', pts: () => CD && CD.e1rm[arg], color: css('--m'), o: { goodUp: true, u: ' kg', d: 1, minSpan: 10, empty: 'Log sets of this exercise to see your strength.' }, needs: true }; }
+  if (kind === 'check') { const f = ciDefs().find(x => x.key === arg) || { name: arg, type: 'scale' };
+    return { title: f.name, pts: () => CD && CD.checks[arg], color: css('--accent'), o: { goodUp: true, u: f.type === 'scale' ? '/10' : ' ' + (f.unit || ''), d: 1, minSpan: f.type === 'scale' ? 4 : 2, empty: 'Log it in Today › More details.' }, needs: true }; }
+  return null;
+}
+function drawExtraCharts() {
+  const ids = chartList().filter(chartSpec), box = $('#extraCharts');
+  box.innerHTML = ids.map((id, i) => `<div class="card"><div class="row between"><h3 style="margin:0">${esc(chartSpec(id).title)}</h3><div class="thead" id="xcH${i}"></div></div><div class="chart sm"><canvas id="xc${i}"></canvas></div></div>`).join('');
+  if (ids.some(id => chartSpec(id).needs) && !CD) {
+    if (!cdLoading) { cdLoading = true; api('chartData').then(d => { CD = d; cdLoading = false; drawExtraCharts(); }, () => { cdLoading = false; }); }
+  }
+  ids.forEach((id, i) => { const c = chartSpec(id); drawTrend('xc' + i, c.pts() || [], c.color, Object.assign({ head: $('#xcH' + i) }, c.o)); });
+}
 function drawTrends() {
   if ($('#tab-progress').classList.contains('hide')) return;
   const bodyPts = k => S.body.map(r => ({ date: r.date, v: num(r[k]) }));
   drawTrend('tW', bodyPts('weight'), css('--w'), { minSpan: unit() === 'lb' ? 16 : 8, u: ' ' + unit(), head: $('#tWHead') });
   drawTrend('tF', bodyPts('bodyfat'), css('--bf'), { minSpan: 6, u: '%', head: $('#tFHead') });
-  const hp = Object.keys(S.health).map(d => ({ date: d, v: num(S.health[d].steps) || null }));
-  $('#stepsCard').classList.toggle('hide', !hp.some(p => p.v));
-  if (hp.some(p => p.v)) drawTrend('tS', hp, css('--s'), { bar: true, u: ' steps', d: 0, head: $('#tSHead') });
+  drawExtraCharts();
 }
 const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
 const weekStart = d => addDays(d, -parse(d).getDay()); // Sunday, like FitDays
@@ -962,11 +988,11 @@ function drawTrend(id, points, color, o) {
   const s = trendSeries(points, M), idx = s.data.map((v, i) => v == null ? -1 : i).filter(i => i >= 0), dp = o.d == null ? 1 : o.d;
   const last = idx.length ? s.data[idx[idx.length - 1]] : null, prev = idx.length > 1 ? s.data[idx[idx.length - 2]] : null;
   o.head.innerHTML = last == null ? ''
-    : `<b>${fmtN(last, dp)}${o.u}</b>${prev != null && fmtN(Math.abs(last - prev), dp) !== fmtN(0, dp) ? ` <i class="${(last > prev) !== !!o.bar ? 'up' : 'down'}">${last > prev ? '↑' : '↓'} ${fmtN(Math.abs(last - prev), dp)}</i>` : ''}
+    : `<b>${fmtN(last, dp)}${o.u}</b>${prev != null && fmtN(Math.abs(last - prev), dp) !== fmtN(0, dp) ? ` <i class="${(last > prev) !== !!(o.bar || o.goodUp) ? 'up' : 'down'}">${last > prev ? '↑' : '↓'} ${fmtN(Math.abs(last - prev), dp)}</i>` : ''}
        <small>${M === 'day' ? (o.bar ? 'latest day' : 'latest') : s.labels[idx[idx.length - 1]] + ' avg'}${o.target ? ' · target ' + o.target : ''}</small>`;
   const box = $('#' + id).parentNode; // friendly empty state instead of empty axes
   box.classList.toggle('empty-chart', last == null);
-  box.dataset.empty = o.bar ? 'Log meals in Today to see your intake here.' : 'No entries in this period yet.';
+  box.dataset.empty = o.empty || (o.bar ? 'Log meals in Today to see your intake here.' : 'No entries in this period yet.');
   if (last == null) return;
   const smooth = !o.bar && M === 'day'; // one smooth trend curve; no dots
   const tick = css('--muted');
@@ -1176,6 +1202,22 @@ function renderCiDefs() {
   $('#ciReset').onclick = () => confirm('Go back to the starter set?') && put(DEFAULT_CHECKINS);
 }
 $('#ciDefsCard').addEventListener('toggle', e => { if (e.target.open) renderCiDefs(); });
+/** More › Customize › Progress graphs: Weight and Body fat always; add any of these underneath. */
+async function renderChartsBox() {
+  const box = $('#chartsBox'), list = chartList();
+  if (!CD) { box.innerHTML = '<p class="muted" style="margin:0">Loading…</p>'; try { CD = await api('chartData'); } catch (e) { return; } }
+  const opts = [['volume', 'Training volume (kg lifted)'], ['steps', 'Steps'], ['kcal', 'Calories eaten']]
+    .concat(CD.exercises.map(e => ['e1rm:' + e[0], 'Strength · ' + e[1]]))
+    .concat(ciDefs().map(f => ['check:' + f.key, 'Daily detail · ' + f.name])).filter(o => list.indexOf(o[0]) < 0);
+  box.innerHTML = `<p class="muted" style="margin-top:0">Weight and Body fat always show. These appear underneath, in this order.</p>` +
+    list.map((id, i) => { const c = chartSpec(id); return c ? `<div class="cidef"><b>${esc(c.title)}</b><button class="link" data-gdel="${i}" aria-label="Remove">✕</button></div>` : ''; }).join('') +
+    `<form id="chartAdd" style="display:flex;gap:8px;align-items:flex-end;margin-top:12px"><label class="grow">Add a graph<select name="id">${opts.map(o => `<option value="${esc(o[0])}">${esc(o[1])}</option>`).join('')}</select></label><button class="primary">Add</button></form>
+     <p class="muted" style="margin:8px 0 0">Strength = estimated 1-rep max from your heaviest set (kg × reps). Exercises appear here once you've logged sets.</p>`;
+  const put = l => busy($('#chartAdd button'), async () => { S.profile = await api('saveProfile', { charts: JSON.stringify(l) }); renderChartsBox(); toast('Progress updated'); });
+  $$('[data-gdel]', box).forEach(b => b.onclick = () => put(list.filter((_, i) => i !== +b.dataset.gdel)));
+  $('#chartAdd').onsubmit = e => { e.preventDefault(); const v = e.target.id.value; if (v) put(list.concat([v])); };
+}
+$('#chartsCard').addEventListener('toggle', e => { if (e.target.open) renderChartsBox(); });
 
 async function renderWeightEntry() {
   renderCheckins();
@@ -1846,8 +1888,26 @@ function renderMyTrainer() {
   else $('#pairForm').onsubmit = e => { e.preventDefault(); const f = e.target;
     busy($('button', f), async () => { Object.assign(S, await api('pairTrainer', { code: f.code.value })); renderMyTrainer(); toast('Paired with ' + S.coach.name); }); };
 }
+/** More › Trainer mode: anyone can coach. On = Personal / Client Profile toggle + Clients tab. */
+function renderTrainerMode() {
+  const box = $('#trainerMode'), me = S.me;
+  box.classList.toggle('hide', !me);
+  if (!me) return;
+  box.innerHTML = me.trainer
+    ? `<b>Trainer mode is on</b><p class="small muted" style="margin:4px 0 0">${(S.clients || []).length} client${(S.clients || []).length === 1 ? '' : 's'}. Switch between Personal Profile and Client Profile at the top; invite clients in Client Profile › Clients.</p>
+       <button class="link minilink" id="tmOff" style="padding-left:0;color:var(--muted)">Turn Off Trainer Mode</button>`
+    : `<b>Coach other people?</b><p class="small muted" style="margin:4px 0 10px">Trainer mode lets you invite clients, see their progress, plans and goals, log for them and leave notes. Your own stats stay as they are.</p>
+       <button class="primary" id="tmOn" style="width:100%">Become A Trainer</button>`;
+  const flip = on => async () => {
+    const w = await api('becomeTrainer', { on });
+    store('who', JSON.stringify(Object.assign({}, WHO, { trainer: on }))); store('as', null); clearSaved();
+    toast(on ? 'You are now a trainer' : 'Trainer mode is off'); setTimeout(() => location.replace(location.pathname), 600);
+  };
+  if ($('#tmOn')) $('#tmOn').onclick = e => busy(e.target, flip(true));
+  if ($('#tmOff')) $('#tmOff').onclick = e => confirm('Turn off trainer mode?') && busy(e.target, flip(false));
+}
 function renderMore() {
-  renderMyTrainer();
+  renderMyTrainer(); renderTrainerMode();
   renderAccount();
   const f = $('#profileForm');
   [...f.elements].forEach(el => { if (el.name && S.profile[el.name] != null) el.value = S.profile[el.name]; });
