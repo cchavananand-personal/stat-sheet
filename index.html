@@ -728,7 +728,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023205028';
+const BUILD = '20261023205351';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -898,7 +898,7 @@ if (ROLE === 'trainer') { // trainer mode: the Clients tab holds the client list
   const nc = document.createElement('div'); nc.className = 'card'; nc.id = 'newClientCard';
   const how = (t, d) => Object.assign(document.createElement('div'), { className: 'addway', innerHTML: (t ? `<b>${t}</b>` : '') + `<p class="small muted">${d}</p>` });
   $('p.small.muted', card).remove();
-  nc.append(how('', 'Share your trainer code. Members enter it to become your client.'), $('#codeCard .row.between'), $('#inviteOut'));
+  nc.append(how('', 'Members enter this code to become your client.'), $('#codeCard .row.between'), $('#inviteOut'));
   $('#codeCard').remove();
   const grp = t => Object.assign(document.createElement('p'), { className: 'grp', textContent: t });
   tab.append(grp('CLIENTS'), card, grp('ADD A CLIENT'), nc, grp('CLIENT RANKING'), $('#clientRankCard'));
