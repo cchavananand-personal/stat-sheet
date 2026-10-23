@@ -729,7 +729,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023193600';
+const BUILD = '20261023194239';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2293,6 +2293,7 @@ function renderAccount() {
   }
   // one panel per client: tap to open their stats; ⋯ for colour, private note, order, invite, remove
   const cl = S.clients || [], acts = (c, i) => `<div class="cacts hide" data-acts="${c.id}">
+      ${c.invited ? `<label class="small">Name<input data-rename="${c.id}" value="${esc(c.name)}" maxlength="40" autocapitalize="words"></label>` : ''}
       <span class="small muted">Colour</span>
       <div class="swatches">${CLIENT_COLORS.map(k => `<button type="button" data-clr="${k}" data-cid="${c.id}" class="${(c.color || CLIENT_COLORS[0]) === k ? 'on' : ''}" style="background:${k}" aria-label="Colour"></button>`).join('')}</div>
       <label class="small">Private note<textarea data-note="${c.id}" rows="2" maxlength="500" placeholder="e.g. Knee injury, avoid deep squats">${esc(c.note || '')}</textarea></label>
@@ -2313,6 +2314,9 @@ function renderAccount() {
   $$('#clientList [data-clr]').forEach(b => b.onclick = () => busy(b, async () => {
     S.clients = await api('setClientColor', { id: b.dataset.cid, color: b.dataset.clr }); renderAccount(); keepOpen(b.dataset.cid); renderRoleTag();
   }));
+  $$('#clientList [data-rename]').forEach(t => t.onchange = () => api('renameClient', { id: t.dataset.rename, name: t.value })
+    .then(l => { S.clients = l; renderAccount(); keepOpen(t.dataset.rename); renderRoleTag(); toast('Name saved'); })
+    .catch(e => { t.value = (S.clients.find(c => c.id === t.dataset.rename) || {}).name || t.value; }));
   $$('#clientList [data-note]').forEach(t => t.onchange = () => api('setClientNote', { id: t.dataset.note, text: t.value }).then(l => { S.clients = l; toast('Note saved'); }));
   $$('#clientList [data-mv]').forEach(b => b.onclick = () => busy(b, async () => {
     S.clients = await api('moveClient', { id: b.dataset.mv, by: +b.dataset.by }); renderAccount(); keepOpen(b.dataset.mv); renderRoleTag();
