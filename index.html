@@ -734,7 +734,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023213437';
+const BUILD = '20261023213847';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2608,9 +2608,9 @@ api('bootstrap', { date: TODAY })
   .then(d => {
     try { localStorage.setItem(BOOT_KEY, JSON.stringify({ date: TODAY, data: d, at: Date.now() })); } catch (e) {}
     if (d.me && d.me.trainer) setTimeout(() => prefetchClients(d), 3000);
+    Object.assign(S, d);
     showCoachRequest();
     syncSavedClients(); // a client added or removed elsewhere: fix the saved copies and the buttons at the top
-    Object.assign(S, d);
     // sign-in was switched on (or off) since this phone last looked
     store('pinsOn', d.pinsOn ? '1' : '0');
     if (d.pinsOn && (!WHO || WHO.role === 'guest') && !QS.get('k') && !PINS_ON) return setWho(null);
