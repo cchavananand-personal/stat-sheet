@@ -309,6 +309,7 @@ button.loading img,button.loading svg{opacity:0}
 #tab-clients #clientsCard{background:none;border:0;box-shadow:none;padding:0}#tab-clients #clientsCard>div{padding:0}
 #tab-clients .cpanel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:4px 16px;margin-bottom:12px}#tab-clients .cpanel .crow{border-bottom:0;padding:8px 0}
 .csub{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}.csub.newtag{color:#e8664a}
+.copyfrom{display:flex;align-items:center;gap:8px;margin:0 0 12px}.copyfrom.hide{display:none}.copyfrom span{white-space:nowrap}.copyfrom select{flex:1;min-width:0;margin:0;min-height:40px}.csub.quiet{color:#e8a33d}
 .cacts{flex-direction:column;align-items:stretch;gap:6px;padding:4px 0 14px;border-top:1px solid var(--line)}.cacts:not(.hide){display:flex}
 .cacts textarea{margin-top:6px;font-size:15px}.cbtns{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:4px}.cbtns .link{padding:6px 0;min-height:0}.cbtns .danger{color:#e8664a}
 #tab-clients #clientList .crow:nth-last-child(2){border-bottom:0}#newClientCard #clientForm{margin-top:0!important}
@@ -545,6 +546,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
     </div>
     <div id="planWorkout" class="hide tpl">
       <div class="tplbar"><i data-ic="clipboard"></i><span><b>Template</b> · repeats in order. Log what you actually did in <b>Today</b>.</span></div>
+      <div class="copyfrom hide" data-what="workout"></div>
       <div class="seg" id="wpDay"></div>
       <div class="card"><h3 id="wpTitle" style="margin-bottom:2px"></h3>
         <p class="small muted" style="margin:0">Tap the body parts for this day.</p>
@@ -577,6 +579,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <div class="card"><div class="row between"><h3 style="margin:0">Calorie intake</h3><div class="thead" id="tKHead"></div></div><div class="chart sm"><canvas id="tK"></canvas></div></div>
     </div>
     <div id="mealsPlan">
+    <div class="copyfrom hide" data-what="meals"></div>
     <div class="card"><h3 style="margin-bottom:2px">Current meal plan</h3>
       <p class="small muted" style="margin:0 0 12px"><span id="planVersion"></span><a href="#" id="planFolderLink" class="lk-ext hide"> · Plan files</a></p>
       <div id="planList"></div>
@@ -726,7 +729,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023191617';
+const BUILD = '20261023193600';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1788,7 +1791,26 @@ function drawIntake() {
   drawTrend('tK', kcalPts, css('--m'), { bar: true, u: ' kcal', d: 0, head: $('#tKHead'), target: num(S.profile.calories), mode: kMode });
 }
 let planKind = 'meals';
+/** Trainer on a client's Planner: copy the workout rotation or meal plan from yourself or another client. */
+function renderCopyFrom() {
+  const src = viewingClient() ? [[S.me.id, 'My plan']].concat((S.clients || []).filter(c => c.id !== S.target.id && !c.invited).map(c => [c.id, c.name])) : [];
+  $$('.copyfrom').forEach(box => {
+    box.classList.toggle('hide', !src.length); if (!src.length) return;
+    const what = box.dataset.what;
+    box.innerHTML = `<span class="small muted">Copy from</span><select>${src.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('')}</select><button class="link">Copy</button>`;
+    $('button', box).onclick = e => {
+      const opt = $('select', box).selectedOptions[0];
+      if (!confirm(what === 'meals' ? 'Use ' + opt.textContent + ' for ' + S.target.name + "'s meal plan from today?" : "Replace " + S.target.name + "'s workout plan with " + opt.textContent + '?')) return;
+      busy(e.target, async () => {
+        const r = await api('copyPlanFrom', { from: opt.value, what });
+        if (r.rotation) setRotation(r.rotation); if (r.plan) S.plan = r.plan;
+        renderMealsTab(); toast('Plan copied');
+      });
+    };
+  });
+}
 function renderMealsTab() {
+  renderCopyFrom();
   segment('planKind', planKind, m => { planKind = m; renderMealsTab(); });
   $('#planMeals').classList.toggle('hide', planKind !== 'meals');
   $('#planWorkout').classList.toggle('hide', planKind !== 'workout');
@@ -2252,6 +2274,13 @@ $('#whoPin').onsubmit = e => {
     try { setWho(await api('login', { name: f.name.value, pin: f.pin.value })); } catch (x) { f.pin.value = ''; f.pin.focus(); }
   });
 };
+/** "Active today" · "Active yesterday" · "Last active 4 days ago" (quiet = 3+ days). */
+function lastActive(ms) {
+  if (!ms) return { text: 'No activity yet', quiet: true };
+  const day = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x.getTime(); };
+  const n = Math.round((day(Date.now()) - day(ms)) / 864e5);
+  return { text: n <= 0 ? 'Active today' : n === 1 ? 'Active yesterday' : 'Last active ' + n + ' days ago', quiet: n >= 3 };
+}
 function renderAccount() {
   // clients live in the Clients tab; in Personal › More only as "invite your first client"
   $('#clientsCard').classList.toggle('hide', !(S.me && S.me.trainer && (viewingClient() || !(S.clients || []).length)));
@@ -2273,9 +2302,9 @@ function renderAccount() {
       </div></div>`;
   if ($('#addNum')) $('#addNum').textContent = '#' + (cl.length + 1);
   $('#clientList').innerHTML = cl.map((c, i) => {
-    const sub = c.invited ? 'Invited · not joined yet' : c.news && c.news.length ? 'New: ' + c.news.map(esc).join(' · ') : (c.note ? esc(c.note) : 'No new updates');
+    const act = lastActive(c.last), sub = c.invited ? 'Invited · not joined yet' : c.news && c.news.length ? 'New: ' + c.news.map(esc).join(' · ') : act.text;
     return `<div class="cpanel"><div class="crow" data-open="${c.id}"><span class="cnum">#${i + 1}</span><i class="cdot" style="background:${c.color || CLIENT_COLORS[0]}"></i>
-      <div class="grow" style="min-width:0"><b>${esc(c.name)}</b><div class="csub${c.news && c.news.length && !c.invited ? ' newtag' : ''}">${sub}</div></div>
+      <div class="grow" style="min-width:0"><b>${esc(c.name)}</b><div class="csub${c.news && c.news.length && !c.invited ? ' newtag' : !c.invited && act.quiet ? ' quiet' : ''}">${sub}</div></div>
       <button class="lk-nav" data-openc="${c.id}">Open</button><button class="link" data-more="${c.id}" aria-label="More options">⋯</button></div>${acts(c, i)}</div>`;
   }).join('') || '<div class="small muted">No clients yet.</div>';
   $$('#clientList [data-open]').forEach(r => r.onclick = e => { if (!e.target.closest('[data-more]')) switchTo(r.dataset.open); });
