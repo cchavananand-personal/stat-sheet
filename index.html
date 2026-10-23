@@ -417,7 +417,6 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <div class="card"><div class="row between"><h3 style="margin:0">Body fat</h3><div class="thead" id="tFHead"></div></div><div class="chart sm"><canvas id="tF"></canvas></div></div>
     <div id="extraCharts"></div>
     <div class="lkrow" style="margin:-4px 0 12px"><button class="lk-nav" data-go="more:chartsCard">+ Add graphs in More › Custom Graphs</button></div>
-    <div class="card hide" id="rankCard"></div>
     <div class="card"><div class="row between"><h3 style="margin:0">Progress photos</h3><button class="lk-nav" data-gallery>Open gallery</button></div>
       <div class="strip" id="tStrip" style="margin-top:8px"></div></div>
 
@@ -604,17 +603,18 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <div class="card" id="codeCard"><div class="row between"><div><div class="small muted">Your trainer code</div><b id="tCode" style="font-size:20px;letter-spacing:.06em">…</b></div>
       <div class="row" style="gap:6px"><button id="codeShare" class="primary" style="min-height:40px">Share</button><button id="codeNew" class="link" style="min-height:0">New code</button></div></div>
       <p class="small muted" style="margin:8px 0 0">People who already use Stat Sheet enter it in More › Trainer to become your client.</p></div>
-    <div class="card" id="clientRankCard"></div>
+    <details class="card" id="clientRankCard"><summary><i data-ic="bars"></i>Client Rankings</summary><div id="clientRankBox" class="small"></div></details>
     <div class="card" id="openOnCard"><label id="openOnRow" style="margin:0">Open the app on<select id="openOn"></select></label></div>
   </section>
 
   <section id="tab-more" class="hide">
     <h2>More</h2>
-    <p class="grp">MY TRAINER</p>
+    <p class="grp" id="grpTrainer">MY TRAINER</p>
     <div class="card" id="myTrainer"></div>
+    <div class="card" id="trainerMode"></div>
     <p class="grp">MY PEERS</p>
     <div class="card" id="peersCard"></div>
-    <div class="card" id="trainerMode"></div>
+    <details class="card" id="rankCard"><summary><i data-ic="bars"></i>Rankings</summary><div id="rankBox" class="small"></div></details>
     <p class="grp">CUSTOMIZE</p>
     <details class="card" id="chartsCard"><summary><i data-ic="chart"></i>Custom Graphs</summary><div id="chartsBox" class="small"></div></details>
     <details class="card" id="ciDefsCard"><summary><i data-ic="sliders"></i>Custom Parameters</summary><div id="ciDefs" class="small"></div></details>
@@ -718,7 +718,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023175501';
+const BUILD = '20261023175736';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -940,7 +940,7 @@ function show(id, keepScroll) {
   $$('main > section').forEach(s => s.classList.toggle('hide', s.id !== 'tab-' + id));
   if (!keepScroll) window.scrollTo(0, 0);
   document.body.classList.toggle('on-clients', id === 'clients'); paintMode();
-  ({ progress: renderProgress, today: renderToday, meals: renderMealsTab, more: renderMore, clients: () => { renderAccount(); renderCode(); renderRanking($('#clientRankCard'), 'clients'); } })[id]();
+  ({ progress: renderProgress, today: renderToday, meals: renderMealsTab, more: renderMore, clients: () => { renderAccount(); renderCode(); } })[id]();
 }
 $('#nav').onclick = e => { const b = e.target.closest('button'); if (b) show(b.dataset.t); };
 
@@ -974,8 +974,6 @@ function renderProgress() {
   $('#todayLbl').textContent = nice(TODAY, {weekday:'long', day:'numeric', month:'long'});
   segment('tMode', tMode, m => { tMode = m; drawTrends(); });
   CD = null; // graphs pick up workouts and details logged since last time
-  $('#rankCard').classList.toggle('hide', ROLE !== 'owner' || viewingClient());
-  if (ROLE === 'owner' && !viewingClient()) renderRanking($('#rankCard'), 'peers');
   drawTrends(); renderPhotoStrip(); loadLog();
 }
 /** Latest progress photos under the body-fat chart; tap one to open the gallery on that day. */
@@ -1990,6 +1988,7 @@ function renderEntries() {
 function renderMyTrainer() {
   const box = $('#myTrainer'), c = S.coach;
   box.classList.toggle('hide', !!(S.me && S.me.trainer)); // trainers can't have a trainer
+  $('#grpTrainer').classList.toggle('hide', !!(S.me && S.me.trainer));
   if (S.me && S.me.trainer) return;
   box.innerHTML = c
     ? `<div class="row"><span class="avatar big t" id="coachAv"></span><div class="grow"><b>${esc(c.name)}</b>
@@ -2046,31 +2045,29 @@ async function renderPeers() {
 }
 /* Rankings over the last 30 days. Progress: you + your peers. My Clients: a trainer's clients. */
 const RANK_METRICS = [
-  { k: 'workouts', label: 'Workouts', short: 'Workout days', unit: ' d', hint: 'workout days in the last 30', better: 1 },
+  { k: 'workouts', label: 'Workouts', short: 'Workout days', unit: ' d', hint: 'workout days', better: 1 },
   { k: 'streak', label: 'Streak', short: 'Weigh-in streak', unit: ' d', hint: 'days in a row with a weigh-in', better: 1 },
-  { k: 'weighIns', label: 'Weigh-ins', short: 'Weigh-ins', unit: '', hint: 'weigh-ins in the last 30 days', better: 1 },
-  { k: 'bfChange', label: 'Body fat', short: 'Body fat change', unit: '%', hint: 'body-fat change over 30 days (a drop ranks first)', better: -1 }];
+  { k: 'weighIns', label: 'Weigh-ins', short: 'Weigh-ins', unit: '', hint: 'weigh-ins', better: 1 },
+  { k: 'bfChange', label: 'Body fat', short: 'Body fat change', unit: '%', hint: 'body-fat change, biggest drop first', better: -1 }];
 let rankMetric = 'workouts';
 async function renderRanking(box, group) {
-  const title = group === 'clients' ? 'Client Rankings' : 'Rankings';
-  if (!box.dataset.loaded) box.innerHTML = `<h3>${title}</h3><div class="ld" style="padding:8px 0">Loading…</div>`;
+  if (!box.dataset.loaded) box.innerHTML = '<div class="ld" style="padding:8px 0">Loading…</div>';
   let rows; try { rows = await api('ranking', { group }); } catch (e) { return; }
   box.dataset.loaded = '1';
   const m = RANK_METRICS.find(x => x.k === rankMetric) || RANK_METRICS[0];
   const fmt = v => v == null ? '–' : (m.k === 'bfChange' && v > 0 ? '+' : '') + fmtN(v, m.k === 'bfChange' ? 1 : 0) + m.unit;
   if (group === 'peers' && rows.length <= 1) { // only you so far: your numbers, and how to compare
     const r = rows[0] || {};
-    box.innerHTML = `<h3>${title}</h3><p class="small muted" style="margin:0">Your last 30 days</p>
+    box.innerHTML = `<p class="small muted" style="margin:0">Your last 30 days</p>
       <div class="rk-tiles">${RANK_METRICS.map(x => `<div><b>${x.k === 'bfChange' && r[x.k] > 0 ? '+' : ''}${r[x.k] == null ? '–' : fmtN(r[x.k], x.k === 'bfChange' ? 1 : 0) + x.unit}</b><small>${x.short}</small></div>`).join('')}</div>
-      <div class="lkrow" style="text-align:left;margin:0"><button class="lk-nav" data-go="more:peersCard">Add peers to compare</button></div>`;
+      <div class="lkrow" style="text-align:left;margin:0"><button class="lk-nav" data-go="more:peersCard">Add peers above to compare</button></div>`;
     return;
   }
-  if (!rows.length) { box.innerHTML = `<h3>${title}</h3><p class="small muted" style="margin:0">Invite clients to see them ranked here.</p>`; return; }
+  if (!rows.length) { box.innerHTML = `<p class="small muted" style="margin:0">Invite clients to see them ranked here.</p>`; return; }
   const sorted = rows.slice().sort((a, b) => (a[m.k] == null) - (b[m.k] == null) || m.better * ((b[m.k] || 0) - (a[m.k] || 0)));
   const max = Math.max(1e-9, ...sorted.map(r => Math.abs(r[m.k] || 0)));
-  box.innerHTML = `<div class="row between"><h3 style="margin:0">${title}</h3><span class="small muted">last 30 days</span></div>
-    <div class="seg" style="margin:10px 0 4px">${RANK_METRICS.map(x => `<button data-rk="${x.k}" class="${x.k === m.k ? 'on' : ''}">${x.label}</button>`).join('')}</div>
-    <p class="small muted" style="margin:0 0 6px">${m.hint}</p>
+  box.innerHTML = `<div class="seg" style="margin:0 0 4px">${RANK_METRICS.map(x => `<button data-rk="${x.k}" class="${x.k === m.k ? 'on' : ''}">${x.label}</button>`).join('')}</div>
+    <p class="small muted" style="margin:0 0 6px">${m.hint} · last 30 days</p>
     ${sorted.map((r, i) => `<div class="rk-row${r.me ? ' me' : ''}"><span class="n">${r[m.k] == null ? '–' : i + 1}</span><span class="avatar" data-rkav="${r.id}"></span>
       <div style="min-width:0"><b>${esc(r.me ? r.name + ' (you)' : r.name)}</b><div class="rk-bar"><i style="width:${r[m.k] == null ? 0 : Math.max(4, Math.abs(r[m.k]) / max * 100)}%"></i></div></div>
       <span class="rk-val">${fmt(r[m.k])}</span></div>`).join('')}`;
@@ -2079,6 +2076,8 @@ async function renderRanking(box, group) {
 }
 function renderMore() {
   renderPeers();
+  $('#rankCard').classList.toggle('hide', !S.me || viewingClient() || viewingPeer());
+  $('#rankCard').ontoggle = () => $('#rankCard').open && renderRanking($('#rankBox'), 'peers');
   renderMyTrainer(); renderTrainerMode();
   renderAccount();
   const f = $('#profileForm');
@@ -2229,6 +2228,7 @@ function setWho(w) {
   clearSaved();
   location.replace(location.pathname); // drop any old ?view=trainer&k=… so everyone ends up on the same link
 }
+$('#clientRankCard').ontoggle = () => $('#clientRankCard').open && renderRanking($('#clientRankBox'), 'clients');
 $('#peerBack').onclick = () => switchTo(S.me.id);
 $('#whoNew').onclick = () => {
   const signing = $('#signForm').classList.toggle('hide') === false;
