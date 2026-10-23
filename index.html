@@ -312,7 +312,7 @@ button.loading img,button.loading svg{opacity:0}
 .cacts{flex-direction:column;align-items:stretch;gap:6px;padding:4px 0 14px;border-top:1px solid var(--line)}.cacts:not(.hide){display:flex}
 .cacts textarea{margin-top:6px;font-size:15px}.cbtns{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:4px}.cbtns .link{padding:6px 0;min-height:0}.cbtns .danger{color:#e8664a}
 #tab-clients #clientList .crow:nth-last-child(2){border-bottom:0}#newClientCard #clientForm{margin-top:0!important}
-.addway b{font-size:15px}.addway p{margin:2px 0 10px}
+.addhead{display:flex;align-items:center;gap:10px;font-size:17px;margin-bottom:6px}.addhead .cnum{color:var(--accent)}.addway b{font-size:15px}.addway p{margin:2px 0 10px}
 .addor{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:13px}.addor::before,.addor::after{content:"";flex:1;height:1px;background:var(--line)}
 .crow b{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.crow .small{white-space:nowrap}
 .crow .link{font-size:20px;padding:4px 10px;min-height:0}
@@ -719,7 +719,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023180616';
+const BUILD = '20261023180748';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -884,12 +884,13 @@ if (ROLE === 'trainer') { // trainer mode: the Clients tab holds the client list
   card.open = true; tab.insertBefore(card, $('#openOnCard'));
   // one panel, two ways in: new people get an invite link, people already on Stat Sheet enter your trainer code
   const nc = document.createElement('div'); nc.className = 'card'; nc.id = 'newClientCard';
-  const how = (t, d) => Object.assign(document.createElement('div'), { className: 'addway', innerHTML: `<b>${t}</b><p class="small muted">${d}</p>` });
+  const how = (t, d) => Object.assign(document.createElement('div'), { className: 'addway', innerHTML: (t ? `<b>${t}</b>` : '') + `<p class="small muted">${d}</p>` });
   $('#clientForm label').firstChild.textContent = 'Their name';
   $('p.small.muted', card).remove();
-  nc.append(how('New to Stat Sheet?', 'Send a link. They pick their own PIN.'), $('#clientForm'), $('#inviteOut'),
+  nc.append(Object.assign(document.createElement('div'), { className: 'addhead', innerHTML: '<span class="cnum" id="addNum">#1</span><b>New Client</b>' }),
+    how('', 'Add their name to send them an invitation.'), $('#clientForm'), $('#inviteOut'),
     Object.assign(document.createElement('div'), { className: 'addor', textContent: 'or' }),
-    how('Already on Stat Sheet?', 'They enter your code in More › My Trainer.'), $('#codeCard .row.between'));
+    how('', 'Or have them enter your trainer code (More › My Trainer) to become your client.'), $('#codeCard .row.between'));
   $('#codeCard').remove();
   const grp = t => Object.assign(document.createElement('p'), { className: 'grp', textContent: t });
   tab.append(grp('CLIENTS'), card, grp('ADD A CLIENT'), nc, grp('CLIENT RANKING'), $('#clientRankCard'), grp('SETTINGS'), $('#openOnCard'));
@@ -2261,6 +2262,7 @@ function renderAccount() {
         ${i > 0 ? `<button class="link" data-mv="${c.id}" data-by="-1">Move up</button>` : ''}${i < cl.length - 1 ? `<button class="link" data-mv="${c.id}" data-by="1">Move down</button>` : ''}
         <button class="link" data-reset="${c.id}">Send new invite</button><button class="link danger" data-rm="${c.id}">Remove</button>
       </div></div>`;
+  if ($('#addNum')) $('#addNum').textContent = '#' + (cl.length + 1);
   $('#clientList').innerHTML = cl.map((c, i) => {
     const sub = c.invited ? 'Invited · not joined yet' : c.news && c.news.length ? 'New: ' + c.news.map(esc).join(' · ') : (c.note ? esc(c.note) : 'Tap to open their stats');
     return `<div class="cpanel"><div class="crow" data-open="${c.id}"><span class="cnum">#${i + 1}</span><i class="cdot" style="background:${c.color || CLIENT_COLORS[0]}"></i>
