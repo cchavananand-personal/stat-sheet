@@ -313,7 +313,7 @@ button.loading img,button.loading svg{opacity:0}
 .cacts textarea{margin-top:6px;font-size:15px}.cbtns{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:4px}.cbtns .link{padding:6px 0;min-height:0}.cbtns .danger{color:#e8664a}
 #tab-clients #clientList .crow:nth-last-child(2){border-bottom:0}#newClientCard #clientForm{margin-top:0!important}
 .addhead{display:flex;align-items:center;gap:10px;font-size:17px;margin-bottom:6px}.addhead .cnum{color:var(--accent)}.addway b{font-size:15px}.addway p{margin:2px 0 10px}
-.addor{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:13px}.addor::before,.addor::after{content:"";flex:1;height:1px;background:var(--line)}
+.addor{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:13px}.addor::before{content:"";flex:1;height:1px;background:var(--line)}
 .crow b{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.crow .small{white-space:nowrap}
 .crow .link{font-size:20px;padding:4px 10px;min-height:0}
 .ndot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#e8664a;margin-left:7px;vertical-align:2px}
@@ -719,7 +719,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023180748';
+const BUILD = '20261023180842';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -889,8 +889,8 @@ if (ROLE === 'trainer') { // trainer mode: the Clients tab holds the client list
   $('p.small.muted', card).remove();
   nc.append(Object.assign(document.createElement('div'), { className: 'addhead', innerHTML: '<span class="cnum" id="addNum">#1</span><b>New Client</b>' }),
     how('', 'Add their name to send them an invitation.'), $('#clientForm'), $('#inviteOut'),
-    Object.assign(document.createElement('div'), { className: 'addor', textContent: 'or' }),
-    how('', 'Or have them enter your trainer code (More › My Trainer) to become your client.'), $('#codeCard .row.between'));
+    Object.assign(document.createElement('div'), { className: 'addor' }),
+    how('', 'Or have them enter your trainer code to become your client.'), $('#codeCard .row.between'));
   $('#codeCard').remove();
   const grp = t => Object.assign(document.createElement('p'), { className: 'grp', textContent: t });
   tab.append(grp('CLIENTS'), card, grp('ADD A CLIENT'), nc, grp('CLIENT RANKING'), $('#clientRankCard'), grp('SETTINGS'), $('#openOnCard'));
