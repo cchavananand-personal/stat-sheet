@@ -736,7 +736,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023215944';
+const BUILD = '20261023220347';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -874,11 +874,16 @@ async function loadPhotos(ids) {
   const need = [...new Set(ids.filter(id => id && !PHOTOS[id]))];
   for (let i = 0; i < need.length; i += 15) Object.assign(PHOTOS, await api('photos', { ids: need.slice(i, i+15) }));
 }
+/** Fill photos: ones already loaded go in at once (same moment as the redraw, so nothing blanks); the rest load, then appear. */
 async function hydrate(root) {
   const imgs = $$('img[data-pid]', root);
-  await loadPhotos(imgs.map(i => i.dataset.pid));
-  imgs.forEach(i => { if (PHOTOS[i.dataset.pid]) i.src = PHOTOS[i.dataset.pid]; });
+  const fill = () => imgs.forEach(i => { const src = PHOTOS[i.dataset.pid]; if (src && i.getAttribute('src') !== src) { i.decoding = 'sync'; i.src = src; } });
+  fill();
+  const miss = imgs.filter(i => !PHOTOS[i.dataset.pid]).map(i => i.dataset.pid);
+  if (miss.length) { await loadPhotos(miss); fill(); }
 }
+/** Redraw only when something changed (a rebuilt photo row would flash). */
+function setHTML(el, html) { if (el._html === html) return false; el._html = html; el.innerHTML = html; return true; }
 const imgTag = (thumb, full, cls, cap) => thumb ? `<img class="${cls||''}" data-pid="${esc(thumb)}" data-full="${esc(full)}" data-cap="${esc(cap||'')}" alt="">` : '';
 document.addEventListener('click', e => { const im = e.target.closest('img[data-full]'); if (im) openPhoto(im.dataset.full, im.dataset.cap); });
 async function openPhoto(id, cap) {
@@ -1012,13 +1017,14 @@ function renderProgress() {
 /** Latest progress photos under the body-fat chart; tap one to open the gallery on that day. */
 async function renderPhotoStrip() {
   const el = $('#tStrip');
-  if (!el.children.length) el.innerHTML = '<div class="empty ld">Loading photos…</div>';
+  if (!el.children.length) { el.innerHTML = '<div class="empty ld">Loading photos…</div>'; el._html = null; }
   const list = await api('gallery');
-  if (!list.length) { el.innerHTML = `<div class="empty">No photos yet. Add one in Today › Log weight.</div>`; return; }
+  if (!list.length) { setHTML(el, `<div class="empty">No photos yet. Add one in Today › Log weight.</div>`); return; }
   const from = Math.max(0, list.length - 12);
-  el.innerHTML = list.slice(from).map((p, k) => `<figure data-gi="${from + k}"><img data-pid="${esc(p.thumbId)}" alt="">${nice(p.date)}${p.weight !== '' ? '<br>' + fx(num(p.weight)) : ''}</figure>`).join('');
-  el.scrollLeft = el.scrollWidth; // newest on the right, like the gallery
-  hydrate(el);
+  if (setHTML(el, list.slice(from).map((p, k) => `<figure data-gi="${from + k}"><img data-pid="${esc(p.thumbId)}" alt="">${nice(p.date)}${p.weight !== '' ? '<br>' + fx(num(p.weight)) : ''}</figure>`).join(''))) {
+    el.scrollLeft = el.scrollWidth; // newest on the right, like the gallery
+    hydrate(el);
+  }
 }
 
 /* Optional graphs, chosen in More › Customize › Progress graphs (saved per person as Profile.charts):
@@ -1999,7 +2005,7 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('click', e => { if (e.target.closest('[data-entries]')) $('#logCard').scrollIntoView({ behavior: 'smooth' }); });
 async function loadLog() {
-  if (!E.list.length) $('#eList').innerHTML = '<div class="empty ld" style="padding:16px">Loading…</div>';
+  if (!E.list.length) { $('#eList').innerHTML = '<div class="empty ld" style="padding:16px">Loading…</div>'; $('#eList')._html = null; }
   E.list = await api('entries'); renderEntries();
 }
 segment('eMetric', E.metric, m => { E.metric = m; renderEntries(); });
@@ -2012,14 +2018,14 @@ function renderEntries() {
       <div><span class="${d > 0 ? 'up' : 'down'}">${d > 0 ? '↗' : '↘'}</span> ${fx(Math.abs(d))}${u}<small>CHANGE (${d > 0 ? '+' : '−'}${Math.abs(pct).toFixed(1)}%)</small></div>`;
   } else $('#eSum').innerHTML = '<div class="muted small" style="grid-column:1/-1;font-weight:500">Not enough entries yet.</div>';
   const all = E.list.filter(x => num(x[k]) != null || x.thumbId || x.notes), rows = all.slice(0, E.shown);
-  $('#eList').innerHTML = rows.map(x => `<div class="ent">
+  setHTML($('#eList'), rows.map(x => `<div class="ent">
     <div class="grow" data-goto="${x.date}"><b>${num(x[k]) != null ? +x[k] + u : '—'}</b><small>${nice(x.date, {weekday:'long', day:'numeric', month:'long', year:'numeric'})}</small>
       ${x.noteT ? `<div class="enote tr"><span>${esc(trainerName())}</span> ${esc(x.noteT)}</div>` : ''}
       ${x.noteM ? `<div class="enote me"><span>${esc(clientName())}</span> ${esc(x.noteM)}</div>` : ''}</div>
     ${x.thumbId ? `<img data-pid="${esc(x.thumbId)}" data-gd="${x.date}" alt="">`
       : OWNER ? `<label class="add" aria-label="Add photo"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-5-5-9 8"/></svg><input type="file" accept="${IMG_ACCEPT}" data-up="${x.date}"></label>` : ''}
   </div>`).join('') + (all.length > rows.length ? `<button class="lk-open" id="eMore" style="width:100%;padding:14px">Show older entries (${all.length - rows.length})</button>` : '')
-    || '<div class="empty" style="padding:16px">No entries yet.</div>';
+    || '<div class="empty" style="padding:16px">No entries yet.</div>');
   const more = $('#eMore'); if (more) more.onclick = () => { E.shown += 40; renderEntries(); };
   $$('[data-goto]').forEach(r => r.onclick = () => { // open that day in Today
     wSel = r.dataset.goto; wMonth = wSel.slice(0, 7); logMode = 'weight'; show('today');
@@ -2085,7 +2091,7 @@ async function renderPeers() {
   box.innerHTML = `<div class="row between"><div class="codeblk"><div class="small muted">Your code</div><span class="codeline"><b id="pCode" style="font-size:18px;letter-spacing:.05em">…</b><button type="button" class="link" data-copycode="#pCode">Copy</button></span></div>
       <button class="primary" id="pShare" style="min-height:40px">Share</button></div>
     <p class="small muted" style="margin:8px 0 10px">Share your code to compare stats and rankings.</p>
-    ${list.map(x => `<div class="crow" style="cursor:default"><span class="avatar" data-pav="${x.id}"></span><b>${esc(x.name)}</b>
+    ${list.map((x, i) => `<div class="crow" style="cursor:default"><span class="cnum">#${i + 1}</span><span class="avatar" data-pav="${x.id}"></span><b>${esc(x.name)}</b>
       <button class="lk-nav" data-peer="${x.id}">Open</button><button class="link" data-unpeer="${x.id}">Remove</button></div>`).join('')}
     <form id="peerForm" style="display:flex;gap:8px;align-items:flex-end;margin-top:10px"><label class="grow" style="margin:0">Add a peer<input name="code" maxlength="24" autocapitalize="characters" placeholder="e.g. MINT-4821" style="text-transform:uppercase"></label><button class="primary">Add</button></form>`;
   list.forEach(x => paintAvatar($(`[data-pav="${x.id}"]`, box), x, ''));
