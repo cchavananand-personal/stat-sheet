@@ -200,6 +200,10 @@ nav button.on{color:var(--accent)}
 #lightbox img{max-width:100%;max-height:82vh;border-radius:12px}
 #toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--bg);padding:12px 18px;
   border-radius:12px;font-size:15px;z-index:100;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.big{top:calc(14px + env(safe-area-inset-top));bottom:auto;transform:translate(-50%,-20px);transition:opacity .25s,transform .35s cubic-bezier(.2,1.4,.4,1);display:flex;align-items:center;gap:12px;text-align:left;
+  background:linear-gradient(135deg,#46c99a,#2c9a72);color:#04150e;font-size:17px;font-weight:800;padding:16px 20px;border-radius:18px;box-shadow:0 14px 40px #2fbf8a66,0 0 0 1px #ffffff30 inset;width:max-content;max-width:calc(100vw - 32px)}
+#toast.big.show{transform:translate(-50%,0)}
+#toast.big::before{content:"";flex:none;width:30px;height:30px;border-radius:50%;background:#04150e url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%2346c99a%27 stroke-width=%273%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M5 12.5l4.5 4.5L19 7.5%27/%3E%3C/svg%3E") center/18px no-repeat}
 #claimAsk{display:grid;gap:10px;text-align:center}#claimAsk.hide{display:none}#claimAsk b{font-size:15px;line-height:1.35}
 #whoErr{color:#ff8a7a;font-weight:600;font-size:14px;margin:8px 0 0}#whoErr.hide{display:none}
 #toast.show{opacity:1}#toast.err{background:var(--bad);color:#fff}
@@ -321,7 +325,9 @@ button.loading img,button.loading svg{opacity:0}
 #newClientCard .row.between{flex-direction:column;align-items:stretch;gap:10px}#newClientCard .row.between>.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}#newClientCard .row.between button{white-space:nowrap;min-height:44px!important}
 .codeline{display:flex;align-items:center;gap:10px}.codeblk{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.codeblk>.small{margin:0}#newClientCard .codeline button{min-height:32px!important}.codeline button.link.link{min-height:32px;padding:4px 10px;font-size:13px}
 .reqform{display:flex;gap:8px;align-items:stretch}.reqform input{flex:1;min-width:0;margin:0}.reqform button{min-height:46px;white-space:nowrap}#reqList .crow{gap:10px;padding:8px 0}
-#coachReq{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:45;background:var(--card);border:1px solid var(--accent);border-radius:16px;padding:14px;box-shadow:0 8px 30px #0006;display:grid;gap:10px}#coachReq.hide{display:none}#coachReq .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}#coachReq button{min-height:44px}
+#coachReq{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:45;background:linear-gradient(160deg,color-mix(in srgb,#3fb58a 22%,var(--card)),var(--card) 70%);border:2px solid #3fb58a;border-radius:18px;padding:16px;box-shadow:0 12px 40px #000a,0 0 30px #3fb58a55;display:grid;gap:12px;animation:reqIn .4s cubic-bezier(.2,1.3,.4,1)}
+#coachReq .rq{display:flex;align-items:center;gap:12px}#coachReq .rq .avatar{width:46px;height:46px;font-size:19px;flex:none}#coachReq .rq b{font-size:17px;display:block;line-height:1.25}
+@keyframes reqIn{from{transform:translateY(30px);opacity:0}}#coachReq.hide{display:none}#coachReq .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}#coachReq button{min-height:44px}
 .addor{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:13px}.addor::before{content:"";flex:1;height:1px;background:var(--line)}
 .crow b{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.crow .small{white-space:nowrap}
 .crow .link{font-size:20px;padding:4px 10px;min-height:0}
@@ -736,7 +742,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023220503';
+const BUILD = '20261023221808';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -804,7 +810,7 @@ function toast(msg, err, ms) {
   // on the sign-in screen, errors stay in the card until you edit a field
   if (err && msg === 'Please sign in.' && !$('#who').classList.contains('hide')) return; // background loads before signing in
   if (err && !$('#who').classList.contains('hide')) { const w = $('#whoErr'); w.textContent = msg; w.classList.remove('hide'); return; }
-  const t = $('#toast'); t.textContent = msg; t.className = 'show' + (err ? ' err' : '');
+  const t = $('#toast'), big = !err && ms >= 5000; t.textContent = msg; t.className = 'show' + (err ? ' err' : '') + (big ? ' big' : '');
   clearTimeout(t._h); t._h = setTimeout(() => t.className = '', ms || 2600);
 }
 const READ_ONLY = new Set(['bootstrap', 'month', 'day', 'meals', 'entries', 'gallery', 'photos', 'notesFor', 'workouts', 'dashboard', 'bodyRange', 'shareInfo', 'healthStatus', 'whoopStatus']); // safe to retry
@@ -2625,13 +2631,14 @@ async function prefetchClients(d) {
 function showCoachRequest() {
   const box = $('#coachReq'), r = S.coachRequest;
   box.classList.toggle('hide', !r); if (!r) return;
-  box.innerHTML = `<div><b>${esc(r.name)} wants to be your trainer</b><div class="small muted">${esc(r.name)} will see and update your stats, plans and goals.</div></div>
+  box.innerHTML = `<div class="rq"><span class="avatar" id="crAv"></span><div><b>${esc(r.name)} wants to be your trainer</b><div class="small muted">${esc(r.name)} will see and update your stats, plans and goals.</div></div></div>
     <div class="row"><button class="primary" id="crYes">Accept</button><button class="link" id="crNo">Decline</button></div>`;
   const answer = accept => e => busy(e.target, async () => {
     Object.assign(S, await api('answerCoach', { accept })); box.classList.add('hide');
     if (accept) toast("You're now training with " + r.name, false, 5000);
     if (curTab === 'more') renderMore();
   });
+  paintAvatar($('#crAv'), r, 't');
   $('#crYes').onclick = answer(true); $('#crNo').onclick = answer(false);
 }
 function bootDone() { const b = $('#boot'); if (!b) return; b.classList.add('done'); setTimeout(() => b.remove(), 400); }
