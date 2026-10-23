@@ -364,7 +364,7 @@ button.link.link.hide{display:none}
 .pill-on,.pill-off{min-height:32px;padding:0 14px;border-radius:99px;font-size:13px;font-weight:700}
 .pill-on{background:var(--accent);color:var(--accent-ink)}.pill-off{background:var(--soft);color:var(--muted)}
 .cidef.off b{color:var(--muted);font-weight:600}
-.cidef{display:flex;align-items:center;gap:8px;min-height:44px;border-bottom:1px solid var(--line)}.cidef b{flex:1}.cidef .link{min-height:0;padding:4px 8px}
+.cidef b{text-transform:capitalize}.cidef{display:flex;align-items:center;gap:8px;min-height:44px;border-bottom:1px solid var(--line)}.cidef b{flex:1}.cidef .link{min-height:0;padding:4px 8px}
 #ciAdd{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}#ciAdd .wide{grid-column:1/-1}
 .ld{color:var(--accent)!important;font-weight:650;display:flex;align-items:center;justify-content:center;gap:8px}
 .ld::before{content:"";width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:spin .7s linear infinite;flex:none}
@@ -396,14 +396,14 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
     <button class="primary">Sign in</button>
   </form>
   <form id="invForm" class="hide">
-    <label>Choose a PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
-    <label>Type it again<input name="pin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
+    <label>Choose A PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
+    <label>Type It Again<input name="pin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
     <button class="primary">Set PIN and start</button>
   </form>
   <form id="signForm" class="hide">
-    <label>Your name<input name="name" maxlength="40" autocapitalize="words" autocomplete="name" placeholder="e.g. Mint" required></label>
-    <label>Choose a PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
-    <label>Type it again<input name="pin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
+    <label>Your Name<input name="name" maxlength="40" autocapitalize="words" autocomplete="name" placeholder="e.g. Mint" required></label>
+    <label>Choose A PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
+    <label>Type It Again<input name="pin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
     <button class="primary">Create account</button>
     <div id="claimAsk" class="hide"></div>
   </form>
@@ -464,7 +464,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
         <form id="bodyForm">
           <div class="grid2">
             <label>Weight (<span class="unit">kg</span>)<input class="big" type="number" name="weight" step="0.01" min="20" max="400" inputmode="decimal" placeholder="—"></label>
-            <label>Body fat %<input class="big" type="number" name="bodyfat" step="0.1" min="2" max="70" inputmode="decimal" placeholder="—"></label>
+            <label>Body Fat %<input class="big" type="number" name="bodyfat" step="0.1" min="2" max="70" inputmode="decimal" placeholder="—"></label>
           </div>
         </form>
         <div class="small muted" id="saveState" style="text-align:center;min-height:18px;margin-top:8px"></div>
@@ -507,7 +507,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
             <label>Meal<select name="type"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option></select></label>
             <label>Time<input type="time" name="time"></label>
           </div>
-          <label>What did you eat?<input name="description" maxlength="300" placeholder="e.g. Chicken rice"></label>
+          <label>What Did You Eat?<input name="description" maxlength="300" placeholder="e.g. Chicken rice"></label>
           <div class="grid2">
             <label>Calories<input type="number" name="calories" min="0" inputmode="numeric" placeholder="kcal"></label>
             <label>Protein<input type="number" name="protein" min="0" inputmode="numeric" placeholder="g"></label>
@@ -531,23 +531,23 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
       <div class="card"><h3 id="goalsTitle">Goals</h3>
         <form id="goalsForm">
           <div class="grid2">
-            <label>Goal weight (<span class="unit">kg</span>)<input type="number" name="goalWeight" step="0.1" inputmode="decimal"></label>
-            <label>Goal body fat %<input type="number" name="goalBodyfat" step="0.1" inputmode="decimal"></label>
-            <label>Daily calories<input type="number" name="calories" inputmode="numeric" placeholder="kcal"></label>
-            <label>Daily protein<input type="number" name="protein" inputmode="numeric" placeholder="g"></label>
+            <label>Goal Weight (<span class="unit">kg</span>)<input type="number" name="goalWeight" step="0.1" inputmode="decimal"></label>
+            <label>Goal Body Fat %<input type="number" name="goalBodyfat" step="0.1" inputmode="decimal"></label>
+            <label>Daily Calories<input type="number" name="calories" inputmode="numeric" placeholder="kcal"></label>
+            <label>Daily Protein<input type="number" name="protein" inputmode="numeric" placeholder="g"></label>
           </div>
-          <label>Goal date<input type="date" name="goalDate"></label>
+          <label>Goal Date<input type="date" name="goalDate"></label>
           <div style="text-align:center"><button type="button" class="lk-open" id="goalsMore">More goals ›</button></div>
           <div id="goalsExtra" class="hide">
             <div class="grid2">
               <label>Waist (cm)<input type="number" name="goalWaist" step="0.5" inputmode="decimal"></label>
-              <label>Daily steps<input type="number" name="goalSteps" inputmode="numeric"></label>
-              <label>Daily water (L)<input type="number" name="goalWater" step="0.1" inputmode="decimal"></label>
+              <label>Daily Steps<input type="number" name="goalSteps" inputmode="numeric"></label>
+              <label>Daily Water (L)<input type="number" name="goalWater" step="0.1" inputmode="decimal"></label>
               <label>Sleep (h)<input type="number" name="goalSleep" step="0.5" inputmode="decimal"></label>
-              <label>Workouts / week<input type="number" name="goalWorkouts" inputmode="numeric"></label>
-              <label>Strength goal<input name="goalLift" maxlength="60" placeholder="e.g. Bench 100 kg"></label>
+              <label>Workouts / Week<input type="number" name="goalWorkouts" inputmode="numeric"></label>
+              <label>Strength Goal<input name="goalLift" maxlength="60" placeholder="e.g. Bench 100 kg"></label>
             </div>
-            <label>Why this matters<textarea name="goalWhy" rows="2" maxlength="400" placeholder="e.g. Stage-ready by March"></textarea></label>
+            <label>Why This Matters<textarea name="goalWhy" rows="2" maxlength="400" placeholder="e.g. Stage-ready by March"></textarea></label>
             <div id="goalsCustom"></div>
             <button type="button" class="lk-open" id="goalAdd" style="padding-left:0">+ Add custom goal</button>
           </div>
@@ -576,7 +576,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
         <p class="small muted" style="margin:0 0 10px">Add a custom exercise to this body part.</p>
         <form id="exForm">
           <div class="grid2">
-            <label>Body part<select name="part"></select></label>
+            <label>Body Part<select name="part"></select></label>
             <label>Name<input name="name" maxlength="60" placeholder="e.g. Cable fly"></label>
           </div>
           <button class="primary">Add exercise</button>
@@ -622,11 +622,11 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
   <!-- MORE -->
   <!-- CLIENTS (trainer mode): the clients card and "Open the app on" move here when the page starts -->
   <section id="tab-clients" class="hide"><h2>My Clients</h2>
-    <div class="card" id="codeCard"><div class="row between"><div class="codeblk"><div class="small muted">Your code</div><span class="codeline"><b id="tCode" style="font-size:20px;letter-spacing:.06em">…</b><button type="button" class="link" data-copycode="#tCode">Copy</button></span></div>
+    <div class="card" id="codeCard"><div class="row between"><div class="codeblk"><div class="small muted">Your Code</div><span class="codeline"><b id="tCode" style="font-size:20px;letter-spacing:.06em">…</b><button type="button" class="link" data-copycode="#tCode">Copy</button></span></div>
       <div class="row" style="gap:6px"><button id="codeShare" class="primary" style="min-height:40px">Share Invite</button><button id="codeNew" class="link">New Code</button></div></div>
       <p class="small muted" style="margin:8px 0 0">People who already use Stat Sheet enter it in More › My Trainer to become your client.</p></div>
     <div class="card" id="clientRankCard"><div id="clientRankBox" class="small"></div></div>
-    <div class="card" id="openOnCard"><label id="openOnRow" style="margin:0">Open the app on<select id="openOn"></select></label></div>
+    <div class="card" id="openOnCard"><label id="openOnRow" style="margin:0">Open The App On<select id="openOn"></select></label></div>
   </section>
 
   <section id="tab-more" class="hide">
@@ -716,7 +716,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
   <form id="profileForm">
         <label>Name<input name="name" maxlength="60"></label>
         <div class="grid2">
-          <label>Birth date<input type="date" name="birthdate"></label>
+          <label>Birth Date<input type="date" name="birthdate"></label>
           <label>Height (cm)<input type="number" name="height" step="0.1" inputmode="decimal"></label>
         </div>
         <button class="primary" style="width:100%;margin-top:10px">Save</button>
@@ -736,7 +736,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023220347';
+const BUILD = '20261023220503';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1315,7 +1315,7 @@ function renderCiDefs() {
     all.map((f, i) => { const on = f.on !== false;
       return `<div class="cidef${on ? '' : ' off'}"><b>${esc(f.name)}</b><span class="muted">${f.type === 'scale' ? '1–10' : esc(f.unit || 'number')}</span>
         <button class="${on ? 'pill-off' : 'pill-on'}" data-ctog="${i}">${on ? 'Remove' : 'Add'}</button></div>`; }).join('') +
-    `<form id="ciAdd"><label class="wide">New parameter<input name="name" maxlength="30" placeholder="e.g. Pump, Digestion, Steps outside"></label>
+    `<form id="ciAdd"><label class="wide">New Parameter<input name="name" maxlength="30" placeholder="e.g. Pump, Digestion, Steps outside"></label>
       <label>Type<select name="type"><option value="scale">1–10 scale</option><option value="number">Number</option></select></label>
       <label>Unit<input name="unit" maxlength="12" placeholder="e.g. L, km, hrs"></label>
       <button class="primary wide">Create Parameter</button></form>`;
@@ -1338,10 +1338,10 @@ async function renderChartsBox() {
     .concat(CD.exercises.map(e => ['e1rm:' + e[0], 'Strength · ' + e[1]]))
     .concat(ciDefs().map(f => ['check:' + f.key, f.name]));
   list.forEach(id => { if (!opts.some(o => o[0] === id) && chartSpec(id)) opts.push([id, chartSpec(id).title]); }); // keep ones already chosen
-  box.innerHTML = `<p class="muted" style="margin-top:0">Weight and Body fat always show. Added graphs appear underneath, in the order you add them.</p>` +
+  box.innerHTML = `<p class="muted" style="margin-top:0">Weight and Body Fat always show. Added graphs appear underneath, in the order you add them.</p>` +
     opts.map(o => { const on = list.indexOf(o[0]) >= 0;
       return `<div class="cidef${on ? '' : ' off'}"><b>${esc(o[1])}</b><button class="${on ? 'pill-off' : 'pill-on'}" data-gtog="${esc(o[0])}">${on ? 'Remove' : 'Add'}</button></div>`; }).join('') +
-    `<p class="muted" style="margin:10px 0 0">Overall strength: 100 = your first sessions, 110 = 10% stronger. Training volume: kg × reps per day. Strength · exercise: estimated 1-rep max.</p>`;
+    `<p class="muted" style="margin:10px 0 0">Overall Strength: 100 = your first sessions, 110 = 10% stronger. Training Volume: kg × reps per day. Strength · Exercise: estimated 1-rep max.</p>`;
   $$('[data-gtog]', box).forEach(b => b.onclick = () => busy(b, async () => {
     const id = b.dataset.gtog, next = list.indexOf(id) >= 0 ? list.filter(x => x !== id) : list.concat([id]);
     S.profile = await api('saveProfile', { charts: JSON.stringify(next) }); renderChartsBox();
@@ -1816,7 +1816,7 @@ function renderCopyFrom() {
   $$('.copyfrom').forEach(box => {
     box.classList.toggle('hide', !src.length); if (!src.length) return;
     const what = box.dataset.what;
-    box.innerHTML = `<span class="small muted">Copy from</span><select>${src.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('')}</select><button class="link">Copy</button>`;
+    box.innerHTML = `<span class="small muted">Copy From</span><select>${src.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('')}</select><button class="link">Copy</button>`;
     $('button', box).onclick = e => {
       const opt = $('select', box).selectedOptions[0];
       if (!confirm(what === 'meals' ? 'Use ' + opt.textContent + ' for ' + S.target.name + "'s meal plan from today?" : "Replace " + S.target.name + "'s workout plan with " + opt.textContent + '?')) return;
@@ -2056,7 +2056,7 @@ function renderMyTrainer() {
        <p class="small muted" style="margin:10px 0 0">${esc(c.name)} can see and update your stats, plans and goals, and writes notes to you.</p>
        <button class="link danger hide" id="leaveCoach" style="margin-top:10px">Leave trainer</button>`
     : `<b>No trainer yet</b><p class="small muted" style="margin:4px 0 8px">Ask your trainer for their code, then enter it here.</p>
-       <form id="pairForm"><label>Trainer code<input name="code" maxlength="20" autocapitalize="characters" placeholder="e.g. KENG-4821"></label><button class="primary">Pair</button></form>`;
+       <form id="pairForm"><label>Trainer Code<input name="code" maxlength="20" autocapitalize="characters" placeholder="e.g. KENG-4821"></label><button class="primary">Pair</button></form>`;
   if (c) { paintAvatar($('#coachAv'), c, 'big t');
     $('#myTrainer .row').onclick = () => $('#leaveCoach').classList.toggle('hide'); // tucked away: tap the trainer to show it
     $('#leaveCoach').onclick = e => confirm('Leave ' + c.name + ' as your trainer?') &&
@@ -2088,12 +2088,12 @@ function renderTrainerMode() {
 async function renderPeers() {
   const box = $('#peersCard'), list = S.peers || [];
   box.classList.toggle('hide', !S.me); if (!S.me) return;
-  box.innerHTML = `<div class="row between"><div class="codeblk"><div class="small muted">Your code</div><span class="codeline"><b id="pCode" style="font-size:18px;letter-spacing:.05em">…</b><button type="button" class="link" data-copycode="#pCode">Copy</button></span></div>
+  box.innerHTML = `<div class="row between"><div class="codeblk"><div class="small muted">Your Code</div><span class="codeline"><b id="pCode" style="font-size:18px;letter-spacing:.05em">…</b><button type="button" class="link" data-copycode="#pCode">Copy</button></span></div>
       <button class="primary" id="pShare" style="min-height:40px">Share</button></div>
     <p class="small muted" style="margin:8px 0 10px">Share your code to compare stats and rankings.</p>
     ${list.map((x, i) => `<div class="crow" style="cursor:default"><span class="cnum">#${i + 1}</span><span class="avatar" data-pav="${x.id}"></span><b>${esc(x.name)}</b>
       <button class="lk-nav" data-peer="${x.id}">Open</button><button class="link" data-unpeer="${x.id}">Remove</button></div>`).join('')}
-    <form id="peerForm" style="display:flex;gap:8px;align-items:flex-end;margin-top:10px"><label class="grow" style="margin:0">Add a peer<input name="code" maxlength="24" autocapitalize="characters" placeholder="e.g. MINT-4821" style="text-transform:uppercase"></label><button class="primary">Add</button></form>`;
+    <form id="peerForm" style="display:flex;gap:8px;align-items:flex-end;margin-top:10px"><label class="grow" style="margin:0">Add A Peer<input name="code" maxlength="24" autocapitalize="characters" placeholder="e.g. MINT-4821" style="text-transform:uppercase"></label><button class="primary">Add</button></form>`;
   list.forEach(x => paintAvatar($(`[data-pav="${x.id}"]`, box), x, ''));
   $$('[data-peer]', box).forEach(b => b.onclick = () => switchTo(b.dataset.peer, 'peer'));
   $$('[data-unpeer]', box).forEach(b => b.onclick = () => confirm('Stop being peers? Neither of you will see the other\'s stats.') && busy(b, async () => { Object.assign(S, await api('removePeer', { id: b.dataset.unpeer })); renderPeers(); }));
@@ -2256,11 +2256,11 @@ function adminBox(ad) {
     ${ad.services.map(x => `<form data-setup="${x.id}" style="margin-top:14px">
       <b>${x.name}</b> ${x.ready ? ic('check') + 'On' : ''}
       <p style="margin:4px 0">Register a free app at <a class="lk-ext" href="${x.register}" target="_blank">${x.register.replace('https://', '')}</a>. ${tips[x.id] || ''} Then paste:</p>
-      <div class="grid2"><label>Client ID<input name="clientId" autocomplete="off"></label><label>Client secret<input name="clientSecret" type="password" autocomplete="off"></label></div>
+      <div class="grid2"><label>Client ID<input name="clientId" autocomplete="off"></label><label>Client Secret<input name="clientSecret" type="password" autocomplete="off"></label></div>
       <button class="primary" style="width:100%;margin-top:8px">${x.ready ? 'Replace keys' : 'Switch on ' + x.name}</button>${x.ready ? `<button type="button" class="link" data-svcoff="${x.id}" style="width:100%">Switch ${x.name} off</button>` : ''}</form>`).join('')}
     <form id="shortcutForm" style="margin-top:14px"><b>Apple Health Shortcut link</b> (optional)
       <p style="margin:4px 0">Build the Shortcut once on your iPhone (steps above, with the key as an <i>Import Question</i>), share it, and paste the iCloud link: everyone else then sets up in one tap.</p>
-      <label>iCloud link<input name="url" value="${esc(ad.shortcutUrl)}" placeholder="https://www.icloud.com/shortcuts/…"></label>
+      <label>iCloud Link<input name="url" value="${esc(ad.shortcutUrl)}" placeholder="https://www.icloud.com/shortcuts/…"></label>
       <button class="primary" style="width:100%;margin-top:8px">Save link</button></form>
   </details>`;
 }
@@ -2403,7 +2403,7 @@ function renderAccount() {
       ${c.invited ? `<label class="small">Name<input data-rename="${c.id}" value="${esc(c.name)}" maxlength="40" autocapitalize="words"></label>` : ''}
       <span class="small muted">Colour</span>
       <div class="swatches">${CLIENT_COLORS.map(k => `<button type="button" data-clr="${k}" data-cid="${c.id}" class="${(c.color || CLIENT_COLORS[0]) === k ? 'on' : ''}" style="background:${k}" aria-label="Colour"></button>`).join('')}</div>
-      <label class="small">Private note<textarea data-note="${c.id}" rows="2" maxlength="500" placeholder="e.g. Knee injury, avoid deep squats">${esc(c.note || '')}</textarea></label>
+      <label class="small">Private Note<textarea data-note="${c.id}" rows="2" maxlength="500" placeholder="e.g. Knee injury, avoid deep squats">${esc(c.note || '')}</textarea></label>
       <div class="cbtns">
 
         <button class="link" data-reset="${c.id}">Send new invite</button><button class="link danger" data-rm="${c.id}">Remove</button>
