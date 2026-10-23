@@ -625,7 +625,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023162750';
+const BUILD = '20261023162836';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1762,11 +1762,13 @@ function renderMyTrainer() {
   box.innerHTML = c
     ? `<div class="row"><span class="avatar big t" id="coachAv"></span><div class="grow"><b>${esc(c.name)}</b>
          <div class="small muted">Your trainer${c.since ? ' · since ' + nice(c.since, { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</div></div>
-         <button class="link" id="leaveCoach" style="min-height:0;color:var(--muted)">Leave</button></div>
-       <p class="small muted" style="margin:10px 0 0">${esc(c.name)} can see and update your stats, plans and goals, and writes notes to you.</p>`
+         </div>
+       <p class="small muted" style="margin:10px 0 0">${esc(c.name)} can see and update your stats, plans and goals, and writes notes to you.</p>
+       <button class="link hide" id="leaveCoach" style="min-height:0;padding:8px 0 0;font-size:13px;color:var(--muted)">Leave trainer</button>`
     : `<b>No trainer yet</b><p class="small muted" style="margin:4px 0 8px">Ask your trainer for their code, then enter it here.</p>
        <form id="pairForm"><label>Trainer code<input name="code" maxlength="20" autocapitalize="characters" placeholder="e.g. KENG-4821"></label><button class="primary">Pair</button></form>`;
   if (c) { paintAvatar($('#coachAv'), c, 'big t');
+    $('#myTrainer .row').onclick = () => $('#leaveCoach').classList.toggle('hide'); // tucked away: tap the trainer to show it
     $('#leaveCoach').onclick = e => confirm('Leave ' + c.name + '? They will no longer see your stats. Your data stays yours.') &&
       busy(e.target, async () => { Object.assign(S, await api('leaveTrainer')); renderMyTrainer(); toast('You left ' + c.name); }); }
   else $('#pairForm').onsubmit = e => { e.preventDefault(); const f = e.target;
