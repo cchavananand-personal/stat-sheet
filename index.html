@@ -571,7 +571,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
     </div>
     <div id="mealsPlan">
     <div class="card"><h3 style="margin-bottom:2px">Current meal plan</h3>
-      <p class="small muted" style="margin:0 0 12px"><span id="planVersion"></span> · <a href="#" id="planFolderLink" class="lk-ext">Plan files</a></p>
+      <p class="small muted" style="margin:0 0 12px"><span id="planVersion"></span><a href="#" id="planFolderLink" class="lk-ext hide"> · Plan files</a></p>
       <div id="planList"></div>
     </div>
     <div class="card"><h3 id="planFormTitle">Add to quick menu</h3>
@@ -719,7 +719,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023180842';
+const BUILD = '20261023181846';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -792,7 +792,7 @@ async function api(action, data, tries) {
     const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ k: KEY, as: AS || undefined, action, data: data || {} }) });
     let r;
-    try { r = await res.json(); } catch (e) { throw Object.assign(new Error('Google did not answer properly. Try again.'), { transient: true }); }
+    try { r = await res.json(); } catch (e) { throw Object.assign(new Error('The server did not answer properly. Try again.'), { transient: true }); }
     if (!r.ok) throw new Error(r.error || 'Something went wrong');
     return r.result;
   } catch (e) {
@@ -970,7 +970,7 @@ $$('[data-x]').forEach(b => b.onclick = () => busy(b, async () => {
   const url = URL.createObjectURL(new Blob([bytes], { type: r.mime }));
   const a = document.createElement('a'); a.href = url; a.download = r.name; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 60000);
-  $('#menuNote').innerHTML = `Saved <b>${esc(r.name)}</b>. Not downloading? <a class="lk-ext" href="${esc(r.url)}" target="_blank">Open it in Google Drive</a>.`; $('#menuNote').classList.remove('hide');
+  $('#menuNote').innerHTML = `Saved <b>${esc(r.name)}</b>. ${r.url ? `Not downloading? <a class="lk-ext" href="${esc(r.url)}" target="_blank">Open it in Google Drive</a>.` : ''}`; $('#menuNote').classList.remove('hide');
   toast('Exported ' + r.name);
 }));
 
@@ -1794,8 +1794,8 @@ function renderMealsTab() {
   const ps = planStartFor(TODAY);
   $('#planVersion').textContent = ps ? 'Started ' + nice(ps, {day: 'numeric', month: 'short', year: 'numeric'}) + ' · logged automatically each day' : 'No plan yet';
   // Your Meal Plan folder (Drive, synced to E:\ETC\Fitness App\Meal Plan on the PC)
-  $('#planFolderLink').href = 'https://drive.google.com/drive/folders/1m6SBYvWmjOdZquG5nAPyHh88a8O5cBwm';
-  $('#planFolderLink').target = '_blank';
+  $('#planFolderLink').classList.toggle('hide', !S.account); // the account holder only; nobody else sees where files live
+  if (S.account) { $('#planFolderLink').href = 'https://drive.google.com/drive/folders/1m6SBYvWmjOdZquG5nAPyHh88a8O5cBwm'; $('#planFolderLink').target = '_blank'; }
   renderPlanList();
 }
 function renderGoals() {
@@ -2264,7 +2264,7 @@ function renderAccount() {
       </div></div>`;
   if ($('#addNum')) $('#addNum').textContent = '#' + (cl.length + 1);
   $('#clientList').innerHTML = cl.map((c, i) => {
-    const sub = c.invited ? 'Invited · not joined yet' : c.news && c.news.length ? 'New: ' + c.news.map(esc).join(' · ') : (c.note ? esc(c.note) : 'Tap to open their stats');
+    const sub = c.invited ? 'Invited · not joined yet' : c.news && c.news.length ? 'New: ' + c.news.map(esc).join(' · ') : (c.note ? esc(c.note) : 'No new updates');
     return `<div class="cpanel"><div class="crow" data-open="${c.id}"><span class="cnum">#${i + 1}</span><i class="cdot" style="background:${c.color || CLIENT_COLORS[0]}"></i>
       <div class="grow" style="min-width:0"><b>${esc(c.name)}</b><div class="csub${c.news && c.news.length && !c.invited ? ' newtag' : ''}">${sub}</div></div>
       <button class="lk-nav" data-openc="${c.id}">Open</button><button class="link" data-more="${c.id}" aria-label="More options">⋯</button></div>${acts(c, i)}</div>`;
@@ -2286,7 +2286,7 @@ function renderAccount() {
   });
   $$('#clientList [data-rm]').forEach(b => b.onclick = () => {
     const c = S.clients.find(x => x.id === b.dataset.rm);
-    if (confirm('Take ' + c.name + ' off your clients? Their data stays in Drive.')) busy(b, async () => { S.clients = await api('removeClient', { id: c.id }); renderAccount(); });
+    if (confirm('Take ' + c.name + ' off your clients? Their data is kept.')) busy(b, async () => { S.clients = await api('removeClient', { id: c.id }); renderAccount(); });
   });
 }
 async function renderCode(renew) { $('#tCode').textContent = await api('myTrainerCode', renew ? { renew: true } : {}); }
