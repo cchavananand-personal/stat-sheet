@@ -252,6 +252,8 @@ nav button.on{color:var(--accent)}
 .psheet>.row b{font-size:17px}.psheet .link{min-height:0;padding:8px 0}
 .pphoto{display:grid;justify-items:center;gap:8px;margin:14px 0;cursor:pointer;color:var(--accent);font-weight:700;font-size:15px}
 .pphoto input{display:none}
+#profRemove:not(.hide){display:flex;margin:0 auto 10px}
+.pphoto>span:last-child{display:inline-flex;align-items:center;min-height:40px;padding:6px 14px;border-radius:10px;border:1px solid var(--line);background:var(--soft);color:var(--text);font-size:14px;font-weight:600}
 #mTheme,#mShare{display:flex!important;align-items:center;justify-content:space-between}
 #mShare .chev{transition:transform .15s;font-size:20px;color:var(--muted)}#mShare.open .chev{transform:rotate(90deg)}
 #menu .sub{margin:0 0 6px 14px;border-left:2px solid var(--line);padding-left:4px}#menu .sub.hide{display:none}
@@ -704,14 +706,13 @@ button.primary.trn{background:#4f8df2;color:#fff}
 </div></div>
 <div id="profSheet" class="hide"><div class="psheet">
   <div class="row between"><button class="link" id="profClose">Cancel</button><b>My Profile</b><span style="width:64px"></span></div>
-  <label class="pphoto"><span class="avatar xl" id="profAv"></span><input type="file" accept="image/*" id="profFile"><span>Change photo</span></label>
-  <button class="link hide" id="profRemove" style="margin:-6px auto 6px;display:block">Remove photo</button>
+  <label class="pphoto"><span class="avatar xl" id="profAv"></span><input type="file" accept="image/*" id="profFile"><span>Change Photo</span></label>
+  <button class="link hide" id="profRemove">Remove photo</button>
   <form id="profileForm">
         <label>Name<input name="name" maxlength="60"></label>
         <div class="grid2">
           <label>Birth date<input type="date" name="birthdate"></label>
           <label>Height (cm)<input type="number" name="height" step="0.1" inputmode="decimal"></label>
-          <label>Unit<select name="units"><option value="kg">kg</option><option value="lb">lb</option></select></label>
         </div>
         <button class="primary" style="width:100%;margin-top:10px">Save</button>
       </form>
@@ -730,7 +731,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023212946';
+const BUILD = '20261023213134';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -823,7 +824,7 @@ async function api(action, data, tries) {
 // while waiting for the server the button shows a spinner instead of its text, so the app never looks frozen
 async function busy(btn, fn) { btn.disabled = true; btn.classList.add('loading'); try { return await fn(); } finally { btn.disabled = false; btn.classList.remove('loading'); } }
 const formObj = f => { const o = {}; new FormData(f).forEach((v, k) => { if (!(v instanceof File)) o[k] = v; }); return o; };
-const unit = () => S.profile.units || 'kg';
+const unit = () => 'kg'; // the app is metric: kg and cm
 function segment(id, on, cb) {
   $$('#' + id + ' button').forEach(b => {
     b.classList.toggle('on', b.dataset.m === on);
