@@ -729,7 +729,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023211042';
+const BUILD = '20261023212249';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1016,6 +1016,7 @@ let CD = null, cdLoading = false; // chart data (workouts and daily details), lo
 function chartSpec(id) {
   const [kind, arg] = id.split(':');
   if (kind === 'volume') return { title: 'Training volume', pts: () => CD && CD.volume, color: css('--s'), o: { bar: true, u: ' kg', d: 0, empty: 'Log workout sets (kg × reps) to see this.' }, needs: true };
+  if (kind === 'strength') return { title: 'Overall strength', pts: () => CD && CD.strength, color: css('--s'), o: { u: '', d: 0, target: 100, empty: 'Log workout sets (kg × reps) to see this.' }, needs: true };
   if (kind === 'steps') return { title: 'Steps', pts: () => Object.keys(S.health).map(d => ({ date: d, v: num(S.health[d].steps) || null })), color: css('--s'), o: { bar: true, u: ' steps', d: 0, empty: 'Connect a device in More › Devices & apps.' } };
   if (kind === 'kcal') return { title: 'Calories eaten', pts: () => Object.keys(S.nutrition).map(d => ({ date: d, v: num(S.nutrition[d].calories) || null })), color: css('--m'), o: { bar: true, u: ' kcal', d: 0, target: num(S.profile.calories) } };
   if (kind === 'e1rm') { const ex = CD && CD.exercises.find(e => e[0] === arg);
@@ -1315,14 +1316,14 @@ $('#ciDefsCard').addEventListener('toggle', e => { if (e.target.open) renderCiDe
 async function renderChartsBox() {
   const box = $('#chartsBox'), list = chartList();
   if (!CD) { box.innerHTML = '<p class="ld" style="margin:0">Loading…</p>'; try { CD = await api('chartData'); } catch (e) { return; } }
-  const opts = [['volume', 'Training volume'], ['steps', 'Steps'], ['kcal', 'Calories eaten']]
+  const opts = [['strength', 'Overall strength'], ['volume', 'Training volume'], ['steps', 'Steps'], ['kcal', 'Calories eaten']]
     .concat(CD.exercises.map(e => ['e1rm:' + e[0], 'Strength · ' + e[1]]))
     .concat(ciDefs().map(f => ['check:' + f.key, f.name]));
   list.forEach(id => { if (!opts.some(o => o[0] === id) && chartSpec(id)) opts.push([id, chartSpec(id).title]); }); // keep ones already chosen
   box.innerHTML = `<p class="muted" style="margin-top:0">Weight and Body fat always show. Added graphs appear underneath, in the order you add them.</p>` +
     opts.map(o => { const on = list.indexOf(o[0]) >= 0;
       return `<div class="cidef${on ? '' : ' off'}"><b>${esc(o[1])}</b><button class="${on ? 'pill-off' : 'pill-on'}" data-gtog="${esc(o[0])}">${on ? 'Remove' : 'Add'}</button></div>`; }).join('') +
-    `<p class="muted" style="margin:10px 0 0">Strength = estimated 1-rep max from your heaviest set (kg × reps). Exercises appear once you've logged sets.</p>`;
+    `<p class="muted" style="margin:10px 0 0">Overall strength: 100 = your first sessions, 110 = 10% stronger. Training volume: kg × reps per day. Strength · exercise: estimated 1-rep max.</p>`;
   $$('[data-gtog]', box).forEach(b => b.onclick = () => busy(b, async () => {
     const id = b.dataset.gtog, next = list.indexOf(id) >= 0 ? list.filter(x => x !== id) : list.concat([id]);
     S.profile = await api('saveProfile', { charts: JSON.stringify(next) }); renderChartsBox();
