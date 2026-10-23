@@ -763,7 +763,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024011527';
+const BUILD = '20261024011626';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2085,7 +2085,7 @@ function renderEntries() {
     const d = cur[k] - start[k], pct = d / start[k] * 100;
     $('#eSum').innerHTML = `<div>${+start[k]}${u}<small>START</small></div><div>${+cur[k]}${u}<small>CURRENT</small></div>
       <div><span class="${d > 0 ? 'up' : 'down'}">${d > 0 ? '↗' : '↘'}</span> ${fx(Math.abs(d))}${u}<small>CHANGE (${d > 0 ? '+' : '−'}${Math.abs(pct).toFixed(1)}%)</small></div>`;
-  } else $('#eSum').innerHTML = (E.list.length ? '<div class="muted small" style="grid-column:1/-1;font-weight:500">Log a few days to see your change.</div>' : '');
+  } else $('#eSum').innerHTML = (E.list.some(x => num(x[E.metric]) != null) ? '<div class="muted small" style="grid-column:1/-1;font-weight:500">Log a few days to see your change.</div>' : '');
   const all = E.list.filter(x => num(x[k]) != null || x.thumbId || x.notes), rows = all.slice(0, E.shown);
   setHTML($('#eList'), rows.map(x => `<div class="ent">
     <div class="grow" data-goto="${x.date}"><b>${num(x[k]) != null ? +x[k] + u : '—'}</b><small>${nice(x.date, {weekday:'long', day:'numeric', month:'long', year:'numeric'})}</small>
