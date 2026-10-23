@@ -298,7 +298,7 @@ button.loading img,button.loading svg{opacity:0}
 #swList button.on{color:var(--accent)}
 .conn{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
 .crow{display:flex;align-items:center;gap:10px;min-height:52px;border-bottom:1px solid var(--line);cursor:pointer}
-#tab-clients #clientList .crow:nth-last-child(2){border-bottom:0}#newClientCard #clientForm{margin-top:0!important}
+#tab-clients #clientList .crow:nth-last-child(2){border-bottom:0}#tab-clients #clientsCard>div{padding:0 16px}#newClientCard #clientForm{margin-top:0!important}
 .crow b{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.crow .small{white-space:nowrap}
 .crow .link{font-size:20px;padding:4px 10px;min-height:0}
 .ndot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#e8664a;margin-left:7px;vertical-align:2px}
@@ -692,7 +692,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023173514';
+const BUILD = '20261023173622';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
