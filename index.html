@@ -139,6 +139,9 @@ button.link{background:none;min-height:36px;padding:6px 8px;color:var(--muted);f
 html,body{max-width:100%;overflow-x:hidden}
 main,header{overflow-x:clip}
 .card{overflow:hidden}
+.tplbar{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;margin:0 0 12px;border-radius:12px;border:1.5px dashed var(--line);font-size:14px;color:var(--muted)}
+.tpl .parts button{border-style:dashed}.tpl .parts button.on{border-style:dashed;background:transparent;color:var(--c);box-shadow:inset 0 0 0 99px color-mix(in srgb,var(--c) 18%,transparent)}
+.tpltag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--muted);border:1px dashed var(--muted);border-radius:6px;padding:1px 6px;margin-left:8px;vertical-align:3px;text-transform:uppercase}
 .mb{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;font-size:11px;font-weight:800;color:#fff;margin-left:8px;vertical-align:2px}
 .mb.t{background:#4f8df2}.mb.c{background:#3fb58a}
 #roleTag{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42vw}#roleTag .mb{margin:0 6px 0 0;vertical-align:1px}
@@ -151,6 +154,7 @@ main,header{overflow-x:clip}
 .enote{margin-top:6px;font-size:13px;color:var(--text);background:var(--soft);border-radius:10px;padding:6px 10px;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.enote span{color:var(--muted);font-weight:600}
 /* trainer link: read-only (can browse days and write notes, nothing else) */
+body.tmode .thumb.add,body.tmode .addtile,body.tmode #mealPick,body.tmode [data-delp],body.tmode label.add{display:none!important}
 .ro .owner-only,.ro [data-delm],.ro [data-delp],.ro .thumb.add,.ro .addtile,.ro #saveState{display:none!important}
 .sum3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .sum3>div{min-width:0}.sum3 small{display:block;font-size:12px;color:var(--muted);font-weight:600}
@@ -294,7 +298,7 @@ button.loading img,button.loading svg{opacity:0}
 #myTrainer .row{gap:12px;align-items:center}#myTrainer b{font-size:16px}
 #pairForm{display:flex;gap:8px;align-items:flex-end;margin-top:6px}#pairForm label{flex:1;margin:0}#pairForm input{text-transform:uppercase;letter-spacing:.05em}
 /* buttons read as titles (e.g. "Add To Quick Menu"), not sentences */
-button,.plink,.addtile span,.pick span{text-transform:capitalize}
+button,.plink,.addtile span,.pick span,summary,.card h3,h2,.psheet b{text-transform:capitalize}
 .plink{color:var(--accent);text-decoration:none;font-weight:600;white-space:nowrap}
 .minilink{min-height:0;padding:6px 4px 2px;font-size:14px;color:var(--accent);font-weight:600}
 #ciBox{margin-top:6px;border-top:1px solid var(--line);padding-top:4px}
@@ -466,8 +470,8 @@ button.primary.trn{background:#4f8df2;color:#fff}
         </form>
       </div>
     </div>
-    <div id="planWorkout" class="hide">
-      <p class="small muted" style="margin:0 2px 10px">Your rotation repeats in order, whatever the weekday. Today shows which day is next.</p>
+    <div id="planWorkout" class="hide tpl">
+      <div class="tplbar">📋 <span><b>Template</b> · repeats in order. Log what you actually did in <b>Today</b>.</span></div>
       <div class="seg" id="wpDay"></div>
       <div class="card"><h3 id="wpTitle" style="margin-bottom:2px"></h3>
         <p class="small muted" style="margin:0">Tap the body parts for this day.</p>
@@ -549,7 +553,8 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <details class="card" id="histCard"><summary>Full history · for AI</summary><div class="small">
       <p style="margin-top:0">Every day in one file: weight, body fat, meals, workouts (every set), activity, and notes from you and your trainer, plus your goals, meal plan and training rotation. Paste it into ChatGPT, Claude or another AI and ask for advice.</p>
       <button class="primary" id="histCopy" style="width:100%">Copy all</button>
-      <div class="grid2" style="margin-top:8px"><button data-x="history">Download .md</button><button data-x="historycsv">Download .csv</button></div>
+      <div class="grid2" style="margin-top:8px"><button data-x="history">Download MD</button><button data-x="historycsv">Download CSV</button></div>
+      <p class="muted" id="histNote" style="margin:8px 0 0">A long history can take 10–20 seconds to prepare the first time; after that it's quick.</p>
       <textarea id="histText" class="hide" readonly style="width:100%;height:160px;margin-top:10px;font:12px/1.4 ui-monospace,monospace"></textarea>
     </div></details>
 
@@ -645,7 +650,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023164413';
+const BUILD = '20261023165009';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1529,7 +1534,7 @@ function renderWorkoutPlan() {
     renderWorkoutPlan();
   });
   const rows = rotRows().filter(r => r.step === rStep), on = new Set(rows.map(r => r.part));
-  $('#wpTitle').textContent = 'Day ' + rStep + (on.size ? ' · ' + stepParts(rStep).join(' + ') : '');
+  $('#wpTitle').innerHTML = esc('Day ' + rStep + (on.size ? ' · ' + stepParts(rStep).join(' + ') : '')) + '<span class="tpltag">Template</span>';
   $('#wpFormTitle').textContent = 'Usual exercises for Day ' + rStep;
   $('#wpParts').innerHTML = partChips(on, 'data-wpart');
   $$('[data-wpart]').forEach(b => b.onclick = () => {
@@ -2162,8 +2167,12 @@ function renderMenu() {
 $('#mPin').onclick = () => { $('#pinForm').classList.toggle('hide'); $('#pinForm').pin.focus(); };
 const isDark = () => (document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark';
 /* Full history: copy to paste into an AI tool. The copy is started inside the tap (iPhone requires that). */
+let histReady = null; // started when the card opens, so Copy is usually instant
+$('#histCard').addEventListener('toggle', e => { if (e.target.open && !histReady) { histReady = api('historyText'); histReady.catch(() => { histReady = null; }); } });
 $('#histCopy').onclick = e => busy(e.target, async () => {
-  const text = api('historyText');
+  const text = histReady || (histReady = api('historyText'));
+  $('#histNote').textContent = 'Preparing your history… this can take up to 20 seconds.';
+  text.finally(() => { $('#histNote').textContent = 'A long history can take 10–20 seconds to prepare the first time; after that it\'s quick.'; histReady = null; });
   try {
     if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write)
       await navigator.clipboard.write([new ClipboardItem({ 'text/plain': text.then(t => new Blob([t], { type: 'text/plain' })) })]);
