@@ -292,6 +292,18 @@ button.loading img,button.loading svg{opacity:0}
 .nbadge.hide{display:none}.newtag{color:#e8664a;font-weight:700;white-space:nowrap}
 #myTrainer .row{gap:12px;align-items:center}#myTrainer b{font-size:16px}
 #pairForm{display:flex;gap:8px;align-items:flex-end;margin-top:6px}#pairForm label{flex:1;margin:0}#pairForm input{text-transform:uppercase;letter-spacing:.05em}
+/* buttons read as titles (e.g. "Add To Quick Menu"), not sentences */
+button,.plink{text-transform:capitalize}
+.plink{color:var(--accent);text-decoration:none;font-weight:600;white-space:nowrap}
+.minilink{min-height:0;padding:6px 4px 2px;font-size:14px;color:var(--accent);font-weight:600}
+#ciBox{margin-top:6px;border-top:1px solid var(--line);padding-top:4px}
+.ci{margin:12px 0 0}.ci>span{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px}
+.pills{display:grid;grid-template-columns:repeat(10,1fr);gap:4px}
+.pills button{min-height:34px;padding:0;border-radius:9px;font-size:14px;font-weight:700;background:var(--soft);color:var(--muted)}
+.pills button.on{background:var(--accent);color:var(--accent-ink)}
+.ciNum{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--muted)}.ciNum input{max-width:120px;margin:0;text-align:center}
+.cidef{display:flex;align-items:center;gap:8px;min-height:44px;border-bottom:1px solid var(--line)}.cidef b{flex:1}.cidef .link{min-height:0;padding:4px 8px}
+#ciAdd{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}#ciAdd .wide{grid-column:1/-1}
 .grp{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--muted);margin:20px 4px 8px}
 .cnum{font-size:13px;font-weight:800;opacity:.55;margin-right:6px;font-variant-numeric:tabular-nums}
 .cacts{display:flex;gap:16px;padding:6px 0 12px}.cacts .link{padding:0;min-height:0}
@@ -379,6 +391,8 @@ button.primary.trn{background:#4f8df2;color:#fff}
           </div>
         </form>
         <div class="small muted" id="saveState" style="text-align:center;min-height:18px;margin-top:8px"></div>
+        <div style="text-align:center"><button class="link minilink" id="ciToggle">More details ›</button></div>
+        <div id="ciBox" class="hide"></div>
         <div class="hstrip hide" id="dayHealth"></div>
         <div class="photos" id="dayPhotos"></div>
         <button class="link" data-gallery style="width:100%;margin-top:6px">View all progress photos ›</button>
@@ -485,7 +499,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
     </div>
     <div id="mealsPlan">
     <div class="card"><h3 style="margin-bottom:2px">Current meal plan</h3>
-      <p class="small muted" style="margin:0 0 12px"><span id="planVersion"></span> · <a href="#" id="planFolderLink">plan files</a></p>
+      <p class="small muted" style="margin:0 0 12px"><span id="planVersion"></span> · <a href="#" id="planFolderLink" class="plink">Plan Files</a></p>
       <div id="planList"></div>
     </div>
     <div class="card"><h3 id="planFormTitle">Add to quick menu</h3>
@@ -525,6 +539,8 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <h2>More</h2>
     <p class="grp">TRAINER</p>
     <div class="card" id="myTrainer"></div>
+    <p class="grp">CUSTOMIZE</p>
+    <details class="card" id="ciDefsCard"><summary>Daily details</summary><div id="ciDefs" class="small"></div></details>
     <p class="grp">YOUR DATA</p>
     <details class="card" id="histCard"><summary>Full history · for AI</summary><div class="small">
       <p style="margin-top:0">Every day in one file: weight, body fat, meals, workouts (every set), activity, and notes from you and your trainer, plus your goals, meal plan and training rotation. Paste it into ChatGPT, Claude or another AI and ask for advice.</p>
@@ -625,7 +641,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023162836';
+const BUILD = '20261023163749';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1106,7 +1122,63 @@ function showLogMode() {
   $('#logWorkout').classList.toggle('hide', logMode !== 'workout');
   if (logMode === 'weight') renderWeightEntry(); else if (logMode === 'meal') loadDayMeals(); else loadWorkout();
 }
+/* Daily details ("check-ins"): your own list of extra things to track each day, e.g. Feeling 1–10, Water in L.
+   Hidden behind a small "More details" link so the weight screen stays simple. */
+const DEFAULT_CHECKINS = [['feeling', 'Feeling'], ['energy', 'Energy'], ['sleepq', 'Sleep quality'], ['soreness', 'Soreness'], ['stress', 'Stress'],
+  ['hunger', 'Hunger'], ['dryness', 'Dryness']].map(([key, name]) => ({ key, name, type: 'scale', unit: '' }))
+  .concat([{ key: 'water', name: 'Water', type: 'number', unit: 'L' }]);
+const ciDefs = () => { try { const d = JSON.parse(S.profile.checkins || ''); if (Array.isArray(d)) return d; } catch (e) {} return DEFAULT_CHECKINS; };
+const CI = {}; // date → {key: value}
+let ciOpen = false;
+async function renderCheckins() {
+  const date = wSel, box = $('#ciBox'), v = CI[date], n = v ? Object.keys(v).length : 0;
+  $('#ciToggle').textContent = ciOpen ? 'Hide details ‹' : 'More details' + (n ? ' · ' + n + ' logged' : '') + ' ›';
+  box.classList.toggle('hide', !ciOpen);
+  if (!ciOpen) return;
+  if (!v) {
+    box.innerHTML = '<div class="small muted" style="padding:8px 0">Loading…</div>';
+    try { CI[date] = await api('checkins', { date }); } catch (e) { box.innerHTML = ''; return; }
+    if (date === wSel) renderCheckins();
+    return;
+  }
+  box.innerHTML = ciDefs().map(f => f.type === 'scale'
+    ? `<div class="ci"><span>${esc(f.name)}</span><div class="pills">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i =>
+        `<button data-ck="${esc(f.key)}" data-cv="${i}" class="${String(v[f.key]) === String(i) ? 'on' : ''}" ${OWNER ? '' : 'disabled'}>${i}</button>`).join('')}</div></div>`
+    : `<div class="ci"><span>${esc(f.name)}</span><label class="ciNum"><input type="number" inputmode="decimal" step="0.1" data-ck="${esc(f.key)}" value="${esc(v[f.key] == null ? '' : v[f.key])}" ${OWNER ? '' : 'readonly'}>${esc(f.unit || '')}</label></div>`).join('');
+  const save = (key, value) => { // shows straight away, saves in the background
+    v[key] = value; if (value === '') delete v[key]; renderCheckins();
+    api('setCheckin', { date, key, value }).then(o => { CI[date] = o; }, () => { delete CI[date]; if (date === wSel) renderCheckins(); });
+  };
+  $$('[data-cv]', box).forEach(b => b.onclick = () => save(b.dataset.ck, String(v[b.dataset.ck]) === b.dataset.cv ? '' : b.dataset.cv)); // tap again to clear
+  $$('input[data-ck]', box).forEach(i => i.onchange = () => save(i.dataset.ck, i.value.trim()));
+}
+$('#ciToggle').onclick = () => { ciOpen = !ciOpen; renderCheckins(); };
+
+/** More › Customize › Daily details: choose what to track. */
+function renderCiDefs() {
+  const defs = ciDefs(), box = $('#ciDefs');
+  box.innerHTML = `<p style="margin-top:0" class="muted">These show under Today › Weight › More details.</p>` +
+    defs.map((f, i) => `<div class="cidef"><b>${esc(f.name)}</b><span class="muted">${f.type === 'scale' ? '1–10' : esc(f.unit || 'number')}</span><button class="link" data-cdel="${i}" aria-label="Remove">✕</button></div>`).join('') +
+    `<form id="ciAdd"><label class="wide">New detail<input name="name" maxlength="30" placeholder="e.g. Pump, Digestion, Steps outside"></label>
+      <label>Type<select name="type"><option value="scale">1–10 scale</option><option value="number">Number</option></select></label>
+      <label>Unit<input name="unit" maxlength="12" placeholder="e.g. L, km, hrs"></label>
+      <button class="primary wide">Add Detail</button></form>
+     <button class="link minilink" id="ciReset" style="margin-top:8px">Reset to starter set</button>`;
+  const put = defs2 => busy($('#ciAdd button'), async () => { const d = await api('saveCheckinDefs', { defs: defs2 }); S.profile.checkins = JSON.stringify(d); renderCiDefs(); if (ciOpen) renderCheckins(); });
+  $$('[data-cdel]', box).forEach(b => b.onclick = () => confirm('Stop tracking ' + defs[+b.dataset.cdel].name + '? Past entries stay in your history.') && put(defs.filter((_, i) => i !== +b.dataset.cdel)));
+  $('#ciAdd').onsubmit = e => {
+    e.preventDefault(); const x = formObj(e.target), name = x.name.trim();
+    if (!name) return toast('Name the detail first', true);
+    let key = name.toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 20) || 'detail';
+    while (defs.some(f => f.key === key)) key += '2';
+    put(defs.concat([{ key, name, type: x.type, unit: x.type === 'number' ? x.unit.trim() : '' }]));
+  };
+  $('#ciReset').onclick = () => confirm('Go back to the starter set?') && put(DEFAULT_CHECKINS);
+}
+$('#ciDefsCard').addEventListener('toggle', e => { if (e.target.open) renderCiDefs(); });
+
 async function renderWeightEntry() {
+  renderCheckins();
   const b = MD.by[wSel] || S.body.find(r => r.date === wSel) || {};
   const f = $('#bodyForm'); f.weight.value = b.weight == null ? '' : b.weight; f.bodyfat.value = b.bodyfat == null ? '' : b.bodyfat;
   $('#saveState').textContent = num(b.weight) != null ? '✓ Saved' : 'Type your weight. It saves automatically.';
