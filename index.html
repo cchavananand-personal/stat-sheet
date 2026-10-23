@@ -31,7 +31,7 @@ body{margin:0;background:var(--bg);padding-bottom:calc(76px + env(safe-area-inse
 #viewBar{position:sticky;top:0;z-index:20;display:block;width:100%;border:0;border-radius:0;background:#4f8df2;color:#fff;
   font-weight:700;font-size:14px;min-height:36px;padding:8px 16px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px;max-width:680px;margin:auto}
-.brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:.05em;font-size:14px;min-width:0}.brand b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.brand span{color:var(--accent)}
+.brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:.05em;font-size:14px;min-width:0}.brand b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.brand span{color:var(--accent)}.brand i{font-style:normal}body.tagged .brand .long{display:none} /* room for the name tag */
 .role{font-size:12px;color:var(--muted);background:var(--soft);padding:5px 10px;border-radius:99px}
 main{max-width:680px;margin:auto;padding:0 16px}
 h2{font-size:26px;margin:8px 0 14px;letter-spacing:-.02em}h3{font-size:17px;margin:0 0 12px}
@@ -269,7 +269,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <path fill="#fff" d="M742 112C758 222 782 246 892 262C782 278 758 302 742 412C726 302 702 278 592 262C702 246 726 222 742 112Z"/>
     <g transform="translate(420 520) rotate(-32) scale(.86)" fill="#fff"><rect x="-290" y="-26" width="580" height="52" rx="26"/><rect x="-262" y="-138" width="84" height="276" rx="34"/><rect x="-168" y="-102" width="60" height="204" rx="26"/><rect x="178" y="-138" width="84" height="276" rx="34"/><rect x="108" y="-102" width="60" height="204" rx="26"/></g>
     <path d="M110 872H380L428 800L490 944L548 836L580 872H914" fill="none" stroke="#6ff3c4" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg><b>KENG <span>X</span> YOON <span>·</span> STAT SHEET</b></div>
+  </svg><b>KENG <span>X</span> YOON<i class="long"> <span>·</span> STAT SHEET</i></b></div>
   <div class="row" style="gap:8px"><div class="role hide" id="roleTag"></div><button class="iconbtn" id="menuBtn" aria-label="More options">⋯</button></div>
 </header>
 <button id="viewBar" class="hide"></button>
@@ -531,7 +531,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023152819';
+const BUILD = '20261023153122';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -690,6 +690,7 @@ function renderRoleTag() {
     : S.me && S.me.trainer ? '<span class="mb ' + (viewingClient() ? 't">T' : 'c">C') + '</span>' + esc(S.target.name) + ' ▾'
     : S.me && S.pinsOn ? esc(S.me.name) : '';
   t.classList.toggle('hide', !t.textContent);
+  document.body.classList.toggle('tagged', !!t.textContent);
   const bar = $('#viewBar'); // trainer mode: always visible whose data you're changing
   bar.classList.toggle('hide', !viewingClient());
   if (viewingClient()) bar.textContent = 'Viewing ' + S.target.name + ' · Switch';
