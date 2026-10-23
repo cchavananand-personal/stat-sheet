@@ -199,7 +199,7 @@ nav button.on{color:var(--accent)}
 #lightbox{position:fixed;inset:0;background:#000e;z-index:20;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;padding:16px}
 #lightbox img{max-width:100%;max-height:82vh;border-radius:12px}
 #toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--bg);padding:12px 18px;
-  border-radius:12px;font-size:15px;z-index:30;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+  border-radius:12px;font-size:15px;z-index:100;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
 #toast.show{opacity:1}#toast.err{background:var(--bad);color:#fff}
 /* progress gallery */
 #gallery{position:fixed;inset:0;z-index:15;background:#15181f;color:#e8ebf0;display:flex;flex-direction:column}
@@ -729,7 +729,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023200950';
+const BUILD = '20261023201401';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
