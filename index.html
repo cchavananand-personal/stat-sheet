@@ -252,11 +252,19 @@ nav button.on{color:var(--accent)}
   background:#121917cc;border:1px solid #ffffff14;box-shadow:0 24px 60px #0009;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .whobox img{width:76px;height:76px;border-radius:20px;margin:0 auto;box-shadow:0 10px 30px #0d6a5066}
 .whobox h2{margin:0;font-size:24px;letter-spacing:-.01em}.whobox h2+p{margin:4px 0 0;font-size:15px}
-#whoPin,#invForm{display:grid;gap:12px;text-align:left}#invForm label{font-size:13px;font-weight:600;color:var(--muted)}#invForm input{font-size:17px;margin-top:6px;min-height:50px}
+#whoPin,#invForm{display:grid;gap:12px;text-align:center}#invForm label{font-size:13px;font-weight:600;color:var(--muted)}#invForm input{font-size:17px;margin-top:6px;min-height:50px}
 #whoPin label{font-size:13px;font-weight:600;color:var(--muted)}
-#whoPin input{font-size:17px;margin-top:6px;min-height:50px} /* same font for name and PIN */
+#whoPin input,#invForm input{font-size:17px;margin-top:6px;min-height:50px;text-align:center} /* same font for name and PIN, centred */
+/* Safari autofill paints fields yellow: keep them the card colour */
+#who input:-webkit-autofill{-webkit-box-shadow:0 0 0 40px var(--soft) inset;-webkit-text-fill-color:var(--text);caret-color:var(--text)}
 #whoPin button{margin-top:6px;min-height:52px;font-size:17px}
 #whoGuest{color:var(--muted)}
+button.loading{position:relative;-webkit-text-fill-color:transparent;pointer-events:none}
+button.loading::after{content:"";position:absolute;inset:0;margin:auto;width:20px;height:20px;border-radius:50%;
+  border:2.5px solid currentColor;border-right-color:transparent;-webkit-text-fill-color:initial;animation:spin .7s linear infinite}
+button.loading img,button.loading svg{opacity:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:26px;height:26px;border-radius:50%;border:3px solid var(--muted);border-right-color:transparent;animation:spin .8s linear infinite}
 #switcher{position:fixed;inset:0;z-index:25;background:#0005}
 #switcher .sheet{position:absolute;top:56px;right:12px;width:260px;max-width:calc(100vw - 24px);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px;box-shadow:0 10px 30px #0004}
 #switcher .sheet b{display:block;font-size:12px;color:var(--muted);padding:8px 10px 4px;letter-spacing:.04em}
@@ -282,7 +290,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 </style>
 </head>
 <body>
-<div id="boot"><img src="icon-180.png" alt=""><div id="bootMsg">Loading your stats…</div></div>
+<div id="boot"><img src="icon-180.png" alt=""><div class="spinner"></div><div id="bootMsg">Loading your stats…</div></div>
 <div id="who" class="hide"><div class="whobox">
   <img src="icon-180.png" alt="">
   <div><h2 id="whoTitle">Welcome back</h2><p class="muted" id="whoSub">Sign in to Stat Sheet</p></div>
@@ -569,7 +577,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023160502';
+const BUILD = '20261023160904';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -649,7 +657,8 @@ async function api(action, data, retried) {
     throw e;
   }
 }
-async function busy(btn, fn) { btn.disabled = true; try { return await fn(); } finally { btn.disabled = false; } }
+// while waiting for the server the button shows a spinner instead of its text, so the app never looks frozen
+async function busy(btn, fn) { btn.disabled = true; btn.classList.add('loading'); try { return await fn(); } finally { btn.disabled = false; btn.classList.remove('loading'); } }
 const formObj = f => { const o = {}; new FormData(f).forEach((v, k) => { if (!(v instanceof File)) o[k] = v; }); return o; };
 const unit = () => S.profile.units || 'kg';
 function segment(id, on, cb) {
