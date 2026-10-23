@@ -307,7 +307,16 @@ button.loading img,button.loading svg{opacity:0}
 button,.plink,.addtile span,.pick span,summary,.card h3,h2,.psheet b{text-transform:capitalize}
 .plink{color:var(--accent);text-decoration:none;font-weight:600;white-space:nowrap}
 .gcust{display:grid;grid-template-columns:1fr 1fr 28px;gap:8px;align-items:end;margin-top:8px}.gcust input{margin:0}.gcust .link{min-height:0;padding:0 0 14px}
-#ciToggle,#goalsMore{color:var(--accent)!important} /* coloured so it reads as something to tap */
+/* Links, one look per kind:
+   .lk-open = opens more on this screen (green, no underline, ›)
+   .lk-nav  = goes to another tab/screen in the app (purple, underlined)
+   .lk-ext  = leaves the app (sky blue, underlined, ↗) */
+button.lk-open,a.lk-open,button.lk-nav,a.lk-nav,a.lk-ext{background:none;border:0;min-height:0;padding:6px 2px;font-size:14px;font-weight:650;cursor:pointer;text-transform:capitalize}
+button.lk-open,a.lk-open{color:var(--accent);text-decoration:none}
+button.lk-nav,a.lk-nav{color:var(--m);text-decoration:underline;text-underline-offset:3px}
+a.lk-ext{color:var(--s);text-decoration:underline;text-underline-offset:3px;text-transform:none}a.lk-ext::after{content:" ↗";text-decoration:none;display:inline-block;margin-left:2px}
+.lkrow{text-align:center;margin:6px 0 2px}
+body.tmode [data-go^="more"]{display:none} /* Client Profile has no More tab */
 .minilink{min-height:0;padding:6px 4px 2px;font-size:14px;color:var(--accent);font-weight:600}
 #ciBox{margin-top:6px;border-top:1px solid var(--line);padding-top:4px}
 .ci{margin:12px 0 0}.ci>span{display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px}
@@ -374,10 +383,11 @@ button.primary.trn{background:#4f8df2;color:#fff}
       <div><b style="font-size:20px" id="hello"></b><div class="small muted" id="todayLbl"></div></div>
       <div class="seg" id="tMode" style="margin:0;width:200px"><button data-m="day" class="on">30d</button><button data-m="week">Weeks</button><button data-m="month">Months</button></div>
     </div>
-    <div class="card"><div class="row between"><div><h3 style="margin:0">Weight</h3><button class="link" data-entries style="padding:4px 0;min-height:30px">All entries ›</button></div><div class="thead" id="tWHead"></div></div><div class="chart sm"><canvas id="tW"></canvas></div></div>
+    <div class="card"><div class="row between"><div><h3 style="margin:0">Weight</h3><button class="lk-open" data-entries style="padding:4px 0">All entries ›</button></div><div class="thead" id="tWHead"></div></div><div class="chart sm"><canvas id="tW"></canvas></div></div>
     <div class="card"><div class="row between"><h3 style="margin:0">Body fat</h3><div class="thead" id="tFHead"></div></div><div class="chart sm"><canvas id="tF"></canvas></div></div>
     <div id="extraCharts"></div>
-    <div class="card"><div class="row between"><h3 style="margin:0">Progress photos</h3><button class="link" data-gallery>Open gallery ›</button></div>
+    <div class="lkrow" style="margin:-4px 0 12px"><button class="lk-nav" data-go="more:chartsCard">+ Add graphs in More › Custom Graphs</button></div>
+    <div class="card"><div class="row between"><h3 style="margin:0">Progress photos</h3><button class="lk-nav" data-gallery>Open gallery</button></div>
       <div class="strip" id="tStrip" style="margin-top:8px"></div></div>
 
 
@@ -408,11 +418,11 @@ button.primary.trn{background:#4f8df2;color:#fff}
           </div>
         </form>
         <div class="small muted" id="saveState" style="text-align:center;min-height:18px;margin-top:8px"></div>
-        <div style="text-align:center"><button class="link minilink" id="ciToggle">More parameters ›</button></div>
+        <div style="text-align:center"><button class="lk-open" id="ciToggle">More parameters ›</button></div>
         <div id="ciBox" class="hide"></div>
         <div class="hstrip hide" id="dayHealth"></div>
         <div class="photos" id="dayPhotos"></div>
-        <button class="link" data-gallery style="width:100%;margin-top:6px">View all progress photos ›</button>
+        <button class="lk-nav" data-gallery style="width:100%;margin-top:6px">View all progress photos</button>
       </div>
     </div>
 
@@ -477,7 +487,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
             <label>Daily protein<input type="number" name="protein" inputmode="numeric" placeholder="g"></label>
           </div>
           <label>Goal date<input type="date" name="goalDate"></label>
-          <div style="text-align:center"><button type="button" class="link minilink" id="goalsMore">More goals ›</button></div>
+          <div style="text-align:center"><button type="button" class="lk-open" id="goalsMore">More goals ›</button></div>
           <div id="goalsExtra" class="hide">
             <div class="grid2">
               <label>Waist (cm)<input type="number" name="goalWaist" step="0.5" inputmode="decimal"></label>
@@ -489,7 +499,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
             </div>
             <label>Why this matters<textarea name="goalWhy" rows="2" maxlength="400" placeholder="e.g. Stage-ready by March"></textarea></label>
             <div id="goalsCustom"></div>
-            <button type="button" class="link minilink" id="goalAdd" style="padding-left:0">+ Add custom goal</button>
+            <button type="button" class="lk-open" id="goalAdd" style="padding-left:0">+ Add custom goal</button>
           </div>
           <button class="primary" style="width:100%;margin-top:10px">Save goals</button>
         </form>
@@ -530,7 +540,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
     </div>
     <div id="mealsPlan">
     <div class="card"><h3 style="margin-bottom:2px">Current meal plan</h3>
-      <p class="small muted" style="margin:0 0 12px"><span id="planVersion"></span> · <a href="#" id="planFolderLink" class="plink">Plan Files</a></p>
+      <p class="small muted" style="margin:0 0 12px"><span id="planVersion"></span> · <a href="#" id="planFolderLink" class="lk-ext">Plan files</a></p>
       <div id="planList"></div>
     </div>
     <div class="card"><h3 id="planFormTitle">Add to quick menu</h3>
@@ -675,7 +685,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023170658';
+const BUILD = '20261023171046';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -905,7 +915,7 @@ $$('[data-x]').forEach(b => b.onclick = () => busy(b, async () => {
   const url = URL.createObjectURL(new Blob([bytes], { type: r.mime }));
   const a = document.createElement('a'); a.href = url; a.download = r.name; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 60000);
-  $('#menuNote').innerHTML = `Saved <b>${esc(r.name)}</b>. Not downloading? <a href="${esc(r.url)}" target="_blank">Open it in Google Drive</a>.`; $('#menuNote').classList.remove('hide');
+  $('#menuNote').innerHTML = `Saved <b>${esc(r.name)}</b>. Not downloading? <a class="lk-ext" href="${esc(r.url)}" target="_blank">Open it in Google Drive</a>.`; $('#menuNote').classList.remove('hide');
   toast('Exported ' + r.name);
 }));
 
@@ -1206,6 +1216,7 @@ async function renderCheckins() {
     v[key] = value; if (value === '') delete v[key]; renderCheckins();
     api('setCheckin', { date, key, value }).then(o => { CI[date] = o; }, () => { delete CI[date]; if (date === wSel) renderCheckins(); });
   };
+  box.insertAdjacentHTML('beforeend', OWNER ? '<div class="lkrow"><button class="lk-nav" data-go="more:ciDefsCard">+ Add parameters in More › Custom Parameters</button></div>' : '');
   $$('[data-cv]', box).forEach(b => b.onclick = () => save(b.dataset.ck, String(v[b.dataset.ck]) === b.dataset.cv ? '' : b.dataset.cv)); // tap again to clear
   $$('input[data-ck]', box).forEach(i => i.onchange = () => save(i.dataset.ck, i.value.trim()));
 }
@@ -1526,7 +1537,7 @@ function renderDayWorkoutPlan() {
   if (!OWNER) return el.classList.add('hide');
   el.classList.remove('hide');
   const step = nextStep(wSel), steps = rotSteps().filter(s => stepParts(s).length);
-  if (step == null) { el.innerHTML = `<div class="small muted">Set your training rotation in the Planner tab and this shows which day is next.</div>`; return; }
+  if (step == null) { el.innerHTML = `<div class="small muted">Set your training rotation in the <button class="lk-nav" data-go="meals:workout" style="padding:0">Planner</button> and this shows which day is next.</div>`; return; }
   const parts = stepParts(step), items = stepItems(step);
   const partsLeft = parts.filter(p => !wkList.some(w => w.part === p));
   const logBtn = x => wkList.some(w => w.code === x.code) ? '<span class="tick">✓</span>'
@@ -1534,7 +1545,8 @@ function renderDayWorkoutPlan() {
   el.innerHTML = `<div class="row between"><div><div class="small muted">Next up · Day ${steps.indexOf(step) + 1} of ${steps.length}</div>
       <h3 style="margin:2px 0 0">${parts.map(p => `<span style="color:${partOf(p).color}">${esc(p)}</span>`).join(' + ')}</h3></div>
       ${partsLeft.length ? '<button class="primary" id="wkLogAll" style="min-height:40px;padding:6px 14px">✓ Trained</button>' : '<span class="tick">✓</span>'}</div>` +
-    (items.some(x => x.code) ? `<div style="margin-top:10px">${exTiles(items, null, logBtn)}</div>` : '');
+    (items.some(x => x.code) ? `<div style="margin-top:10px">${exTiles(items, null, logBtn)}</div>` : '') +
+    '<div class="lkrow" style="text-align:left;margin:6px 0 0"><button class="lk-nav" data-go="meals:workout">Edit rotation in Planner</button></div>';
   // a usual exercise opens the sets form with it chosen, so you enter what you actually did
   $$('[data-logw]', el).forEach(b => b.onclick = () => {
     const f = $('#wkForm'); f.reset(); resetSets(); f.code.value = b.dataset.logw;
@@ -1668,12 +1680,13 @@ const planLabel = date => { const f = planStartFor(date || TODAY); return f ? 'P
 const sameMeal = (x, m) => m.type === x.type && m.description === x.description; // a logged meal that is this plan item
 function renderMealPlan(list) {
   const items = planItems(wSel), el = $('#mPlan');
-  if (!items.length) { el.innerHTML = '<div class="empty">No meal plan yet. Set one up in the Planner tab.</div>'; return; }
+  if (!items.length) { el.innerHTML = '<div class="empty">No meal plan yet. Set one up in the <button class="lk-nav" data-go="meals:meals" style="padding:0">Planner</button>.</div>'; return; }
   const eaten = x => list.find(m => sameMeal(x, m)), left = items.filter(x => !eaten(x));
   const mark = x => { const m = eaten(x);
     if (m) return OWNER ? `<button class="link tick" data-unlog="${m.id}" aria-label="Eaten · tap to undo">✓</button>` : '<span class="tick">✓</span>';
     return OWNER ? `<button class="primary" data-logp="${x.id}" style="min-height:40px;padding:6px 14px">+ Log</button>` : ''; };
   el.innerHTML = `<div class="row between"><h3 style="margin:0">Your plan <span class="small muted" style="font-weight:500">· ${esc(planLabel(wSel))}</span></h3>${OWNER && left.length > 1 ? '<button class="link" id="logAllPlan">Log all</button>' : ''}</div>` +
+    (OWNER ? '<div class="lkrow" style="text-align:left;margin:-2px 0 6px"><button class="lk-nav" data-go="meals:meals">Edit menu in Planner</button></div>' : '') +
     items.map(x => { const m = eaten(x);
       return `<div class="item mtile" style="${mealStyle(x)}">${m && m.thumbId ? imgTag(m.thumbId, m.photoId, 'thumb', x.type) : ''}<div class="grow"><b><span class="mtime">${esc(x.time)}</span> · ${esc(x.type)}</b>
       <p>${esc(x.description)}</p><p>${[x.calories && x.calories + ' kcal', x.protein && x.protein + 'g protein'].filter(Boolean).join(' · ')}</p></div>${mark(x)}</div>`; }).join('');
@@ -1877,6 +1890,14 @@ function fillStage() { // best available version: full photo, else thumbnail
 
 /* ---------- LOG (bottom of Progress): every entry with its photo ---------- */
 const E = { list: [], metric: 'weight', shown: 40 };
+/* in-app links: data-go="more:<card id>" opens that More card; "meals:<meals|workout|goals>" opens the Planner on that part */
+document.addEventListener('click', e => {
+  const g = e.target.closest('[data-go]'); if (!g) return;
+  const [tab, arg] = g.dataset.go.split(':');
+  if (tab === 'meals') { planKind = arg || 'meals'; show('meals'); return; }
+  show(tab);
+  const card = arg && $('#' + arg); if (card) { card.open = true; setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }
+});
 document.addEventListener('click', e => { if (e.target.closest('[data-entries]')) $('#logCard').scrollIntoView({ behavior: 'smooth' }); });
 async function loadLog() {
   if (!E.list.length) $('#eList').innerHTML = '<div class="empty" style="padding:16px">Loading…</div>';
@@ -1898,7 +1919,7 @@ function renderEntries() {
       ${x.noteM ? `<div class="enote me"><span>${esc(clientName())}</span> ${esc(x.noteM)}</div>` : ''}</div>
     ${x.thumbId ? `<img data-pid="${esc(x.thumbId)}" data-gd="${x.date}" alt="">`
       : OWNER ? `<label class="add" aria-label="Add photo"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-5-5-9 8"/></svg><input type="file" accept="${IMG_ACCEPT}" data-up="${x.date}"></label>` : ''}
-  </div>`).join('') + (all.length > rows.length ? `<button class="link" id="eMore" style="width:100%;padding:14px">Show older entries (${all.length - rows.length})</button>` : '')
+  </div>`).join('') + (all.length > rows.length ? `<button class="lk-open" id="eMore" style="width:100%;padding:14px">Show older entries (${all.length - rows.length})</button>` : '')
     || '<div class="empty" style="padding:16px">No entries yet.</div>';
   const more = $('#eMore'); if (more) more.onclick = () => { E.shown += 40; renderEntries(); };
   $$('[data-goto]').forEach(r => r.onclick = () => { // open that day in Today
@@ -2035,7 +2056,7 @@ async function renderConnections() {
   };
   const steps = a.shortcutUrl
     ? `<ol style="padding-left:18px;line-height:1.6;margin:8px 0">
-        <li><a href="${esc(a.shortcutUrl)}" target="_blank"><b>Get the Stat Sheet Shortcut</b></a> and tap <b>Add Shortcut</b>.</li>
+        <li><a class="lk-ext" href="${esc(a.shortcutUrl)}" target="_blank">Get the Stat Sheet Shortcut</a> and tap <b>Add Shortcut</b>.</li>
         <li>When it asks for your key, paste the key below.</li>
         <li><b>Shortcuts</b> → Automation → <b>+</b> → Time of Day <b>23:50</b>, Daily, <b>Run Immediately</b> → pick the Stat Sheet shortcut.</li>
       </ol>`
@@ -2088,7 +2109,7 @@ function adminBox(ad) {
     ${copyBtn('Redirect URL', ad.redirect)}
     ${ad.services.map(x => `<form data-setup="${x.id}" style="margin-top:14px">
       <b>${x.name}</b> ${x.ready ? ic('check') + 'On' : ''}
-      <p style="margin:4px 0">Register a free app at <a href="${x.register}" target="_blank">${x.register.replace('https://', '')}</a>. ${tips[x.id] || ''} Then paste:</p>
+      <p style="margin:4px 0">Register a free app at <a class="lk-ext" href="${x.register}" target="_blank">${x.register.replace('https://', '')}</a>. ${tips[x.id] || ''} Then paste:</p>
       <div class="grid2"><label>Client ID<input name="clientId" autocomplete="off"></label><label>Client secret<input name="clientSecret" type="password" autocomplete="off"></label></div>
       <button class="primary" style="width:100%;margin-top:8px">${x.ready ? 'Replace keys' : 'Switch on ' + x.name}</button>${x.ready ? `<button type="button" class="link" data-svcoff="${x.id}" style="width:100%">Switch ${x.name} off</button>` : ''}</form>`).join('')}
     <form id="shortcutForm" style="margin-top:14px"><b>Apple Health Shortcut link</b> (optional)
