@@ -181,7 +181,11 @@ body.tmode .thumb.add,body.tmode .addtile,body.tmode #mealPick,body.tmode [data-
 #startCard .st{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:8px 12px;margin-top:8px;border-radius:12px;background:var(--soft);border:1px solid var(--line);color:var(--text);font-weight:650;text-align:left}
 #startCard .st i.n{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:13px;font-weight:800;border:2px solid var(--accent);color:var(--accent)}
 #startCard .st.done{opacity:.55}#startCard .st.done i.n{background:var(--accent);color:var(--accent-ink)}#startCard .st .grow{flex:1}#startCard .st .go{color:var(--accent);font-size:18px}
-.ecta{display:flex;justify-content:center;margin:4px 0 6px}.ecta button{min-height:42px}.chart.sm.empty-chart canvas{display:none}
+.ecta{display:flex;align-items:center;gap:12px;margin:10px 0 2px;padding:12px;border:1px dashed var(--line);border-radius:14px;background:color-mix(in srgb,var(--soft) 55%,transparent);text-align:left}
+.ecta .eic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}.ecta .eic svg{width:20px;height:20px}
+.ecta .et{flex:1;min-width:0}.ecta .et b{display:block;font-size:15px}.ecta .et small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35;margin-top:2px}
+.ecta button.link.link{flex:none;color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,var(--line));background:transparent;font-weight:700}
+.empty-chart.has-cta::after{display:none}.chart.sm.empty-chart canvas{display:none}
 .chart.sm.empty-chart::after{content:attr(data-empty);display:block;color:var(--muted);font-size:14px;padding:8px 0}
 .thead{text-align:right;line-height:1.2}.thead b{font-size:20px}.thead i{font-style:normal;font-size:13px;font-weight:600}.thead small{display:block;font-size:11px;color:var(--muted)}
 .strip{display:flex;gap:10px;overflow-x:auto;padding:4px 0}.strip figure{margin:0;flex:none;text-align:center;font-size:11px;color:var(--muted)}
@@ -759,7 +763,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024010350';
+const BUILD = '20261024011312';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1045,7 +1049,7 @@ async function renderPhotoStrip() {
   if (!el.children.length) { el.innerHTML = '<div class="empty ld">Loading photos…</div>'; el._html = null; }
   const list = await api('gallery');
   hasPhoto = list.length > 0; renderStart();
-  if (!list.length) { setHTML(el, `<div style="width:100%"><div class="empty">No progress photos yet.</div>${OWNER ? '<div class="ecta"><button class="primary" data-go="log:photo">Add Photo</button></div>' : ''}</div>`); return; }
+  if (!list.length) { setHTML(el, `<div style="width:100%">${OWNER ? emptyCta('camera', 'No progress photos yet', 'One photo a week shows change the scale misses.', 'Add Photo', 'log:photo') : '<div class="empty">No progress photos yet.</div>'}</div>`); return; }
   const from = Math.max(0, list.length - 12);
   if (setHTML(el, list.slice(from).map((p, k) => `<figure data-gi="${from + k}"><img data-pid="${esc(p.thumbId)}" alt="">${nice(p.date)}${p.weight !== '' ? '<br>' + fx(num(p.weight)) : ''}</figure>`).join(''))) {
     el.scrollLeft = el.scrollWidth; // newest on the right, like the gallery
@@ -1145,7 +1149,10 @@ function drawTrend(id, points, color, o) {
   const box = $('#' + id).parentNode; // friendly empty state instead of empty axes
   box.classList.toggle('empty-chart', last == null);
   const cta = box.parentNode.querySelector('.ecta'); if (cta) cta.remove();
-  if (last == null && OWNER && (id === 'tW' || id === 'tF')) box.insertAdjacentHTML('afterend', `<div class="ecta"><button class="primary" data-go="log:${id === 'tW' ? 'weight' : 'bodyfat'}">Log ${id === 'tW' ? 'Weight' : 'Body Fat'}</button></div>`);
+  const needCta = last == null && OWNER && (id === 'tW' || id === 'tF');
+  box.classList.toggle('has-cta', needCta);
+  if (needCta) box.insertAdjacentHTML('afterend', id === 'tW' ? emptyCta('scale', 'No weigh-ins yet', 'Your trend line starts with your first entry.', 'Log Weight', 'log:weight')
+    : emptyCta('chart', 'No body fat readings yet', 'Add it next to your weight in Today.', 'Log Body Fat', 'log:bodyfat'));
   box.dataset.empty = o.empty || (o.bar ? 'Log meals in Today to see your intake here.' : (id === 'tW' ? 'No weigh-ins yet.' : id === 'tF' ? 'No body fat readings yet.' : 'No entries in this period yet.'));
   if (last == null) return;
   const smooth = !o.bar && M === 'day'; // one smooth trend curve; no dots
@@ -1394,8 +1401,11 @@ function autoSave() {
   const cur = MD.by[date] || {};
   if (String(cur.weight == null ? '' : cur.weight) === row.weight && String(cur.bodyfat == null ? '' : cur.bodyfat) === row.bodyfat) return;
   $('#saveState').textContent = 'Saving…';
+  const i = S.body.findIndex(b => b.date === date); // show it everywhere straight away
+  if (i >= 0) S.body[i] = Object.assign({}, S.body[i], row); else S.body = S.body.concat([row]).sort((a, b) => a.date.localeCompare(b.date));
   api('saveBodyMany', { rows: [row], exact: true }).then(r => {
     S.body = r.body; MD.by[date] = Object.assign(MD.by[date] || {}, row);
+    if (curTab === 'progress') { drawTrends(); renderStart(); loadLog(); }
     if (date === wSel) $('#saveState').textContent = '✓ Saved';
     drawCal();
   }, () => { if (date === wSel) $('#saveState').textContent = 'Not saved. Try again.'; });
@@ -2034,6 +2044,8 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('click', e => { if (e.target.closest('[data-entries]')) $('#logCard').scrollIntoView({ behavior: 'smooth' }); });
 /** Today › Weight, scrolled into view; the weight / body-fat box focused, or the photo tiles shown. */
+/** An empty panel: icon, what's missing, one helpful line, and the button that fixes it. */
+const emptyCta = (icon, title, hint, label, go) => `<div class="ecta"><span class="eic">${ic(icon)}</span><span class="et"><b>${title}</b><small>${hint}</small></span><button class="link" data-go="${go}">${label}</button></div>`;
 function goLog(what) {
   wSel = TODAY; logMode = 'weight'; show('today');
   setTimeout(() => {
@@ -2082,7 +2094,7 @@ function renderEntries() {
     ${x.thumbId ? `<img data-pid="${esc(x.thumbId)}" data-gd="${x.date}" alt="">`
       : OWNER ? `<label class="add" aria-label="Add photo"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-5-5-9 8"/></svg><input type="file" accept="${IMG_ACCEPT}" data-up="${x.date}"></label>` : ''}
   </div>`).join('') + (all.length > rows.length ? `<button class="lk-open" id="eMore" style="width:100%;padding:14px">Show older entries (${all.length - rows.length})</button>` : '')
-    || `<div class="empty" style="padding:16px 16px 6px">No entries yet.</div>${OWNER ? '<div class="ecta"><button class="primary" data-go="log:weight">Log Weight</button></div>' : ''}`);
+    || (OWNER ? `<div style="padding:4px 16px 14px">${emptyCta('notes', 'No entries yet', 'Every weigh-in is listed here with its photo and notes.', 'Log Weight', 'log:weight')}</div>` : '<div class="empty" style="padding:16px">No entries yet.</div>'));
   const more = $('#eMore'); if (more) more.onclick = () => { E.shown += 40; renderEntries(); };
   $$('[data-goto]').forEach(r => r.onclick = () => { // open that day in Today
     wSel = r.dataset.goto; wMonth = wSel.slice(0, 7); logMode = 'weight'; show('today');
