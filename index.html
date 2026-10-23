@@ -591,7 +591,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023161201';
+const BUILD = '20261023161718';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -657,7 +657,7 @@ function toast(msg, err) {
 }
 const READ_ONLY = new Set(['bootstrap', 'month', 'day', 'meals', 'entries', 'gallery', 'photos', 'notesFor', 'workouts', 'dashboard', 'bodyRange', 'shareInfo', 'healthStatus', 'whoopStatus']); // safe to retry
 /** Calls the Apps Script API. text/plain keeps it a "simple" request (no CORS preflight). Retries once on a network blip. */
-async function api(action, data, retried) {
+async function api(action, data, tries) {
   try {
     const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ k: KEY, as: AS || undefined, action, data: data || {} }) });
@@ -666,7 +666,11 @@ async function api(action, data, retried) {
     if (!r.ok) throw new Error(r.error || 'Something went wrong');
     return r.result;
   } catch (e) {
-    if (!retried && READ_ONLY.has(action) && (e.transient || e instanceof TypeError)) return api(action, data, true);
+    const n = tries || 0;
+    if (n < 2 && READ_ONLY.has(action) && (e.transient || e instanceof TypeError)) { // e.g. just back from the background
+      await new Promise(r => setTimeout(r, 900 * (n + 1)));
+      return api(action, data, n + 1);
+    }
     toast(e instanceof TypeError ? 'No connection. Check your internet and try again.' : (e.message || String(e)), true);
     throw e;
   }
@@ -962,10 +966,24 @@ async function renderToday() {
     noNext: wMonth >= TODAY.slice(0, 7),
     step: dir => { const d = ymd(new Date(y, m - 1 + dir, 1)); return d > TODAY ? TODAY : d; }
   });
+  const monthKey = 'month-v1-' + ((WHO && WHO.id) || ROLE) + '-' + AS + '-' + wMonth, apply = r => {
+    MD = { by: {}, photos: {}, wk: {}, month: wMonth };
+    r.body.forEach(b => MD.by[b.date] = b);
+    r.photoDays.forEach(d => MD.photos[d] = 1);
+    (r.workoutDays || []).forEach(d => MD.wk[d] = 1);
+  };
+  if (MD.month !== wMonth) { try { const c = JSON.parse(localStorage.getItem(monthKey)); if (c) apply(c); } catch (e) {} } // saved copy first
   drawCal(); renderEntry();
-  const want = wMonth, r = await api('month', { from: first, to: last });
+  const want = wMonth;
+  let r;
+  try { r = await api('month', { from: first, to: last }); }
+  catch (e) { // keep what's on screen; offer a retry instead of an empty month
+    if (want === wMonth) { $('#calInfo').innerHTML = '<button class="link" id="calRetry" style="min-height:0;padding:0">Couldn\'t refresh · tap to retry</button>'; $('#calRetry').onclick = renderToday; }
+    return;
+  }
   if (want !== wMonth) return;
-  MD = { by: {}, photos: {}, wk: {} };
+  try { localStorage.setItem(monthKey, JSON.stringify({ body: r.body, photoDays: r.photoDays, workoutDays: r.workoutDays })); } catch (e) {}
+  MD = { by: {}, photos: {}, wk: {}, month: wMonth };
   r.body.forEach(b => MD.by[b.date] = b);
   r.photoDays.forEach(d => MD.photos[d] = 1);
   (r.workoutDays || []).forEach(d => MD.wk[d] = 1);
@@ -1992,10 +2010,10 @@ let lastBoot = Date.now();
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible' || Date.now() - lastBoot < 15000 || !S.target) return;
   lastBoot = Date.now();
-  api('bootstrap', { date: TODAY }).then(d => {
+  setTimeout(() => api('bootstrap', { date: TODAY }).then(d => {
     Object.assign(S, d); Object.keys(WKD).forEach(k => delete WKD[k]);
     if (!/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) { renderRoleTag(); show(curTab, true); }
-  }).catch(() => {});
+  }).catch(() => {}), 1200);
 });
 api('bootstrap', { date: TODAY })
   .then(d => {
