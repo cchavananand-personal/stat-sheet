@@ -232,7 +232,7 @@ nav button.on{color:var(--accent)}
   background:#121917cc;border:1px solid #ffffff14;box-shadow:0 24px 60px #0009;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .whobox img{width:76px;height:76px;border-radius:20px;margin:0 auto;box-shadow:0 10px 30px #0d6a5066}
 .whobox h2{margin:0;font-size:24px;letter-spacing:-.01em}.whobox h2+p{margin:4px 0 0;font-size:15px}
-#whoPin{display:grid;gap:12px;text-align:left}
+#whoPin,#invForm{display:grid;gap:12px;text-align:left}#invForm label{font-size:13px;font-weight:600;color:var(--muted)}#invForm input{font-size:17px;margin-top:6px;min-height:50px}
 #whoPin label{font-size:13px;font-weight:600;color:var(--muted)}
 #whoPin input{font-size:17px;margin-top:6px;min-height:50px} /* same font for name and PIN */
 #whoPin button{margin-top:6px;min-height:52px;font-size:17px}
@@ -245,7 +245,13 @@ nav button.on{color:var(--accent)}
 #swList button{display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;background:none;min-height:46px;padding:10px;font-weight:600}
 #swList button.on{color:var(--accent)}
 .conn{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
-.crow{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.crow b{flex:1}
+.crow{display:flex;align-items:center;gap:10px;min-height:52px;border-bottom:1px solid var(--line);cursor:pointer}
+.crow b{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.crow .small{white-space:nowrap}
+.crow .link{font-size:20px;padding:4px 10px;min-height:0}
+.cnum{font-size:13px;font-weight:800;opacity:.55;margin-right:6px;font-variant-numeric:tabular-nums}
+.cacts{display:flex;gap:16px;padding:6px 0 12px}.cacts .link{padding:0;min-height:0}
+#inviteOut{margin-top:12px;padding:12px;border-radius:12px;background:#4f8df21f;border:1px solid #4f8df255}
+#inviteOut input{margin:8px 0}
 button.primary.trn{background:#4f8df2;color:#fff}
 #roleTag{cursor:pointer}
 #boot{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:var(--muted);font-size:15px;transition:opacity .25s}
@@ -259,11 +265,16 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <div id="boot"><img src="icon-180.png" alt=""><div id="bootMsg">Loading your stats…</div></div>
 <div id="who" class="hide"><div class="whobox">
   <img src="icon-180.png" alt="">
-  <div><h2>Welcome back</h2><p class="muted">Sign in to Stat Sheet</p></div>
+  <div><h2 id="whoTitle">Welcome back</h2><p class="muted" id="whoSub">Sign in to Stat Sheet</p></div>
   <form id="whoPin">
     <label>Name<input name="name" autocomplete="username" autocapitalize="words" placeholder="Your name" required></label>
     <label>PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" placeholder="4–6 digits" required></label>
     <button class="primary">Sign in</button>
+  </form>
+  <form id="invForm" class="hide">
+    <label>Choose a PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
+    <label>Type it again<input name="pin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
+    <button class="primary">Set PIN and start</button>
   </form>
   <button class="link" id="whoGuest">Continue without signing in</button>
   <p class="small muted" style="margin:0">You stay signed in on this phone until you sign out.</p>
@@ -487,12 +498,12 @@ button.primary.trn{background:#4f8df2;color:#fff}
 
     <details class="card hide" id="clientsCard"><summary>Clients</summary><div>
       <div id="clientList"></div>
-      <form id="clientForm" class="grid2" style="display:grid;margin-top:10px">
-        <label>Name<input name="name" maxlength="40" autocapitalize="words" placeholder="e.g. Mint"></label>
-        <label>Their PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits"></label>
-        <button class="primary" style="grid-column:1/-1">Add client</button>
+      <form id="clientForm" style="display:flex;gap:8px;align-items:flex-end;margin-top:12px">
+        <label class="grow">New client<input name="name" maxlength="40" autocapitalize="words" placeholder="Name, e.g. Mint"></label>
+        <button class="primary">Invite</button>
       </form>
-      <p class="small muted" style="margin-bottom:0">Each client gets their own sheet and photo folder. Send them the app link with their name and PIN.</p>
+      <div id="inviteOut" class="hide"></div>
+      <p class="small muted" style="margin-bottom:0">Clients set their own PIN from the invite link. You never see it.</p>
     </div></details>
 
     <details class="card"><summary>Share</summary><div>
@@ -544,7 +555,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023154353';
+const BUILD = '20261023155044';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -718,7 +729,7 @@ function renderRoleTag() {
   const bar = $('#clientBar');
   bar.classList.toggle('hide', !viewingClient());
   if (viewingClient()) {
-    bar.innerHTML = (S.clients || []).map(c => `<button data-as="${c.id}" class="${c.id === S.target.id ? 'on' : ''}">${esc(c.name)}</button>`).join('');
+    bar.innerHTML = (S.clients || []).map((c, i) => `<button data-as="${c.id}" class="${c.id === S.target.id ? 'on' : ''}"><span class="cnum">#${i + 1}</span>${esc(c.name)}</button>`).join('');
     $$('button', bar).forEach(b => b.onclick = () => b.dataset.as !== S.target.id && switchTo(b.dataset.as));
     const on = $('.on', bar); if (on) on.scrollIntoView({ inline: 'center', block: 'nearest' });
   }
@@ -1807,18 +1818,31 @@ function renderAccount() {
       .map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('');
     $('#openOn').value = store('openOn') || 'me';
   }
-  $('#clientList').innerHTML = (S.clients || []).map(c => `<div class="crow"><b>${esc(c.name)}</b>
-      <button class="link" data-open="${c.id}">Open</button><button class="link" data-pin="${c.id}">New PIN</button><button class="link" data-rm="${c.id}">Remove</button></div>`).join('')
+  $('#clientList').innerHTML = (S.clients || []).map((c, i) => `<div class="crow" data-open="${c.id}"><span class="cnum">#${i + 1}</span><b>${esc(c.name)}</b>
+      ${c.invited ? '<span class="small muted">Invited</span>' : ''}<button class="link" data-more="${c.id}" aria-label="More">⋯</button></div>
+      <div class="cacts hide" data-acts="${c.id}"><button class="link" data-reset="${c.id}">Send new invite</button><button class="link" data-rm="${c.id}">Remove</button></div>`).join('')
     || '<div class="small muted">No clients yet.</div>';
-  $$('#clientList [data-open]').forEach(b => b.onclick = () => switchTo(b.dataset.open));
-  $$('#clientList [data-pin]').forEach(b => b.onclick = () => {
-    const c = S.clients.find(x => x.id === b.dataset.pin), pin = prompt('New PIN for ' + c.name + ' (4–6 digits)');
-    if (pin) busy(b, async () => { await api('setClientPin', { id: c.id, pin }); toast(c.name + "'s PIN changed"); });
+  $$('#clientList [data-open]').forEach(r => r.onclick = e => { if (!e.target.closest('[data-more]')) switchTo(r.dataset.open); });
+  $$('#clientList [data-more]').forEach(b => b.onclick = () => $(`#clientList [data-acts="${b.dataset.more}"]`).classList.toggle('hide'));
+  $$('#clientList [data-reset]').forEach(b => b.onclick = () => {
+    const c = S.clients.find(x => x.id === b.dataset.reset);
+    if (confirm('Send ' + c.name + ' a new invite? Their PIN is cleared and their phones are signed out; they set a new PIN with the link.'))
+      busy(b, async () => { const r = await api('resetClient', { id: c.id }); S.clients = r.clients; renderAccount(); showInvite(r); });
   });
   $$('#clientList [data-rm]').forEach(b => b.onclick = () => {
     const c = S.clients.find(x => x.id === b.dataset.rm);
     if (confirm('Take ' + c.name + ' off your clients? Their data stays in Drive.')) busy(b, async () => { S.clients = await api('removeClient', { id: c.id }); renderAccount(); });
   });
+}
+/** Show the invite link to send (copy or share sheet). */
+function showInvite(r) {
+  const box = $('#inviteOut');
+  box.innerHTML = `<b>Send this link to ${esc(r.name)}</b><div class="small muted">They open it and set their own PIN. Works once, for 14 days.</div>
+    <input readonly value="${esc(r.link)}"><div class="grid2"><button class="primary" id="invShare">Share</button><button id="invCopy">Copy</button></div>`;
+  box.classList.remove('hide');
+  const text = 'Hi ' + r.name + ', here is your Stat Sheet invite: ' + r.link;
+  $('#invShare').onclick = () => navigator.share ? navigator.share({ text }).catch(() => {}) : $('#invCopy').click();
+  $('#invCopy').onclick = () => { navigator.clipboard ? navigator.clipboard.writeText(r.link) : $('input', box).select(); toast('Link copied'); };
 }
 $('#pinForm').onsubmit = e => {
   e.preventDefault(); const f = e.target;
@@ -1826,11 +1850,32 @@ $('#pinForm').onsubmit = e => {
 };
 $('#clientForm').onsubmit = e => {
   e.preventDefault(); const f = e.target, x = formObj(f);
-  busy($('button', f), async () => { S.clients = await api('addClient', x); f.reset(); renderAccount(); toast(x.name + ' added'); });
+  busy($('button', f), async () => { const r = await api('addClient', x); S.clients = r.clients; f.reset(); renderAccount(); showInvite(r); });
 };
 $('#signOut').onclick = () => confirm('Sign out of this phone?') && setWho(null);
 $('#openOn').onchange = e => { store('openOn', e.target.value); toast('Next time the app opens on ' + e.target.selectedOptions[0].textContent); };
-if (PINS_ON && !WHO && !QS.get('k')) showWho();
+if (QS.get('invite')) showInviteScreen(QS.get('invite'));
+else if (PINS_ON && !WHO && !QS.get('k')) showWho();
+/** Opened from an invite link: set your own PIN, then you're signed in on this phone. */
+async function showInviteScreen(token) {
+  $('#who').classList.remove('hide'); $('#whoPin').classList.add('hide'); $('#whoGuest').classList.add('hide');
+  $('#whoTitle').textContent = 'Welcome'; $('#whoSub').textContent = 'Checking your invite…';
+  try {
+    const i = await api('inviteInfo', { invite: token });
+    $('#whoTitle').textContent = 'Welcome, ' + i.name;
+    $('#whoSub').textContent = 'Choose a PIN to start' + (i.trainer ? ' · ' + i.trainer + ' is your trainer' : '');
+    $('#invForm').classList.remove('hide'); $('#invForm').pin.focus();
+  } catch (e) {
+    $('#whoSub').textContent = e.message;
+    $('#whoGuest').textContent = 'Go to sign in'; $('#whoGuest').classList.remove('hide');
+    $('#whoGuest').onclick = () => location.replace(location.pathname);
+  }
+  $('#invForm').onsubmit = e => {
+    e.preventDefault(); const f = e.target;
+    if (f.pin.value !== f.pin2.value) { f.pin2.value = ''; f.pin2.focus(); return toast('The two PINs are different', true); }
+    busy($('button', f), async () => { setWho(await api('claimInvite', { invite: token, pin: f.pin.value })); });
+  };
+}
 
 /* Open instantly with the data from last time (saved on this phone), then swap in fresh data from Google. */
 const BOOT_KEY = 'boot-v2-' + ((WHO && WHO.id) || ROLE) + '-' + AS; // v2: trainers now open on their own stats
