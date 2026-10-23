@@ -215,7 +215,14 @@ nav button.on{color:var(--accent)}
 /* first-load screen */
 #who{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
 .whobox{width:100%;max-width:340px;display:grid;gap:12px;text-align:center}.whobox img{width:72px;height:72px;border-radius:18px;margin:0 auto}
-#whoPick,#whoPin{display:grid;gap:10px}#whoPin input{text-align:center;font-size:26px;letter-spacing:.35em}
+#whoPin{display:grid;gap:10px}#whoPin input{text-align:center;font-size:20px}#whoPin input[name=pin]{font-size:26px;letter-spacing:.35em}
+#switcher{position:fixed;inset:0;z-index:25;background:#0005}
+#switcher .sheet{position:absolute;top:56px;right:12px;width:260px;max-width:calc(100vw - 24px);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px;box-shadow:0 10px 30px #0004}
+#switcher .sheet b{display:block;font-size:12px;color:var(--muted);padding:8px 10px 4px;letter-spacing:.04em}
+#switcher .sheet small{display:block;color:var(--muted);font-size:12px;padding:6px 10px 8px}
+#swList button{display:flex;justify-content:space-between;width:100%;text-align:left;background:none;min-height:46px;padding:10px;font-weight:600}
+#swList button.on{color:var(--accent)}
+.crow{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.crow b{flex:1}
 button.primary.trn{background:#4f8df2;color:#fff}
 #roleTag{cursor:pointer}
 #boot{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:var(--muted);font-size:15px;transition:opacity .25s}
@@ -229,20 +236,16 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <div id="boot"><img src="icon-180.png" alt=""><div id="bootMsg">Loading your stats…</div></div>
 <div id="who" class="hide"><div class="whobox">
   <img src="icon-180.png" alt="">
-  <h2 style="margin:4px 0">Who's using this?</h2>
-  <div id="whoPick">
-    <button class="primary" data-who="owner">I'm the client</button>
-    <button class="primary trn" data-who="trainer">I'm the trainer</button>
-    <button class="link" data-who="guest">Just looking</button>
-  </div>
-  <form id="whoPin" class="hide">
-    <p class="muted" id="whoAs" style="margin:0"></p>
-    <input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="PIN" required>
+  <h2 style="margin:4px 0">Sign in</h2>
+  <form id="whoPin">
+    <input name="name" autocomplete="username" autocapitalize="words" placeholder="Your name" required>
+    <input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" placeholder="PIN" required>
     <button class="primary">Sign in</button>
-    <button type="button" class="link" id="whoBack">Back</button>
   </form>
+  <button class="link" id="whoGuest">Just looking</button>
   <p class="small muted" style="margin:6px 0 0">You only do this once on this phone.</p>
 </div></div>
+<div id="switcher" class="hide"><div class="sheet"><b>SHOW STATS FOR</b><div id="swList"></div><small>Add or manage clients in More › Clients.</small></div></div>
 <header>
   <div class="brand"><svg width="30" height="30" viewBox="0 0 1024 1024" aria-hidden="true" style="border-radius:8px;flex:none">
     <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#062a22"/><stop offset=".5" stop-color="#0d6a50"/><stop offset="1" stop-color="#3a2a9e"/></linearGradient></defs>
@@ -442,15 +445,23 @@ button.primary.trn{background:#4f8df2;color:#fff}
       <button class="primary" id="impBtn" disabled style="width:100%">Import</button>
     </div></details>
 
-    <details class="card"><summary>Sign-in PINs</summary><div>
+    <details class="card" id="accountCard"><summary>Account</summary><div>
       <p class="small muted" id="pinState" style="margin-top:0"></p>
-      <form id="pinForm" class="grid2" style="display:grid">
-        <label>Your PIN<input name="ownerPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits"></label>
-        <label>Trainer PIN<input name="trainerPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits"></label>
-        <button class="primary" style="grid-column:1/-1">Save PINs</button>
+      <form id="pinForm" class="hide" style="display:flex;gap:8px;align-items:flex-end">
+        <label class="grow">New PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits"></label>
+        <button class="primary">Change</button>
       </form>
       <button class="link hide" id="signOut" style="width:100%;margin-top:8px">Sign out of this phone</button>
-      <button class="link hide" id="pinsOff" style="width:100%">Turn sign-in off</button>
+    </div></details>
+
+    <details class="card hide" id="clientsCard"><summary>Clients</summary><div>
+      <div id="clientList"></div>
+      <form id="clientForm" class="grid2" style="display:grid;margin-top:10px">
+        <label>Name<input name="name" maxlength="40" autocapitalize="words" placeholder="e.g. Mint"></label>
+        <label>Their PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits"></label>
+        <button class="primary" style="grid-column:1/-1">Add client</button>
+      </form>
+      <p class="small muted" style="margin-bottom:0">Each client gets their own sheet and photo folder. Send them the app link with their name and PIN.</p>
     </div></details>
 
     <details class="card"><summary>Share</summary><div>
@@ -504,7 +515,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023144011';
+const BUILD = '20261023144836';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -527,10 +538,16 @@ const QS = new URLSearchParams(location.search);
 const store = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} };
 const WHO = (() => { try { return JSON.parse(store('who')) || null; } catch (e) { return null; } })();
 const PINS_ON = store('pinsOn') === '1';
-const clientName = () => (typeof S !== 'undefined' && S.profile && S.profile.name) || 'Client';
-const trainerName = () => (typeof S !== 'undefined' && S.profile && S.profile.trainerName) || 'Trainer';
 const KEY = QS.get('k') || (WHO && WHO.key) || '';
-const ROLE = QS.get('view') === 'trainer' ? 'trainer' : WHO ? WHO.role : PINS_ON ? 'guest' : 'owner', OWNER = ROLE === 'owner';
+// a trainer chooses whose stats to show (their own, or a client's); everyone else sees their own
+const I_TRAIN = QS.get('view') === 'trainer' || !!(WHO && (WHO.trainer || WHO.role === 'trainer'));
+const AS = I_TRAIN ? store('as') || '' : '';
+const ROLE = !KEY ? (PINS_ON || (WHO && WHO.role === 'guest') ? 'guest' : 'owner')
+  : I_TRAIN && AS !== (WHO && WHO.id) ? 'trainer' : 'owner';
+const OWNER = ROLE !== 'guest'; // signed in = full access to the stats on screen (a trainer has full access to clients)
+const clientName = () => (typeof S !== 'undefined' && S.target && S.target.name) || (typeof S !== 'undefined' && S.profile && S.profile.name) || 'Client';
+const trainerName = () => (typeof S !== 'undefined' && S.trainerName) || 'Trainer';
+const viewingClient = () => !!(S.me && S.target && S.me.id !== S.target.id); // a trainer looking at someone else
 const $ = (s, el) => (el || document).querySelector(s);
 const $$ = (s, el) => [...(el || document).querySelectorAll(s)];
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -561,7 +578,7 @@ const READ_ONLY = new Set(['bootstrap', 'month', 'day', 'meals', 'entries', 'gal
 async function api(action, data, retried) {
   try {
     const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ k: KEY, action, data: data || {} }) });
+      body: JSON.stringify({ k: KEY, as: AS || undefined, action, data: data || {} }) });
     let r;
     try { r = await res.json(); } catch (e) { throw Object.assign(new Error('Google did not answer properly. Try again.'), { transient: true }); }
     if (!r.ok) throw new Error(r.error || 'Something went wrong');
@@ -642,9 +659,25 @@ const ICONS = {
 const TABS = OWNER ? [['progress','Progress'],['today','Today'],['meals','Plan'],['more','More']] : [['progress','Progress'],['today','Today']];
 $('#nav').innerHTML = TABS.map(([id, label]) => `<button data-t="${id}"><svg viewBox="0 0 24 24">${ICONS[id]}</svg>${label}</button>`).join('');
 if (!OWNER) { document.body.classList.add('ro');
-$$('#bodyForm input').forEach(i => i.readOnly = true); $('#roleTag').textContent = ROLE === 'trainer' ? trainerName() : 'Viewing · Sign in'; $('#roleTag').classList.remove('hide'); }
+$$('#bodyForm input').forEach(i => i.readOnly = true); }
 if (ROLE === 'guest') $('#noteForm').classList.add('hide');
-$('#roleTag').onclick = () => ROLE === 'guest' ? showWho() : WHO && confirm('Sign out of this phone?') && setWho(null);
+function renderRoleTag() {
+  const t = $('#roleTag');
+  t.textContent = ROLE === 'guest' ? 'Viewing · Sign in'
+    : S.me && S.me.trainer ? (viewingClient() ? S.target.name : 'My stats') + ' ▾'
+    : S.me && S.pinsOn ? S.me.name : '';
+  t.classList.toggle('hide', !t.textContent);
+}
+$('#roleTag').onclick = () => ROLE === 'guest' ? showWho() : S.me && S.me.trainer ? showSwitch() : WHO && confirm('Sign out of this phone?') && setWho(null);
+/** Trainer: switch between your own stats and each client's. */
+function showSwitch() {
+  const cur = S.target && S.target.id, rows = [{ id: S.me.id, name: 'My stats' }].concat(S.clients || []);
+  $('#swList').innerHTML = rows.map(r => `<button data-as="${r.id}" class="${r.id === cur ? 'on' : ''}">${esc(r.name)}${r.id === cur ? '<span>✓</span>' : ''}</button>`).join('');
+  $$('#swList [data-as]').forEach(b => b.onclick = () => b.dataset.as === cur ? $('#switcher').classList.add('hide') : switchTo(b.dataset.as));
+  $('#switcher').classList.remove('hide');
+}
+$('#switcher').onclick = e => { if (e.target.id === 'switcher') $('#switcher').classList.add('hide'); };
+function switchTo(id) { store('as', id); clearSaved(); location.replace(location.pathname); }
 let curTab = 'progress';
 function show(id, keepScroll) {
   curTab = id;
@@ -868,8 +901,8 @@ function renderDayNotes(list) {
   const sec = (cls, title, notes, none) => `<div class="nsec ${cls}"><h4>${title}</h4>` +
     (notes.map(n => `<div class="nitem">${esc(n.text)}<small>${esc(time(n))}</small></div>`).join('') || `<div class="nnone">${none}</div>`) + '</div>';
   const tr = list.filter(n => n.author === 'Trainer'), me = list.filter(n => n.author !== 'Trainer');
-  $('#notes').innerHTML = sec('tr', esc(trainerName()) + (ROLE === 'trainer' ? ' · you' : ' · trainer'), tr, 'No notes from ' + esc(trainerName()) + '.')
-    + sec('me', esc(clientName()) + (OWNER ? ' · you' : ' · client'), me, 'No notes from ' + esc(clientName()) + '.');
+  $('#notes').innerHTML = sec('tr', esc(trainerName()) + (viewingClient() ? ' · you' : ' · trainer'), tr, 'No notes from ' + esc(trainerName()) + '.')
+    + sec('me', esc(clientName()) + (OWNER && !viewingClient() ? ' · you' : ' · client'), me, 'No notes from ' + esc(clientName()) + '.');
 }
 $('#noteForm').onsubmit = e => {
   e.preventDefault(); const f = e.target, date = wSel;
@@ -1540,11 +1573,7 @@ function renderEntries() {
 
 /* ---------- MORE ---------- */
 function renderMore() {
-  $('#pinState').textContent = S.pinsOn
-    ? 'On. Anyone opening the app picks client, trainer or just looking, and enters their PIN once. Notes show who wrote them. Saving here changes both PINs.'
-    : 'Off: the app is fully open and every note shows as yours. Set a PIN for you and one for your trainer; each of you signs in once.';
-  $('#signOut').classList.toggle('hide', !WHO);
-  $('#pinsOff').classList.toggle('hide', !S.pinsOn);
+  renderAccount();
   const f = $('#profileForm');
   [...f.elements].forEach(el => { if (el.name && S.profile[el.name] != null) el.value = S.profile[el.name]; });
   renderWhoop();
@@ -1652,61 +1681,72 @@ function renderWhoop() {
 }
 
 /* start */
-/* Sign-in: pick who you are once; the phone keeps the key the server hands back. */
+/* Sign-in: name + PIN once; the phone keeps the key the server hands back until "Sign out". */
+function clearSaved() { try { Object.keys(localStorage).filter(k => k.startsWith('boot-')).forEach(k => localStorage.removeItem(k)); } catch (e) {} }
 function setWho(w) {
-  store('who', w ? JSON.stringify(w) : null);
-  try { Object.keys(localStorage).filter(k => k.startsWith('boot-')).forEach(k => localStorage.removeItem(k)); } catch (e) {}
+  store('who', w ? JSON.stringify(w) : null); store('as', null); clearSaved();
   location.replace(location.pathname); // drop any old ?view=trainer&k=… so everyone ends up on the same link
 }
-function nameWho() {
-  $('#whoPick [data-who=owner]').textContent = 'I\x27m ' + clientName() + ' (client)';
-  $('#whoPick [data-who=trainer]').textContent = 'I\x27m ' + trainerName() + ' (trainer)';
-}
-function showWho() {
-  nameWho(); $('#who').classList.remove('hide'); $('#whoPick').classList.remove('hide'); $('#whoPin').classList.add('hide');
-}
-$$('#whoPick [data-who]').forEach(b => b.onclick = () => {
-  const who = b.dataset.who;
-  if (who === 'guest') { if (ROLE === 'guest') { store('who', JSON.stringify({ role: 'guest', key: '' })); $('#who').classList.add('hide'); } else setWho({ role: 'guest', key: '' }); return; }
-  const f = $('#whoPin'); f.dataset.who = who; f.reset();
-  $('#whoAs').textContent = (who === 'trainer' ? trainerName() : clientName()) + '\x27s PIN';
-  $('#whoPick').classList.add('hide'); f.classList.remove('hide'); f.pin.focus();
-});
-$('#whoBack').onclick = showWho;
+function showWho() { $('#who').classList.remove('hide'); $('#whoPin').reset(); }
+$('#whoGuest').onclick = () => ROLE === 'guest' ? (store('who', JSON.stringify({ role: 'guest', key: '' })), $('#who').classList.add('hide')) : setWho({ role: 'guest', key: '' });
 $('#whoPin').onsubmit = e => {
   e.preventDefault(); const f = e.target;
   busy($('button.primary', f), async () => {
-    try { setWho(await api('login', { who: f.dataset.who, pin: f.pin.value })); } catch (x) { f.pin.value = ''; f.pin.focus(); }
+    try { setWho(await api('login', { name: f.name.value, pin: f.pin.value })); } catch (x) { f.pin.value = ''; f.pin.focus(); }
   });
 };
+function renderAccount() {
+  $('#pinState').textContent = !S.pinsOn ? 'Sign-in is off: the app is fully open.'
+    : S.me ? 'Signed in as ' + S.me.name + (S.me.trainer ? ' (trainer)' : '') + ' on this phone.' : 'Not signed in.';
+  $('#pinForm').classList.toggle('hide', !(S.me && !viewingClient()));
+  $('#signOut').classList.toggle('hide', !WHO);
+  $('#clientsCard').classList.toggle('hide', !(S.me && S.me.trainer));
+  $('#clientList').innerHTML = (S.clients || []).map(c => `<div class="crow"><b>${esc(c.name)}</b>
+      <button class="link" data-open="${c.id}">Open</button><button class="link" data-pin="${c.id}">New PIN</button><button class="link" data-rm="${c.id}">Remove</button></div>`).join('')
+    || '<div class="small muted">No clients yet.</div>';
+  $$('#clientList [data-open]').forEach(b => b.onclick = () => switchTo(b.dataset.open));
+  $$('#clientList [data-pin]').forEach(b => b.onclick = () => {
+    const c = S.clients.find(x => x.id === b.dataset.pin), pin = prompt('New PIN for ' + c.name + ' (4–6 digits)');
+    if (pin) busy(b, async () => { await api('setClientPin', { id: c.id, pin }); toast(c.name + "'s PIN changed"); });
+  });
+  $$('#clientList [data-rm]').forEach(b => b.onclick = () => {
+    const c = S.clients.find(x => x.id === b.dataset.rm);
+    if (confirm('Take ' + c.name + ' off your clients? Their data stays in Drive.')) busy(b, async () => { S.clients = await api('removeClient', { id: c.id }); renderAccount(); });
+  });
+}
 $('#pinForm').onsubmit = e => {
   e.preventDefault(); const f = e.target;
-  if (!confirm('Save these PINs? You and your trainer will each sign in once with them.')) return;
-  busy($('button', f), async () => { setWho(await api('setPins', formObj(f))); });
+  busy($('button', f), async () => { await api('changePin', { pin: f.pin.value }); f.reset(); toast('PIN changed'); });
+};
+$('#clientForm').onsubmit = e => {
+  e.preventDefault(); const f = e.target, x = formObj(f);
+  busy($('button', f), async () => { S.clients = await api('addClient', x); f.reset(); renderAccount(); toast(x.name + ' added'); });
 };
 $('#signOut').onclick = () => confirm('Sign out of this phone?') && setWho(null);
-$('#pinsOff').onclick = e => confirm('Turn sign-in off? The app becomes fully open again and new notes all show as yours.')
-  && busy(e.target, async () => { await api('pinsOff'); store('pinsOn', '0'); S.pinsOn = false; renderMore(); toast('Sign-in is off'); });
 if (PINS_ON && !WHO && !QS.get('k')) showWho();
 
 /* Open instantly with the data from last time (saved on this phone), then swap in fresh data from Google. */
-const BOOT_KEY = 'boot-' + ROLE;
+const BOOT_KEY = 'boot-' + ((WHO && WHO.id) || ROLE) + '-' + AS;
 function bootDone() { const b = $('#boot'); if (!b) return; b.classList.add('done'); setTimeout(() => b.remove(), 400); }
 let saved = null;
 try { saved = JSON.parse(localStorage.getItem(BOOT_KEY)); } catch (e) {}
 if (saved && saved.data) {
   Object.assign(S, saved.data);
   if (saved.date !== TODAY) { S.meals = []; S.dayPhotos = []; } // those two are for the day it was saved
-  show('progress'); bootDone();
+  show('progress'); bootDone(); renderRoleTag();
 }
 api('bootstrap', { date: TODAY })
   .then(d => {
     try { localStorage.setItem(BOOT_KEY, JSON.stringify({ date: TODAY, data: d })); } catch (e) {}
     Object.assign(S, d);
     // sign-in was switched on (or off) since this phone last looked
-    store('pinsOn', d.pinsOn ? '1' : '0'); nameWho();
+    store('pinsOn', d.pinsOn ? '1' : '0');
     if (d.pinsOn && !WHO && !QS.get('k') && !PINS_ON) return setWho(null);
     if (!d.pinsOn && ROLE === 'guest') return setWho(null);
+    if (KEY && !d.me) return setWho(null); // this phone's key no longer works (e.g. removed): sign in again
+    if (QS.get('k') && d.me) return setWho(Object.assign({ key: QS.get('k') }, d.me)); // old link: remember who, move to the plain link
+    if (d.me && d.target && AS && d.target.id !== AS) store('as', d.target.id);
+    renderRoleTag();
     if (!saved) { show('progress'); bootDone(); return; }
     // redraw what's on screen with the fresh data, unless you're typing in it
     if (!/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) show(curTab, true);
