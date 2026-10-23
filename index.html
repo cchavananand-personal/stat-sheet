@@ -200,6 +200,7 @@ nav button.on{color:var(--accent)}
 #lightbox img{max-width:100%;max-height:82vh;border-radius:12px}
 #toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--bg);padding:12px 18px;
   border-radius:12px;font-size:15px;z-index:100;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;text-align:center}
+#claimAsk{display:grid;gap:10px;text-align:center}#claimAsk.hide{display:none}#claimAsk b{font-size:15px;line-height:1.35}
 #whoErr{color:#ff8a7a;font-weight:600;font-size:14px;margin:8px 0 0}#whoErr.hide{display:none}
 #toast.show{opacity:1}#toast.err{background:var(--bad);color:#fff}
 /* progress gallery */
@@ -396,6 +397,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <label>Choose a PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
     <label>Type it again<input name="pin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
     <button class="primary">Create account</button>
+    <div id="claimAsk" class="hide"></div>
   </form>
   <button class="lk-open" id="whoNew">New here? Create an account</button>
   <button class="link hide" id="whoGuest">Go to sign in</button>
@@ -730,7 +732,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023201524';
+const BUILD = '20261023202235';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2270,7 +2272,17 @@ $('#whoNew').onclick = () => {
 $('#signForm').onsubmit = e => {
   e.preventDefault(); const f = e.target;
   if (f.pin.value !== f.pin2.value) { f.pin2.value = ''; f.pin2.focus(); return toast('The two PINs are different', true); }
-  busy($('button.primary', f), async () => { setWho(await api('signUp', { name: f.name.value, pin: f.pin.value })); });
+  busy($('button.primary', f), async () => {
+    const r = await api('signUp', { name: f.name.value, pin: f.pin.value, claim: f.dataset.claim === '1' });
+    if (!r.invited) return setWho(r);
+    // the name belongs to a trainer's invite: confirm it's them, then join
+    $('#whoErr').classList.add('hide');
+    $('#claimAsk').innerHTML = `<b>${esc(r.trainer)} invited ${esc(r.name)}. Is that you?</b>
+      <button type="button" class="primary" id="claimYes">Yes, Join ${esc(r.trainer)}</button><button type="button" class="link" id="claimNo">No, Use Another Name</button>`;
+    $('#claimAsk').classList.remove('hide'); $('button.primary', f).classList.add('hide');
+    $('#claimYes').onclick = e => { f.dataset.claim = '1'; busy(e.target, async () => setWho(await api('signUp', { name: f.name.value, pin: f.pin.value, claim: true }))); };
+    $('#claimNo').onclick = () => { $('#claimAsk').classList.add('hide'); $('button.primary', f).classList.remove('hide'); f.name.value = ''; f.name.focus(); };
+  });
 };
 function showWho() { $('#who').classList.remove('hide'); $('#whoPin').reset(); }
 $('#whoPin').onsubmit = e => {
