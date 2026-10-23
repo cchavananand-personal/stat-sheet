@@ -614,7 +614,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
   <!-- MORE -->
   <!-- CLIENTS (trainer mode): the clients card and "Open the app on" move here when the page starts -->
   <section id="tab-clients" class="hide"><h2>My Clients</h2>
-    <div class="card" id="codeCard"><div class="row between"><div><div class="small muted">Your trainer code</div><b id="tCode" style="font-size:20px;letter-spacing:.06em">…</b></div>
+    <div class="card" id="codeCard"><div class="row between"><div><div class="small muted">Your code</div><b id="tCode" style="font-size:20px;letter-spacing:.06em">…</b></div>
       <div class="row" style="gap:6px"><button id="codeShare" class="primary" style="min-height:40px">Share</button><button id="codeNew" class="link">New Code</button></div></div>
       <p class="small muted" style="margin:8px 0 0">People who already use Stat Sheet enter it in More › My Trainer to become your client.</p></div>
     <div class="card" id="clientRankCard"><div id="clientRankBox" class="small"></div></div>
@@ -728,7 +728,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023205351';
+const BUILD = '20261023205837';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -950,7 +950,7 @@ function showSwitch() {
 $('#switcher').onclick = e => { if (e.target.id === 'switcher') $('#switcher').classList.add('hide'); };
 function switchTo(id, kind) {
   store('as', id); store('asKind', kind || null); if (S.me && id !== S.me.id && !kind) store('lastAs', id);
-  try { sessionStorage.setItem('keepAs', '1'); } catch (e) {} clearSaved(); location.replace(location.pathname);
+  try { sessionStorage.setItem('keepAs', '1'); } catch (e) {} location.replace(location.pathname); // saved copies are per person: opens instantly
 }
 let curTab = 'progress';
 function show(id, keepScroll) {
@@ -2030,7 +2030,7 @@ function renderMyTrainer() {
   if (S.me && S.me.trainer) return;
   box.innerHTML = c
     ? `<div class="row"><span class="avatar big t" id="coachAv"></span><div class="grow"><b>${esc(c.name)}</b>
-         <div class="small muted">Your trainer${c.since ? ' · since ' + nice(c.since, { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</div></div>
+         <div class="small muted">Your trainer${c.since ? ' · since ' + nice(c.since, { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</div>${c.code ? `<div class="small muted">Code <b style="color:var(--text);letter-spacing:.04em">${esc(c.code)}</b></div>` : ''}</div>
          </div>
        <p class="small muted" style="margin:10px 0 0">${esc(c.name)} can see and update your stats, plans and goals, and writes notes to you.</p>
        <button class="link danger hide" id="leaveCoach" style="margin-top:10px">Leave trainer</button>`
@@ -2067,12 +2067,12 @@ function renderTrainerMode() {
 async function renderPeers() {
   const box = $('#peersCard'), list = S.peers || [];
   box.classList.toggle('hide', !S.me); if (!S.me) return;
-  box.innerHTML = `<div class="row between"><div><div class="small muted">Your peer code</div><b id="pCode" style="font-size:18px;letter-spacing:.05em">…</b></div>
+  box.innerHTML = `<div class="row between"><div><div class="small muted">Your code</div><b id="pCode" style="font-size:18px;letter-spacing:.05em">…</b></div>
       <button class="primary" id="pShare" style="min-height:40px">Share</button></div>
     <p class="small muted" style="margin:8px 0 10px">Share your code to compare stats and rankings.</p>
     ${list.map(x => `<div class="crow" style="cursor:default"><span class="avatar" data-pav="${x.id}"></span><b>${esc(x.name)}</b>
       <button class="lk-nav" data-peer="${x.id}">Open</button><button class="link" data-unpeer="${x.id}">Remove</button></div>`).join('')}
-    <form id="peerForm" style="display:flex;gap:8px;align-items:flex-end;margin-top:10px"><label class="grow" style="margin:0">Add a peer<input name="code" maxlength="24" autocapitalize="characters" placeholder="e.g. P-MINT-4821" style="text-transform:uppercase"></label><button class="primary">Add</button></form>`;
+    <form id="peerForm" style="display:flex;gap:8px;align-items:flex-end;margin-top:10px"><label class="grow" style="margin:0">Add a peer<input name="code" maxlength="24" autocapitalize="characters" placeholder="e.g. MINT-4821" style="text-transform:uppercase"></label><button class="primary">Add</button></form>`;
   list.forEach(x => paintAvatar($(`[data-pav="${x.id}"]`, box), x, ''));
   $$('[data-peer]', box).forEach(b => b.onclick = () => switchTo(b.dataset.peer, 'peer'));
   $$('[data-unpeer]', box).forEach(b => b.onclick = () => confirm('Stop being peers? Neither of you will see the other\'s stats.') && busy(b, async () => { Object.assign(S, await api('removePeer', { id: b.dataset.unpeer })); renderPeers(); }));
@@ -2509,6 +2509,19 @@ async function showInviteScreen(token) {
 /* Open instantly with the data from last time (saved on this phone), then swap in fresh data from Google. */
 const BOOT_KEY = 'boot-v2-' + ((WHO && WHO.id) || ROLE) + '-' + AS; // v2: trainers now open on their own stats
 try { Object.keys(localStorage).filter(k => k.startsWith('boot-') && !k.startsWith('boot-v2-')).forEach(k => localStorage.removeItem(k)); } catch (e) {}
+/** Trainer: quietly load each client (and your own stats) so switching opens instantly. Fresh copies (< 5 min) are skipped. */
+async function prefetchClients(d) {
+  const ids = [d.me.id].concat((d.clients || []).filter(c => !c.invited).map(c => c.id)).filter(id => id !== AS);
+  for (const id of ids) {
+    const key = 'boot-v2-' + d.me.id + '-' + id;
+    try { const old = JSON.parse(localStorage.getItem(key) || 'null'); if (old && old.date === TODAY && Date.now() - (old.at || 0) < 3e5) continue; } catch (e) {}
+    try {
+      const r = await (await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ k: KEY, as: id, action: 'bootstrap', data: { date: TODAY } }) })).json();
+      if (r.ok) localStorage.setItem(key, JSON.stringify({ date: TODAY, data: r.result, at: Date.now() }));
+    } catch (e) { return; } // offline or storage full: switching just loads as before
+  }
+}
 function bootDone() { const b = $('#boot'); if (!b) return; b.classList.add('done'); setTimeout(() => b.remove(), 400); }
 let saved = null;
 try { saved = JSON.parse(localStorage.getItem(BOOT_KEY)); } catch (e) {}
@@ -2528,7 +2541,8 @@ document.addEventListener('visibilitychange', () => {
 });
 api('bootstrap', { date: TODAY })
   .then(d => {
-    try { localStorage.setItem(BOOT_KEY, JSON.stringify({ date: TODAY, data: d })); } catch (e) {}
+    try { localStorage.setItem(BOOT_KEY, JSON.stringify({ date: TODAY, data: d, at: Date.now() })); } catch (e) {}
+    if (d.me && d.me.trainer) setTimeout(() => prefetchClients(d), 3000);
     Object.assign(S, d);
     // sign-in was switched on (or off) since this phone last looked
     store('pinsOn', d.pinsOn ? '1' : '0');
