@@ -376,6 +376,8 @@ button.link.link.hide{display:none}
 #inviteOut input{margin:8px 0}
 button.primary.trn{background:#4f8df2;color:#fff}
 #roleTag{cursor:pointer}
+#peerAv{margin-right:-18px;box-shadow:0 0 0 3px var(--bg);z-index:0}#peerAv.hide{display:none}#menuBtn{position:relative;z-index:1;box-shadow:0 0 0 3px var(--bg)}
+body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 #boot{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:var(--muted);font-size:15px;transition:opacity .25s}
 #boot img{width:84px;height:84px;border-radius:20px;animation:pulse 1.4s ease-in-out infinite}
 #boot.done{opacity:0;pointer-events:none}
@@ -417,7 +419,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <g transform="translate(420 520) rotate(-32) scale(.86)" fill="#fff"><rect x="-290" y="-26" width="580" height="52" rx="26"/><rect x="-262" y="-138" width="84" height="276" rx="34"/><rect x="-168" y="-102" width="60" height="204" rx="26"/><rect x="178" y="-138" width="84" height="276" rx="34"/><rect x="108" y="-102" width="60" height="204" rx="26"/></g>
     <path d="M110 872H380L428 800L490 944L548 836L580 872H914" fill="none" stroke="#6ff3c4" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
   </svg><b id="brandName">STAT SHEET</b></div>
-  <div class="row" style="gap:8px"><div class="role hide" id="roleTag"></div><button class="avatar" id="menuBtn" aria-label="Account">?</button></div>
+  <div class="row" style="gap:8px"><div class="role hide" id="roleTag"></div><span class="avatar hide" id="peerAv"></span><button class="avatar" id="menuBtn" aria-label="Account">?</button></div>
 </header>
 <div id="peerBar" class="hide"><span>Viewing <b id="peerName"></b> · peer</span><button class="lk-open" id="peerBack">Back to my stats</button></div>
 <div id="trainerBar" class="hide">
@@ -734,7 +736,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023213847';
+const BUILD = '20261023214353';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -753,6 +755,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 const API_URL = 'https://script.google.com/macros/s/AKfycbzLggqhy0TH8zRjU1ow5gf0O0UfVh8EBTnvWkcvOYOSZXo4vvcKeMZb-gLKymSr-28/exec';
 const QS = new URLSearchParams(location.search);
 if (QS.get('trainer')) { try { localStorage.setItem('pendingCoach', QS.get('trainer')); } catch (e) {} history.replaceState(null, '', location.pathname); }
+if (QS.get('peer')) { try { localStorage.setItem('pendingPeer', QS.get('peer')); } catch (e) {} history.replaceState(null, '', location.pathname); }
 /* Who is using the app. One link for everyone: once PINs are set, each phone signs in once (client or trainer, or just
    looks) and remembers it here until "Sign out". Old trainer links (?view=trainer&k=…) still work. The server enforces all of it. */
 const store = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} };
@@ -1000,7 +1003,7 @@ let tMode = 'day', progressLoaded = false; // 30 days by default
 const TC = {};
 function renderProgress() {
   const p = S.profile;
-  $('#hello').textContent = typeof S !== 'undefined' && viewingClient() ? S.target.name + '\x27s stats' : p.name ? 'Hi ' + p.name : 'Progress';
+  $('#hello').textContent = typeof S !== 'undefined' && S.me && S.target && S.me.id !== S.target.id ? S.target.name + "'s Stats" : p.name ? 'Hi ' + p.name : 'Progress';
   $('#todayLbl').textContent = nice(TODAY, {weekday:'long', day:'numeric', month:'long'});
   segment('tMode', tMode, m => { tMode = m; drawTrends(); });
   CD = null; // graphs pick up workouts and details logged since last time
@@ -2058,8 +2061,8 @@ function renderMyTrainer() {
 /** More › Trainer mode: anyone can coach. On = Personal / Client Profile toggle + Clients tab. */
 function renderTrainerMode() {
   const box = $('#trainerMode'), me = S.me;
-  box.classList.toggle('hide', !me);
-  if (!me) return;
+  box.classList.toggle('hide', !me || (!me.trainer && !!S.coach)); // you have a trainer: no becoming one (it would drop them)
+  if (!me || (!me.trainer && S.coach)) return;
   box.classList.toggle('lit', !!me.trainer);
   box.innerHTML = me.trainer
     ? `<b>Trainer mode is on</b><p class="small muted" style="margin:4px 0 0">Managing ${(S.clients || []).length} client${(S.clients || []).length === 1 ? '' : 's'} in Client Profile.</p>
@@ -2071,7 +2074,7 @@ function renderTrainerMode() {
     store('who', JSON.stringify(Object.assign({}, WHO, { trainer: on }))); store('as', null); clearSaved();
     toast(on ? 'You are now a trainer' : 'Trainer mode is off'); setTimeout(() => location.replace(location.pathname), 600);
   };
-  if ($('#tmOn')) $('#tmOn').onclick = e => busy(e.target, flip(true));
+  if ($('#tmOn')) $('#tmOn').onclick = e => confirm('Become a trainer? You can then invite clients and manage their progress.') && busy(e.target, flip(true));
   if ($('#tmShare')) $('#tmShare').onclick = e => busy(e.target, async () => { $('#tCode').textContent = await api('myTrainerCode', {}); $('#codeShare').click(); });
   if ($('#tmOff')) $('#tmOff').onclick = e => confirm('Turn off trainer mode?') && busy(e.target, flip(false));
 }
@@ -2090,7 +2093,7 @@ async function renderPeers() {
   $$('[data-unpeer]', box).forEach(b => b.onclick = () => confirm('Stop being peers? Neither of you will see the other\'s stats.') && busy(b, async () => { Object.assign(S, await api('removePeer', { id: b.dataset.unpeer })); renderPeers(); }));
   $('#peerForm').onsubmit = e => { e.preventDefault(); const f = e.target;
     busy($('button', f), async () => { Object.assign(S, await api('addPeer', { code: f.code.value })); renderPeers(); toast('Peer added'); }); };
-  $('#pShare').onclick = () => { const t = 'Add me as a peer on Stat Sheet: ' + $('#pCode').textContent + ' (More › My Peers). App: ' + location.origin + location.pathname;
+  $('#pShare').onclick = () => { const t = 'Compare stats with me on Stat Sheet: ' + location.origin + location.pathname + '?peer=' + encodeURIComponent($('#pCode').textContent);
     navigator.share ? navigator.share({ text: t }).catch(() => {}) : (navigator.clipboard && navigator.clipboard.writeText(t), toast('Copied')); };
   try { $('#pCode').textContent = await api('myPeerCode', {}); } catch (e) {}
 }
@@ -2280,9 +2283,9 @@ $('#whoNew').onclick = () => {
   $('#whoErr').classList.add('hide');
   const signing = $('#signForm').classList.toggle('hide') === false;
   $('#whoPin').classList.toggle('hide', signing);
-  const jn = store('pendingCoach') && store('pendingCoachName'); // opened from a trainer's invite link
+  const jc = store('pendingCoach') && store('pendingCoachName'), jp = !jc && store('pendingPeer') && store('pendingPeerName'), jn = jc || jp; // opened from an invite link
   $('#whoTitle').textContent = jn ? 'Join ' + jn : signing ? 'Create account' : 'Welcome back';
-  $('#whoSub').textContent = jn ? (signing ? 'Create your account to train with ' : 'Sign in to join ') + jn : signing ? 'Pick your name and a PIN' : 'Sign in to Stat Sheet';
+  $('#whoSub').textContent = jn ? (signing ? (jc ? 'Create your account to train with ' : 'Create your account to compare stats with ') : 'Sign in to join ') + jn : signing ? 'Pick your name and a PIN' : 'Sign in to Stat Sheet';
   $('#whoNew').textContent = signing ? 'Have an account? Sign in' : 'New here? Create an account';
 };
 $('#signForm').onsubmit = e => {
@@ -2302,6 +2305,12 @@ $('#signForm').onsubmit = e => {
 };
 function showWho() {
   $('#who').classList.remove('hide'); $('#whoPin').reset();
+  const pp = store('pendingPeer');
+  if (pp && !store('pendingCoach')) api('peerInfo', { code: pp }).then(c => {
+    store('pendingPeerName', c.name);
+    if ($('#signForm').classList.contains('hide')) $('#whoNew').click();
+    $('#whoTitle').textContent = 'Join ' + c.name; $('#whoSub').textContent = 'Create your account to compare stats with ' + c.name;
+  }).catch(() => store('pendingPeer', null));
   const pc = store('pendingCoach'); if (!pc) return;
   api('coachInfo', { code: pc }).then(c => {
     store('pendingCoachName', c.name);
@@ -2489,6 +2498,7 @@ $('#profRemove').onclick = () => confirm('Remove your photo?') && saveAvatar('')
 function renderMenu() {
   const me = S.me, cls = viewingClient() ? 't' : me ? 'c' : '';
   paintAvatar($('#menuBtn'), me, cls); paintAvatar($('#meAv'), me, 'big ' + cls);
+  $('#peerAv').classList.toggle('hide', !viewingPeer()); if (viewingPeer()) paintAvatar($('#peerAv'), S.target, '');
   $('#mEdit').classList.toggle('hide', !me || viewingClient());
   $('#meName').textContent = me ? me.name : 'Not signed in';
   $('#meRole').textContent = !me ? 'Viewing only' : me.trainer ? (viewingClient() ? 'Trainer · viewing ' + S.target.name : 'Trainer · personal profile') : 'Client';
@@ -2618,6 +2628,9 @@ api('bootstrap', { date: TODAY })
     if (KEY && !d.me) return setWho(null); // this phone's key no longer works (e.g. removed): sign in again
     if (QS.get('k') && d.me) return setWho(Object.assign({ key: QS.get('k') }, d.me)); // old link: remember who, move to the plain link
     if (d.me && d.target && AS && d.target.id !== AS) store('as', d.target.id);
+    const pp = store('pendingPeer'); // opened from someone's peer link: become peers once signed in
+    if (pp && d.me) { store('pendingPeer', null); const pn = store('pendingPeerName'); store('pendingPeerName', null);
+      if (!(d.peers || []).some(x => x.name === pn)) api('addPeer', { code: pp }).then(w => { Object.assign(S, w); if (curTab === 'more') renderMore(); toast('You and ' + (pn || 'your friend') + ' are now peers', false, 5000); }).catch(() => {}); }
     const pc = store('pendingCoach'); // opened from a trainer's link: pair once signed in
     if (pc && d.me) { store('pendingCoach', null); setTimeout(() => store('pendingCoachName', null), 2000);
       // opening the invite link is the yes: join straight away (only switching from another trainer asks first)
