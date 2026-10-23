@@ -176,11 +176,12 @@ nav button.on{color:var(--accent)}
 .g-strip::-webkit-scrollbar{display:none}
 .g-strip img{flex:none;width:68px;height:90px;object-fit:cover;border-radius:8px;background:#2a303b;scroll-snap-align:center;opacity:.55;transition:opacity .15s}
 .g-strip img.cur{opacity:1;outline:2px solid #fff;outline-offset:-2px}
-.note{border-radius:14px;padding:9px 12px;margin-bottom:8px;font-size:15px;max-width:82%;width:fit-content;overflow-wrap:anywhere}
-.note small{display:block;margin-bottom:2px;font-weight:700;font-size:12px}
-.note.me{background:#3fb58a26}.note.me small{color:#3fb58a}
-.note.tr{background:#4f8df226}.note.tr small{color:#4f8df2}
-.note.right{margin-left:auto;border-bottom-right-radius:4px}.note.left{margin-right:auto;border-bottom-left-radius:4px}
+.nsec{--c:#3fb58a;border-left:4px solid var(--c);background:color-mix(in srgb,var(--c) 13%,transparent);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.nsec.tr{--c:#4f8df2}
+.nsec h4{margin:0 0 4px;font-size:13px;font-weight:800;color:var(--c);text-transform:uppercase;letter-spacing:.04em}
+.nitem{font-size:15px;padding:5px 0;overflow-wrap:anywhere}.nitem+.nitem{border-top:1px solid var(--line)}
+.nitem small{color:var(--muted);font-size:12px;margin-left:8px}
+.nnone{font-size:14px;color:var(--muted)}
 .enote.tr{border-left:3px solid #4f8df2}.enote.tr span{color:#4f8df2}
 .enote.me{border-left:3px solid #3fb58a}.enote.me span{color:#3fb58a}
 .enote{-webkit-line-clamp:1!important}
@@ -312,9 +313,9 @@ nav button.on{color:var(--accent)}
         </form>
       </div>
     </div>
-    <div class="card" id="dayNotes"><h3 id="notesTitle">Notes with trainer</h3>
+    <div class="card" id="dayNotes"><h3 id="notesTitle">Notes</h3>
       <div id="notes"></div>
-      <form id="noteForm" style="display:flex;gap:8px;margin-top:8px"><input name="text" class="grow" placeholder="Write a note for this day…" maxlength="1000"><button class="primary">Send</button></form>
+      <form id="noteForm" style="display:flex;gap:8px;margin-top:8px"><input name="text" class="grow" placeholder="Add your note for this day…" maxlength="1000"><button class="primary">Send</button></form>
     </div>
   </section>
 
@@ -465,7 +466,7 @@ nav button.on{color:var(--accent)}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023133839';
+const BUILD = '20261023135525';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -596,7 +597,7 @@ const ICONS = {
 const TABS = OWNER ? [['progress','Progress'],['today','Today'],['meals','Plan'],['more','More']] : [['progress','Progress'],['today','Today']];
 $('#nav').innerHTML = TABS.map(([id, label]) => `<button data-t="${id}"><svg viewBox="0 0 24 24">${ICONS[id]}</svg>${label}</button>`).join('');
 if (!OWNER) { document.body.classList.add('ro');
-  $('#notesTitle').textContent = 'Notes with client'; $$('#bodyForm input').forEach(i => i.readOnly = true); $('#roleTag').textContent = 'View only'; $('#roleTag').classList.remove('hide'); }
+$$('#bodyForm input').forEach(i => i.readOnly = true); $('#roleTag').textContent = 'View only'; $('#roleTag').classList.remove('hide'); }
 let curTab = 'progress';
 function show(id, keepScroll) {
   curTab = id;
@@ -776,6 +777,7 @@ async function renderToday() {
   r.body.forEach(b => MD.by[b.date] = b);
   r.photoDays.forEach(d => MD.photos[d] = 1);
   (r.workoutDays || []).forEach(d => MD.wk[d] = 1);
+  if (r.notes) for (let d = first; d <= last; d = addDays(d, 1)) NTD[d] = r.notes.filter(n => String(n.date).slice(0, 10) === d);
   // whole month of workouts up front, so switching days shows the right chips instantly
   if (!wkPending) for (let d = first; d <= last; d = addDays(d, 1)) WKD[d] = (r.workouts || []).filter(w => w.date === d);
   drawCal(); renderEntry();
@@ -801,24 +803,31 @@ function renderEntry() {
 }
 
 /* notes with trainer — filed per day, so each day has its own conversation */
+const NTD = {}; // date → that day's notes; the whole month arrives with the calendar, so days open instantly
 async function loadDayNotes() {
   const want = wSel;
-  $('#notes').innerHTML = '<div class="empty">Loading…</div>';
-  const list = await api('notesFor', { date: wSel });
-  if (want === wSel) renderDayNotes(list);
+  if (NTD[want]) renderDayNotes(NTD[want]);
+  else $('#notes').innerHTML = '<div class="empty">Loading…</div>';
+  try {
+    const list = await api('notesFor', { date: want });
+    NTD[want] = list; if (want === wSel) renderDayNotes(list);
+  } catch (e) {
+    if (want === wSel && !NTD[want]) $('#notes').innerHTML = '<button class="link" id="notesRetry">Couldn\'t load notes · tap to try again</button>', $('#notesRetry').onclick = loadDayNotes;
+  }
 }
+/** Two separate sections: the trainer's notes (blue) and the client's (green). You write into your own. */
 function renderDayNotes(list) {
-  // chat style: your own notes on the right, the other person's on the left; trainer always blue, client always green
-  $('#notes').innerHTML = list.map(n => {
-    const trainer = n.author === 'Trainer', mine = trainer === !OWNER;
-    const who = mine ? 'You' : trainer ? 'Trainer' : (S.profile.name || 'Client');
-    return `<div class="note ${trainer ? 'tr' : 'me'} ${mine ? 'right' : 'left'}"><small>${esc(who)}${String(n.date).length > 10 ? ' · ' + esc(String(n.date).slice(11)) : ''}</small>${esc(n.text)}</div>`;
-  }).join('') || `<div class="empty">No notes for ${wSel === TODAY ? 'today' : 'this day'}.</div>`;
+  const time = n => String(n.date).length > 10 ? String(n.date).slice(11) : '';
+  const sec = (cls, title, notes, none) => `<div class="nsec ${cls}"><h4>${title}</h4>` +
+    (notes.map(n => `<div class="nitem">${esc(n.text)}<small>${esc(time(n))}</small></div>`).join('') || `<div class="nnone">${none}</div>`) + '</div>';
+  const tr = list.filter(n => n.author === 'Trainer'), me = list.filter(n => n.author !== 'Trainer');
+  $('#notes').innerHTML = sec('tr', OWNER ? 'Trainer' : 'You (trainer)', tr, 'No notes from the trainer.')
+    + sec('me', OWNER ? 'You' : esc(S.profile.name || 'Client'), me, OWNER ? 'No notes from you.' : 'No notes from the client.');
 }
 $('#noteForm').onsubmit = e => {
   e.preventDefault(); const f = e.target, date = wSel;
   if (!f.text.value.trim()) return;
-  busy($('button', f), async () => { const list = await api('addNote', { text: f.text.value, date }); f.reset(); if (date === wSel) renderDayNotes(list); });
+  busy($('button', f), async () => { const list = await api('addNote', { text: f.text.value, date }); f.reset(); NTD[date] = list; if (date === wSel) renderDayNotes(list); });
 };
 
 /** Garmin (via Apple Health) numbers for the selected day, shown under the weight boxes. */
