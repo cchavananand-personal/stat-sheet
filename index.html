@@ -736,7 +736,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023215348';
+const BUILD = '20261023215944';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2408,7 +2408,7 @@ function renderAccount() {
       <div class="grow" style="min-width:0"><b>${esc(c.name)}</b><div class="csub${c.news && c.news.length && !c.invited ? ' newtag' : (!c.invited && act.quiet) || c.expired ? ' quiet' : ''}">${sub}</div></div>
       <button class="lk-nav" data-openc="${c.id}">Open</button><button class="link" data-more="${c.id}" aria-label="More options">⋯</button></div>${acts(c, i)}</div>`;
   }).join('') || '<div class="small muted">No clients yet.</div>';
-  cl.forEach(c => paintAvatar($(`#clientList [data-cav="${c.id}"]`), c, ''));
+  cl.forEach(c => paintAvatar($(`#clientList [data-cav="${c.id}"]`), c, 'cav'));
   $$('#clientList [data-open]').forEach(r => r.onclick = e => { if (clientDragged) return; if (!e.target.closest('[data-more]')) switchTo(r.dataset.open); });
   $$('#clientList [data-more]').forEach(b => b.onclick = () => $(`#clientList [data-acts="${b.dataset.more}"]`).classList.toggle('hide'));
   const keepOpen = id => { const el = $(`#clientList [data-acts="${id}"]`); if (el) el.classList.remove('hide'); };
