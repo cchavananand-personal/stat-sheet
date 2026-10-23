@@ -717,7 +717,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023175957';
+const BUILD = '20261023180111';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2051,7 +2051,7 @@ async function renderRanking(box, group) {
   if (!box.dataset.loaded) box.innerHTML = '<div class="ld" style="padding:8px 0">Loading…</div>';
   let rows; try { rows = await api('ranking', { group }); } catch (e) { return; }
   box.dataset.loaded = '1';
-  const how = '<p class="small muted" style="margin:0 0 6px">Consistency score, last 30 days: workouts (4 a week = 50) + weigh-ins (daily = 50)</p>';
+  const how = '<p class="small muted" style="margin:0 0 6px">Consistency out of 100 · last 30 days</p>';
   const sub = r => (r.workouts || 0) + ' workout' + (r.workouts === 1 ? '' : 's') + ' · ' + (r.weighIns || 0) + ' weigh-in' + (r.weighIns === 1 ? '' : 's');
   if (!rows.length) { box.innerHTML = '<p class="small muted" style="margin:0">Invite clients to see them ranked here.</p>'; return; }
   const sorted = rows.map(r => Object.assign({ score: consistency(r) }, r)).sort((x, y) => y.score - x.score);
