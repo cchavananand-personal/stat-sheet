@@ -39,6 +39,14 @@ body.tmode header{background:linear-gradient(color-mix(in srgb,var(--accent) 8%,
 body{margin:0;background:var(--bg);padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 /* trainer mode: C | T toggle in the header, and a row of clients under it (scrolls sideways when there are many) */
 #tab-clients summary{display:none}body.on-clients #clientBar{display:none!important}#tab-clients #openOnRow{margin:0}
+#peerBar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:linear-gradient(#e8a33d22,#e8a33d14),var(--bg);border-bottom:1px solid #e8a33d55;font-size:14px;white-space:nowrap}
+#peerBar.hide{display:none}#peerBar b{color:#e8a33d}#peerBar .lk-open{color:#e8a33d}
+.rk-row{display:grid;grid-template-columns:22px 26px 1fr 64px;align-items:center;gap:8px;padding:7px 0}
+.rk-row .avatar{width:26px;height:26px;font-size:12px}.rk-row .n{font-weight:800;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
+.rk-bar{height:10px;border-radius:99px;background:var(--soft);overflow:hidden;margin-top:4px}.rk-bar i{display:block;height:100%;border-radius:99px;background:color-mix(in srgb,var(--text) 35%,transparent)}
+.rk-row.me .rk-bar i{background:var(--accent)}.rk-row.me b{color:var(--accent)}.rk-row b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.rk-val{text-align:right;font-weight:800;font-variant-numeric:tabular-nums;font-size:14px}
+.rk-tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.rk-tiles div{background:var(--soft);border-radius:12px;padding:10px 12px}.rk-tiles b{display:block;font-size:20px}.rk-tiles small{color:var(--muted);font-size:12px}
 #trainerBar{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding:6px 16px 8px}
 #modeSeg{display:flex;gap:4px;padding:3px;border-radius:12px;background:var(--soft);max-width:648px;margin:auto}
 #modeSeg button{flex:1;min-height:36px;padding:0 8px;border-radius:9px;background:none;font-size:14px;font-weight:700;color:var(--muted);white-space:nowrap}
@@ -271,12 +279,13 @@ nav button.on{color:var(--accent)}
 /* first-load screen */
 /* sign-in screen: --who-bg can be swapped for a photo, e.g. url(signin-bg.jpg) center/cover */
 #who{--who-bg:radial-gradient(900px 520px at 15% -5%,#0d6a5059,transparent 70%),radial-gradient(800px 560px at 105% 105%,#3a2a9e55,transparent 70%),linear-gradient(160deg,#0a1110,#0b0d14);
+  --bg:#0f1312;--card:#171c1a;--text:#e6ece9;--muted:#93a09a;--line:#2a322f;--soft:#1f2724;--accent:#3fb58a;--accent-ink:#06120d;color:var(--text);
   position:fixed;inset:0;z-index:60;background:var(--who-bg);background-color:#0b0f0e;display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto}
 .whobox{width:100%;max-width:360px;display:grid;gap:18px;text-align:center;padding:30px 22px 22px;border-radius:24px;
   background:#121917cc;border:1px solid #ffffff14;box-shadow:0 24px 60px #0009;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .whobox img{width:76px;height:76px;border-radius:20px;margin:0 auto;box-shadow:0 10px 30px #0d6a5066}
 .whobox h2{margin:0;font-size:24px;letter-spacing:-.01em}.whobox h2+p{margin:4px 0 0;font-size:15px}
-#whoPin,#invForm{display:grid;gap:12px;text-align:center}#invForm label{font-size:13px;font-weight:600;color:var(--muted)}#invForm input{font-size:17px;margin-top:6px;min-height:50px}
+#whoPin,#invForm,#signForm{display:grid;gap:12px;text-align:center}#signForm.hide{display:none}#signForm label{font-size:13px;font-weight:600;color:var(--muted)}#signForm input{font-size:17px;margin-top:6px;min-height:50px;text-align:center}#invForm label{font-size:13px;font-weight:600;color:var(--muted)}#invForm input{font-size:17px;margin-top:6px;min-height:50px}
 #whoPin label{font-size:13px;font-weight:600;color:var(--muted)}
 #whoPin input,#invForm input{font-size:17px;margin-top:6px;min-height:50px;text-align:center} /* same font for name and PIN, centred */
 /* Safari autofill paints fields yellow: keep them the card colour */
@@ -371,6 +380,13 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <label>Type it again<input name="pin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
     <button class="primary">Set PIN and start</button>
   </form>
+  <form id="signForm" class="hide">
+    <label>Your name<input name="name" maxlength="40" autocapitalize="words" autocomplete="name" placeholder="e.g. Mint" required></label>
+    <label>Choose a PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
+    <label>Type it again<input name="pin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
+    <button class="primary">Create account</button>
+  </form>
+  <button class="lk-open" id="whoNew">New here? Create an account</button>
   <button class="link" id="whoGuest">Continue without signing in</button>
   <p class="small muted" style="margin:0">You stay signed in on this phone until you sign out.</p>
 </div></div>
@@ -385,6 +401,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
   </svg><b id="brandName">STAT SHEET</b></div>
   <div class="row" style="gap:8px"><div class="role hide" id="roleTag"></div><button class="avatar" id="menuBtn" aria-label="Account">?</button></div>
 </header>
+<div id="peerBar" class="hide"><span>Viewing <b id="peerName"></b> · peer</span><button class="lk-open" id="peerBack">Back to my stats</button></div>
 <div id="trainerBar" class="hide">
   <div id="modeSeg"><button data-m="c"><span class="mb c">C</span>Personal Profile</button><button data-m="t"><span class="mb t">T</span>Client Profile<i class="nbadge hide" id="tBadge"></i></button></div>
   <div id="clientBar" class="hide" role="tablist" aria-label="Clients"></div>
@@ -400,6 +417,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <div class="card"><div class="row between"><h3 style="margin:0">Body fat</h3><div class="thead" id="tFHead"></div></div><div class="chart sm"><canvas id="tF"></canvas></div></div>
     <div id="extraCharts"></div>
     <div class="lkrow" style="margin:-4px 0 12px"><button class="lk-nav" data-go="more:chartsCard">+ Add graphs in More › Custom Graphs</button></div>
+    <div class="card hide" id="rankCard"></div>
     <div class="card"><div class="row between"><h3 style="margin:0">Progress photos</h3><button class="lk-nav" data-gallery>Open gallery</button></div>
       <div class="strip" id="tStrip" style="margin-top:8px"></div></div>
 
@@ -586,6 +604,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <div class="card" id="codeCard"><div class="row between"><div><div class="small muted">Your trainer code</div><b id="tCode" style="font-size:20px;letter-spacing:.06em">…</b></div>
       <div class="row" style="gap:6px"><button id="codeShare" class="primary" style="min-height:40px">Share</button><button id="codeNew" class="link" style="min-height:0">New code</button></div></div>
       <p class="small muted" style="margin:8px 0 0">People who already use Stat Sheet enter it in More › Trainer to become your client.</p></div>
+    <div class="card" id="clientRankCard"></div>
     <div class="card" id="openOnCard"><label id="openOnRow" style="margin:0">Open the app on<select id="openOn"></select></label></div>
   </section>
 
@@ -593,6 +612,8 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <h2>More</h2>
     <p class="grp">MY TRAINER</p>
     <div class="card" id="myTrainer"></div>
+    <p class="grp">MY PEERS</p>
+    <div class="card" id="peersCard"></div>
     <div class="card" id="trainerMode"></div>
     <p class="grp">CUSTOMIZE</p>
     <details class="card" id="chartsCard"><summary><i data-ic="chart"></i>Custom Graphs</summary><div id="chartsBox" class="small"></div></details>
@@ -697,7 +718,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023174414';
+const BUILD = '20261023175014';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -727,15 +748,17 @@ const I_TRAIN = QS.get('view') === 'trainer' || !!(WHO && (WHO.trainer || WHO.ro
 // "Open the app on" setting (My stats · Last client viewed · a chosen client).
 const keepAs = (() => { try { return sessionStorage.getItem('keepAs') === '1'; } catch (e) { return false; } })();
 const OPEN_ON = store('openOn') || 'me';
-const AS = !I_TRAIN ? '' : keepAs ? store('as') || ''
+const AS = keepAs ? store('as') || '' : !I_TRAIN ? ''
   : OPEN_ON === 'me' ? '' : OPEN_ON === 'last' ? store('lastAs') || '' : OPEN_ON;
 if (I_TRAIN) { store('as', AS || null); try { sessionStorage.setItem('keepAs', '1'); } catch (e) {} }
 const ROLE = !KEY ? (PINS_ON || (WHO && WHO.role === 'guest') ? 'guest' : 'owner')
+  : AS && AS !== (WHO && WHO.id) && store('asKind') === 'peer' ? 'peer' // a peer's stats: look only
   : I_TRAIN && AS && AS !== (WHO && WHO.id) ? 'trainer' : 'owner'; // a trainer starts on their own stats
-const OWNER = ROLE !== 'guest'; // signed in = full access to the stats on screen (a trainer has full access to clients)
+const OWNER = ROLE !== 'guest' && ROLE !== 'peer'; // signed in = full access to the stats on screen (a trainer has full access to clients)
 const clientName = () => (typeof S !== 'undefined' && S.target && S.target.name) || (typeof S !== 'undefined' && S.profile && S.profile.name) || 'Client';
 const trainerName = () => (typeof S !== 'undefined' && S.trainerName) || 'Trainer';
-const viewingClient = () => !!(S.me && S.target && S.me.id !== S.target.id); // a trainer looking at someone else
+const viewingClient = () => !!(S.me && S.target && S.me.id !== S.target.id && S.role !== 'peer');
+const viewingPeer = () => S.role === 'peer'; // a trainer looking at someone else
 const $ = (s, el) => (el || document).querySelector(s);
 const $$ = (s, el) => [...(el || document).querySelectorAll(s)];
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -865,7 +888,7 @@ if (ROLE === 'trainer') { // trainer mode: the Clients tab holds the client list
 }
 if (!OWNER) { document.body.classList.add('ro');
 $$('#bodyForm input').forEach(i => i.readOnly = true); }
-if (ROLE === 'guest') $('#noteForm').classList.add('hide');
+if (ROLE === 'guest' || ROLE === 'peer') $('#noteForm').classList.add('hide');
 function renderRoleTag() {
   const t = $('#roleTag');
   // C = your own stats (client mode) · T = a client's stats (trainer mode)
@@ -874,7 +897,9 @@ function renderRoleTag() {
   // title: TRAINER X CLIENT only in trainer mode; otherwise just the app name
   $('#brandName').innerHTML = viewingClient() ? esc(S.me.name.toUpperCase()) + ' <span>X</span> ' + esc(S.target.name.toUpperCase()) : 'STAT SHEET';
   // trainers: C | T toggle; in T, one tap per client
-  $('#trainerBar').classList.toggle('hide', !trainer);
+  $('#trainerBar').classList.toggle('hide', !trainer || viewingPeer());
+  $('#peerBar').classList.toggle('hide', !viewingPeer());
+  if (viewingPeer()) $('#peerName').textContent = S.target.name;
   document.body.classList.toggle('tmode', viewingClient());
   paintMode();
   $$('#modeSeg button').forEach(b => b.classList.toggle('on', (b.dataset.m === 't') === viewingClient()));
@@ -904,7 +929,10 @@ function showSwitch() {
   $('#switcher').classList.remove('hide');
 }
 $('#switcher').onclick = e => { if (e.target.id === 'switcher') $('#switcher').classList.add('hide'); };
-function switchTo(id) { store('as', id); if (S.me && id !== S.me.id) store('lastAs', id); clearSaved(); location.replace(location.pathname); }
+function switchTo(id, kind) {
+  store('as', id); store('asKind', kind || null); if (S.me && id !== S.me.id && !kind) store('lastAs', id);
+  try { sessionStorage.setItem('keepAs', '1'); } catch (e) {} clearSaved(); location.replace(location.pathname);
+}
 let curTab = 'progress';
 function show(id, keepScroll) {
   curTab = id;
@@ -912,7 +940,7 @@ function show(id, keepScroll) {
   $$('main > section').forEach(s => s.classList.toggle('hide', s.id !== 'tab-' + id));
   if (!keepScroll) window.scrollTo(0, 0);
   document.body.classList.toggle('on-clients', id === 'clients'); paintMode();
-  ({ progress: renderProgress, today: renderToday, meals: renderMealsTab, more: renderMore, clients: () => { renderAccount(); renderCode(); } })[id]();
+  ({ progress: renderProgress, today: renderToday, meals: renderMealsTab, more: renderMore, clients: () => { renderAccount(); renderCode(); renderRanking($('#clientRankCard'), 'clients'); } })[id]();
 }
 $('#nav').onclick = e => { const b = e.target.closest('button'); if (b) show(b.dataset.t); };
 
@@ -946,6 +974,8 @@ function renderProgress() {
   $('#todayLbl').textContent = nice(TODAY, {weekday:'long', day:'numeric', month:'long'});
   segment('tMode', tMode, m => { tMode = m; drawTrends(); });
   CD = null; // graphs pick up workouts and details logged since last time
+  $('#rankCard').classList.toggle('hide', ROLE !== 'owner' || viewingClient());
+  if (ROLE === 'owner' && !viewingClient()) renderRanking($('#rankCard'), 'peers');
   drawTrends(); renderPhotoStrip(); loadLog();
 }
 /** Latest progress photos under the body-fat chart; tap one to open the gallery on that day. */
@@ -1995,7 +2025,60 @@ function renderTrainerMode() {
   if ($('#tmOn')) $('#tmOn').onclick = e => busy(e.target, flip(true));
   if ($('#tmOff')) $('#tmOff').onclick = e => confirm('Turn off trainer mode?') && busy(e.target, flip(false));
 }
+/** More › My Peers: share your peer code, add someone's, see who you're peers with. Peers can only look. */
+async function renderPeers() {
+  const box = $('#peersCard'), list = S.peers || [];
+  box.classList.toggle('hide', !S.me); if (!S.me) return;
+  box.innerHTML = `<div class="row between"><div><div class="small muted">Your peer code</div><b id="pCode" style="font-size:18px;letter-spacing:.05em">…</b></div>
+      <button class="primary" id="pShare" style="min-height:40px">Share</button></div>
+    <p class="small muted" style="margin:8px 0 10px">Peers see each other's stats and rankings. They can't change anything.</p>
+    ${list.map(x => `<div class="crow" style="cursor:default"><span class="avatar" data-pav="${x.id}"></span><b>${esc(x.name)}</b>
+      <button class="lk-nav" data-peer="${x.id}">Open</button><button class="link" data-unpeer="${x.id}" style="font-size:13px;color:var(--muted)">Remove</button></div>`).join('')}
+    <form id="peerForm" style="display:flex;gap:8px;align-items:flex-end;margin-top:10px"><label class="grow" style="margin:0">Add a peer<input name="code" maxlength="24" autocapitalize="characters" placeholder="Their code, e.g. P-MINT-4821" style="text-transform:uppercase"></label><button class="primary">Add</button></form>`;
+  list.forEach(x => paintAvatar($(`[data-pav="${x.id}"]`, box), x, ''));
+  $$('[data-peer]', box).forEach(b => b.onclick = () => switchTo(b.dataset.peer, 'peer'));
+  $$('[data-unpeer]', box).forEach(b => b.onclick = () => confirm('Stop being peers? Neither of you will see the other\'s stats.') && busy(b, async () => { Object.assign(S, await api('removePeer', { id: b.dataset.unpeer })); renderPeers(); }));
+  $('#peerForm').onsubmit = e => { e.preventDefault(); const f = e.target;
+    busy($('button', f), async () => { Object.assign(S, await api('addPeer', { code: f.code.value })); renderPeers(); toast('Peer added'); }); };
+  $('#pShare').onclick = () => { const t = 'Add me as a peer on Stat Sheet: ' + $('#pCode').textContent + ' (More › My Peers). App: ' + location.origin + location.pathname;
+    navigator.share ? navigator.share({ text: t }).catch(() => {}) : (navigator.clipboard && navigator.clipboard.writeText(t), toast('Copied')); };
+  try { $('#pCode').textContent = await api('myPeerCode', {}); } catch (e) {}
+}
+/* Rankings over the last 30 days. Progress: you + your peers. My Clients: a trainer's clients. */
+const RANK_METRICS = [
+  { k: 'workouts', label: 'Workouts', unit: ' d', hint: 'workout days in the last 30', better: 1 },
+  { k: 'streak', label: 'Streak', unit: ' d', hint: 'days in a row with a weigh-in', better: 1 },
+  { k: 'weighIns', label: 'Weigh-ins', unit: '', hint: 'weigh-ins in the last 30 days', better: 1 },
+  { k: 'bfChange', label: 'Body fat', unit: '%', hint: 'body-fat change over 30 days (a drop ranks first)', better: -1 }];
+let rankMetric = 'workouts';
+async function renderRanking(box, group) {
+  const title = group === 'clients' ? 'Client Rankings' : 'Rankings';
+  if (!box.dataset.loaded) box.innerHTML = `<h3>${title}</h3><div class="ld" style="padding:8px 0">Loading…</div>`;
+  let rows; try { rows = await api('ranking', { group }); } catch (e) { return; }
+  box.dataset.loaded = '1';
+  const m = RANK_METRICS.find(x => x.k === rankMetric) || RANK_METRICS[0];
+  const fmt = v => v == null ? '–' : (m.k === 'bfChange' && v > 0 ? '+' : '') + fmtN(v, m.k === 'bfChange' ? 1 : 0) + m.unit;
+  if (group === 'peers' && rows.length <= 1) { // only you so far: your numbers, and how to compare
+    const r = rows[0] || {};
+    box.innerHTML = `<h3>${title}</h3><p class="small muted" style="margin:0">Your last 30 days</p>
+      <div class="rk-tiles">${RANK_METRICS.map(x => `<div><b>${x.k === 'bfChange' && r[x.k] > 0 ? '+' : ''}${r[x.k] == null ? '–' : fmtN(r[x.k], x.k === 'bfChange' ? 1 : 0) + x.unit}</b><small>${x.hint}</small></div>`).join('')}</div>
+      <div class="lkrow" style="text-align:left;margin:0"><button class="lk-nav" data-go="more:peersCard">Add peers in More › My Peers to see how you compare</button></div>`;
+    return;
+  }
+  if (!rows.length) { box.innerHTML = `<h3>${title}</h3><p class="small muted" style="margin:0">Invite clients to see them ranked here.</p>`; return; }
+  const sorted = rows.slice().sort((a, b) => (a[m.k] == null) - (b[m.k] == null) || m.better * ((b[m.k] || 0) - (a[m.k] || 0)));
+  const max = Math.max(1e-9, ...sorted.map(r => Math.abs(r[m.k] || 0)));
+  box.innerHTML = `<div class="row between"><h3 style="margin:0">${title}</h3><span class="small muted">last 30 days</span></div>
+    <div class="seg" style="margin:10px 0 4px">${RANK_METRICS.map(x => `<button data-rk="${x.k}" class="${x.k === m.k ? 'on' : ''}">${x.label}</button>`).join('')}</div>
+    <p class="small muted" style="margin:0 0 6px">${m.hint}</p>
+    ${sorted.map((r, i) => `<div class="rk-row${r.me ? ' me' : ''}"><span class="n">${r[m.k] == null ? '–' : i + 1}</span><span class="avatar" data-rkav="${r.id}"></span>
+      <div style="min-width:0"><b>${esc(r.me ? r.name + ' (you)' : r.name)}</b><div class="rk-bar"><i style="width:${r[m.k] == null ? 0 : Math.max(4, Math.abs(r[m.k]) / max * 100)}%"></i></div></div>
+      <span class="rk-val">${fmt(r[m.k])}</span></div>`).join('')}`;
+  sorted.forEach(r => paintAvatar($(`[data-rkav="${r.id}"]`, box), r, r.me ? 'c' : ''));
+  $$('[data-rk]', box).forEach(b => b.onclick = () => { rankMetric = b.dataset.rk; renderRanking(box, group); });
+}
 function renderMore() {
+  renderPeers();
   renderMyTrainer(); renderTrainerMode();
   renderAccount();
   const f = $('#profileForm');
@@ -2146,6 +2229,19 @@ function setWho(w) {
   clearSaved();
   location.replace(location.pathname); // drop any old ?view=trainer&k=… so everyone ends up on the same link
 }
+$('#peerBack').onclick = () => switchTo(S.me.id);
+$('#whoNew').onclick = () => {
+  const signing = $('#signForm').classList.toggle('hide') === false;
+  $('#whoPin').classList.toggle('hide', signing);
+  $('#whoTitle').textContent = signing ? 'Create account' : 'Welcome back';
+  $('#whoSub').textContent = signing ? 'Pick your name and a PIN' : 'Sign in to Stat Sheet';
+  $('#whoNew').textContent = signing ? 'Have an account? Sign in' : 'New here? Create an account';
+};
+$('#signForm').onsubmit = e => {
+  e.preventDefault(); const f = e.target;
+  if (f.pin.value !== f.pin2.value) { f.pin2.value = ''; f.pin2.focus(); return toast('The two PINs are different', true); }
+  busy($('button.primary', f), async () => { setWho(await api('signUp', { name: f.name.value, pin: f.pin.value })); });
+};
 function showWho() { $('#who').classList.remove('hide'); $('#whoPin').reset(); }
 $('#whoGuest').onclick = () => ROLE === 'guest' ? (store('who', JSON.stringify({ role: 'guest', key: '' })), $('#who').classList.add('hide')) : setWho({ role: 'guest', key: '' });
 $('#whoPin').onsubmit = e => {
@@ -2222,6 +2318,7 @@ function paintMode() {
   if (typeof S === 'undefined' || !S.target) return;
   const onList = curTab === 'clients', me = viewingClient() && !onList && (S.clients || []).find(c => c.id === S.target.id), col = me && me.color;
   if (col) { document.body.style.setProperty('--accent', col); store('clr-' + S.target.id, col); } else document.body.style.removeProperty('--accent');
+  if (viewingPeer()) { $('#brandName').innerHTML = esc(S.target.name.toUpperCase()) + ' <span>·</span> PEER'; document.body.style.setProperty('--accent', '#e8a33d'); return; }
   if (viewingClient()) $('#brandName').innerHTML = onList ? 'MY CLIENTS' : esc(S.me.name.toUpperCase()) + ' <span>X</span> ' + esc(S.target.name.toUpperCase());
 }
 /** A round avatar: the person's photo if they have one, otherwise their initial. */
