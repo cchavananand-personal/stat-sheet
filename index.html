@@ -299,6 +299,8 @@ button.loading img,button.loading svg{opacity:0}
 .ndot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#e8664a;margin-left:7px;vertical-align:2px}
 .nbadge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:#e8664a;color:#fff;font-size:11px;font-weight:800;font-style:normal;margin-left:8px}
 .nbadge.hide{display:none}.newtag{color:#e8664a;font-weight:700;white-space:nowrap}
+#trainerMode.lit{border-color:color-mix(in srgb,var(--accent) 70%,transparent);background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 20%,var(--card)),var(--card));box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 30%,transparent),0 8px 24px color-mix(in srgb,var(--accent) 18%,transparent)}
+#trainerMode.lit>b{color:var(--accent)}
 #myTrainer .row{gap:12px;align-items:center}#myTrainer b{font-size:16px}
 #pairForm{display:flex;gap:8px;align-items:flex-end;margin-top:6px}#pairForm label{flex:1;margin:0}#pairForm input{text-transform:uppercase;letter-spacing:.05em}
 /* buttons read as titles (e.g. "Add To Quick Menu"), not sentences */
@@ -312,6 +314,9 @@ button,.plink,.addtile span,.pick span,summary,.card h3,h2,.psheet b{text-transf
 .pills button{min-height:34px;padding:0;border-radius:9px;font-size:14px;font-weight:700;background:var(--soft);color:var(--muted)}
 .pills button.on{background:var(--accent);color:var(--accent-ink)}
 .ciNum{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--muted)}.ciNum input{max-width:120px;margin:0;text-align:center}
+.pill-on,.pill-off{min-height:32px;padding:0 14px;border-radius:99px;font-size:13px;font-weight:700}
+.pill-on{background:var(--accent);color:var(--accent-ink)}.pill-off{background:var(--soft);color:var(--muted)}
+.cidef.off b{color:var(--muted);font-weight:600}
 .cidef{display:flex;align-items:center;gap:8px;min-height:44px;border-bottom:1px solid var(--line)}.cidef b{flex:1}.cidef .link{min-height:0;padding:4px 8px}
 #ciAdd{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}#ciAdd .wide{grid-column:1/-1}
 .grp{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--muted);margin:20px 4px 8px}
@@ -402,7 +407,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
           </div>
         </form>
         <div class="small muted" id="saveState" style="text-align:center;min-height:18px;margin-top:8px"></div>
-        <div style="text-align:center"><button class="link minilink" id="ciToggle">More details ›</button></div>
+        <div style="text-align:center"><button class="link minilink" id="ciToggle">Custom parameters ›</button></div>
         <div id="ciBox" class="hide"></div>
         <div class="hstrip hide" id="dayHealth"></div>
         <div class="photos" id="dayPhotos"></div>
@@ -566,10 +571,10 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <div class="card" id="myTrainer"></div>
     <div class="card" id="trainerMode"></div>
     <p class="grp">CUSTOMIZE</p>
-    <details class="card" id="chartsCard"><summary><i data-ic="chart"></i>Progress graphs</summary><div id="chartsBox" class="small"></div></details>
-    <details class="card" id="ciDefsCard"><summary><i data-ic="sliders"></i>Daily details</summary><div id="ciDefs" class="small"></div></details>
+    <details class="card" id="chartsCard"><summary><i data-ic="chart"></i>Custom Graphs</summary><div id="chartsBox" class="small"></div></details>
+    <details class="card" id="ciDefsCard"><summary><i data-ic="sliders"></i>Custom Parameters</summary><div id="ciDefs" class="small"></div></details>
     <p class="grp">YOUR DATA</p>
-    <details class="card" id="histCard"><summary><i data-ic="sparkle"></i>Full history · for AI</summary><div class="small">
+    <details class="card" id="histCard"><summary><i data-ic="file"></i>Full History Export</summary><div class="small">
       <p style="margin-top:0">Every day in one file: weight, body fat, meals, workouts (every set), activity, and notes from you and your trainer, plus your goals, meal plan and training rotation. Paste it into ChatGPT, Claude or another AI and ask for advice.</p>
       <button class="primary" id="histCopy" style="width:100%">Copy all</button>
       <div class="grid2" style="margin-top:8px"><button data-x="history">Download MD</button><button data-x="historycsv">Download CSV</button></div>
@@ -633,7 +638,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <button data-x="body"><i data-ic="bars"></i>Body data · CSV</button>
     <button data-x="meals"><i data-ic="meal"></i>Meal log · CSV</button>
     <button data-x="plan"><i data-ic="notes"></i>Meal plan · PDF</button>
-    <button data-x="history"><i data-ic="sparkle"></i>Full history · for AI</button>
+    <button data-x="history"><i data-ic="file"></i>Full History Export</button>
     <small id="menuNote" class="hide"></small>
   </div>
   <button id="mPin"><i data-ic="key"></i>Change PIN</button>
@@ -669,7 +674,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023170054';
+const BUILD = '20261023170355';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1133,8 +1138,8 @@ function renderDayNotes(list) {
   const sec = (cls, title, notes, none) => `<div class="nsec ${cls}"><h4>${title}</h4>` +
     (notes.map(n => `<div class="nitem" data-nid="${n.id}"><span class="ntext">${esc(n.text)}</span><small>${esc(time(n))}</small>${myNote(n) ? '<span class="nacts"><button class="link" data-nedit aria-label="Edit">✎</button><button class="link" data-ndel aria-label="Delete">✕</button></span>' : ''}</div>`).join('') || `<div class="nnone">${none}</div>`) + '</div>';
   const tr = list.filter(n => n.author === 'Trainer'), me = list.filter(n => n.author !== 'Trainer');
-  $('#notes').innerHTML = sec('tr', esc(trainerName()) + (viewingClient() ? ' · you' : ' · trainer'), tr, 'No notes from ' + esc(trainerName()) + '.')
-    + sec('me', esc(clientName()) + (OWNER && !viewingClient() ? ' · you' : ' · client'), me, 'No notes from ' + esc(clientName()) + '.');
+  $('#notes').innerHTML = (tr.length ? sec('tr', esc(trainerName()) + (viewingClient() ? ' · you' : ' · trainer'), tr, '') : '')
+    + (me.length ? sec('me', esc(clientName()) + (OWNER && !viewingClient() ? ' · you' : ' · client'), me, '') : '');
   const date = wSel, after = l => { NTD[date] = l; if (date === wSel) renderDayNotes(l); };
   $$('#notes [data-ndel]').forEach(b => b.onclick = () => confirm('Delete this note?') &&
     busy(b, async () => after(await api('deleteNote', { id: b.closest('[data-nid]').dataset.nid }))));
@@ -1177,12 +1182,13 @@ function showLogMode() {
 const DEFAULT_CHECKINS = [['feeling', 'Feeling'], ['energy', 'Energy'], ['sleepq', 'Sleep quality'], ['soreness', 'Soreness'], ['stress', 'Stress'],
   ['hunger', 'Hunger'], ['dryness', 'Dryness']].map(([key, name]) => ({ key, name, type: 'scale', unit: '' }))
   .concat([{ key: 'water', name: 'Water', type: 'number', unit: 'L' }]);
-const ciDefs = () => { try { const d = JSON.parse(S.profile.checkins || ''); if (Array.isArray(d)) return d; } catch (e) {} return DEFAULT_CHECKINS; };
+const ciAll = () => { try { const d = JSON.parse(S.profile.checkins || ''); if (Array.isArray(d)) return d; } catch (e) {} return DEFAULT_CHECKINS; };
+const ciDefs = () => ciAll().filter(f => f.on !== false); // the ones in use; removed ones keep on:false and can be added back
 const CI = {}; // date → {key: value}
 let ciOpen = false;
 async function renderCheckins() {
   const date = wSel, box = $('#ciBox'), v = CI[date], n = v ? Object.keys(v).length : 0;
-  $('#ciToggle').textContent = ciOpen ? 'Hide details ‹' : 'More details' + (n ? ' · ' + n + ' logged' : '') + ' ›';
+  $('#ciToggle').textContent = ciOpen ? 'Hide custom parameters ‹' : 'Custom parameters' + (n ? ' · ' + n + ' logged' : '') + ' ›';
   box.classList.toggle('hide', !ciOpen);
   if (!ciOpen) return;
   if (!v) {
@@ -1206,40 +1212,42 @@ $('#ciToggle').onclick = () => { ciOpen = !ciOpen; renderCheckins(); };
 
 /** More › Customize › Daily details: choose what to track. */
 function renderCiDefs() {
-  const defs = ciDefs(), box = $('#ciDefs');
-  box.innerHTML = `<p style="margin-top:0" class="muted">These show under Today › Weight › More details.</p>` +
-    defs.map((f, i) => `<div class="cidef"><b>${esc(f.name)}</b><span class="muted">${f.type === 'scale' ? '1–10' : esc(f.unit || 'number')}</span><button class="link" data-cdel="${i}" aria-label="Remove">✕</button></div>`).join('') +
-    `<form id="ciAdd"><label class="wide">New detail<input name="name" maxlength="30" placeholder="e.g. Pump, Digestion, Steps outside"></label>
+  const all = ciAll(), box = $('#ciDefs');
+  box.innerHTML = `<p style="margin-top:0" class="muted">Extra things to track each day. They show under Today › Weight › Custom parameters.</p>` +
+    all.map((f, i) => { const on = f.on !== false;
+      return `<div class="cidef${on ? '' : ' off'}"><b>${esc(f.name)}</b><span class="muted">${f.type === 'scale' ? '1–10' : esc(f.unit || 'number')}</span>
+        <button class="${on ? 'pill-off' : 'pill-on'}" data-ctog="${i}">${on ? 'Remove' : 'Add'}</button></div>`; }).join('') +
+    `<form id="ciAdd"><label class="wide">New parameter<input name="name" maxlength="30" placeholder="e.g. Pump, Digestion, Steps outside"></label>
       <label>Type<select name="type"><option value="scale">1–10 scale</option><option value="number">Number</option></select></label>
       <label>Unit<input name="unit" maxlength="12" placeholder="e.g. L, km, hrs"></label>
-      <button class="primary wide">Add Detail</button></form>
-     <button class="link minilink" id="ciReset" style="margin-top:8px">Reset to starter set</button>`;
-  const put = defs2 => busy($('#ciAdd button'), async () => { const d = await api('saveCheckinDefs', { defs: defs2 }); S.profile.checkins = JSON.stringify(d); renderCiDefs(); if (ciOpen) renderCheckins(); });
-  $$('[data-cdel]', box).forEach(b => b.onclick = () => confirm('Stop tracking ' + defs[+b.dataset.cdel].name + '? Past entries stay in your history.') && put(defs.filter((_, i) => i !== +b.dataset.cdel)));
+      <button class="primary wide">Create Parameter</button></form>`;
+  const put = list => busy($('#ciAdd button'), async () => { const d = await api('saveCheckinDefs', { defs: list }); S.profile.checkins = JSON.stringify(d); renderCiDefs(); if (ciOpen) renderCheckins(); });
+  $$('[data-ctog]', box).forEach(b => b.onclick = () => put(all.map((f, i) => i === +b.dataset.ctog ? Object.assign({}, f, { on: f.on === false }) : f)));
   $('#ciAdd').onsubmit = e => {
     e.preventDefault(); const x = formObj(e.target), name = x.name.trim();
-    if (!name) return toast('Name the detail first', true);
+    if (!name) return toast('Name the parameter first', true);
     let key = name.toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 20) || 'detail';
-    while (defs.some(f => f.key === key)) key += '2';
-    put(defs.concat([{ key, name, type: x.type, unit: x.type === 'number' ? x.unit.trim() : '' }]));
+    while (all.some(f => f.key === key)) key += '2';
+    put(all.concat([{ key, name, type: x.type, unit: x.type === 'number' ? x.unit.trim() : '', on: true }]));
   };
-  $('#ciReset').onclick = () => confirm('Go back to the starter set?') && put(DEFAULT_CHECKINS);
 }
 $('#ciDefsCard').addEventListener('toggle', e => { if (e.target.open) renderCiDefs(); });
 /** More › Customize › Progress graphs: Weight and Body fat always; add any of these underneath. */
 async function renderChartsBox() {
   const box = $('#chartsBox'), list = chartList();
   if (!CD) { box.innerHTML = '<p class="muted" style="margin:0">Loading…</p>'; try { CD = await api('chartData'); } catch (e) { return; } }
-  const opts = [['volume', 'Training volume (kg lifted)'], ['steps', 'Steps'], ['kcal', 'Calories eaten']]
+  const opts = [['volume', 'Training volume'], ['steps', 'Steps'], ['kcal', 'Calories eaten']]
     .concat(CD.exercises.map(e => ['e1rm:' + e[0], 'Strength · ' + e[1]]))
-    .concat(ciDefs().map(f => ['check:' + f.key, 'Daily detail · ' + f.name])).filter(o => list.indexOf(o[0]) < 0);
-  box.innerHTML = `<p class="muted" style="margin-top:0">Weight and Body fat always show. These appear underneath, in this order.</p>` +
-    list.map((id, i) => { const c = chartSpec(id); return c ? `<div class="cidef"><b>${esc(c.title)}</b><button class="link" data-gdel="${i}" aria-label="Remove">✕</button></div>` : ''; }).join('') +
-    `<form id="chartAdd" style="display:flex;gap:8px;align-items:flex-end;margin-top:12px"><label class="grow">Add a graph<select name="id">${opts.map(o => `<option value="${esc(o[0])}">${esc(o[1])}</option>`).join('')}</select></label><button class="primary">Add</button></form>
-     <p class="muted" style="margin:8px 0 0">Strength = estimated 1-rep max from your heaviest set (kg × reps). Exercises appear here once you've logged sets.</p>`;
-  const put = l => busy($('#chartAdd button'), async () => { S.profile = await api('saveProfile', { charts: JSON.stringify(l) }); renderChartsBox(); toast('Progress updated'); });
-  $$('[data-gdel]', box).forEach(b => b.onclick = () => put(list.filter((_, i) => i !== +b.dataset.gdel)));
-  $('#chartAdd').onsubmit = e => { e.preventDefault(); const v = e.target.id.value; if (v) put(list.concat([v])); };
+    .concat(ciDefs().map(f => ['check:' + f.key, f.name]));
+  list.forEach(id => { if (!opts.some(o => o[0] === id) && chartSpec(id)) opts.push([id, chartSpec(id).title]); }); // keep ones already chosen
+  box.innerHTML = `<p class="muted" style="margin-top:0">Weight and Body fat always show. Added graphs appear underneath, in the order you add them.</p>` +
+    opts.map(o => { const on = list.indexOf(o[0]) >= 0;
+      return `<div class="cidef${on ? '' : ' off'}"><b>${esc(o[1])}</b><button class="${on ? 'pill-off' : 'pill-on'}" data-gtog="${esc(o[0])}">${on ? 'Remove' : 'Add'}</button></div>`; }).join('') +
+    `<p class="muted" style="margin:10px 0 0">Strength = estimated 1-rep max from your heaviest set (kg × reps). Exercises appear once you've logged sets.</p>`;
+  $$('[data-gtog]', box).forEach(b => b.onclick = () => busy(b, async () => {
+    const id = b.dataset.gtog, next = list.indexOf(id) >= 0 ? list.filter(x => x !== id) : list.concat([id]);
+    S.profile = await api('saveProfile', { charts: JSON.stringify(next) }); renderChartsBox();
+  }));
 }
 $('#chartsCard').addEventListener('toggle', e => { if (e.target.open) renderChartsBox(); });
 
@@ -1911,6 +1919,8 @@ function renderEntries() {
 /** More › Trainer: who your trainer is, or pair with one by their code. */
 function renderMyTrainer() {
   const box = $('#myTrainer'), c = S.coach;
+  box.classList.toggle('hide', !!(S.me && S.me.trainer)); // trainers can't have a trainer
+  if (S.me && S.me.trainer) return;
   box.innerHTML = c
     ? `<div class="row"><span class="avatar big t" id="coachAv"></span><div class="grow"><b>${esc(c.name)}</b>
          <div class="small muted">Your trainer${c.since ? ' · since ' + nice(c.since, { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</div></div>
@@ -1931,10 +1941,11 @@ function renderTrainerMode() {
   const box = $('#trainerMode'), me = S.me;
   box.classList.toggle('hide', !me);
   if (!me) return;
+  box.classList.toggle('lit', !!me.trainer);
   box.innerHTML = me.trainer
     ? `<b>Trainer mode is on</b><p class="small muted" style="margin:4px 0 0">${(S.clients || []).length} client${(S.clients || []).length === 1 ? '' : 's'}. Switch between Personal Profile and Client Profile at the top; invite clients in Client Profile › Clients.</p>
        <button class="link minilink" id="tmOff" style="padding-left:0;color:var(--muted)">Turn Off Trainer Mode</button>`
-    : `<b>Coach other people?</b><p class="small muted" style="margin:4px 0 10px">Trainer mode lets you invite clients, see their progress, plans and goals, log for them and leave notes. Your own stats stay as they are.</p>
+    : `<b>Coach other people?</b><p class="small muted" style="margin:4px 0 10px">Trainer mode lets you invite clients, see their progress, plans and goals, log for them and leave notes. Your own stats stay as they are. A trainer can't have a trainer of their own.</p>
        <button class="primary" id="tmOn" style="width:100%">Become A Trainer</button>`;
   const flip = on => async () => {
     const w = await api('becomeTrainer', { on });
