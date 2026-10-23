@@ -312,7 +312,7 @@ button.loading img,button.loading svg{opacity:0}
 .crow{display:flex;align-items:center;gap:10px;min-height:52px;border-bottom:1px solid var(--line);cursor:pointer}
 #tab-clients #clientsCard{background:none;border:0;box-shadow:none;padding:0}#tab-clients #clientsCard>div{padding:0}
 #tab-clients .cpanel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:4px 16px;margin-bottom:12px}#tab-clients .cpanel .crow{border-bottom:0;padding:8px 0}
-.csub{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}.csub.newtag{color:#e8664a}
+.csub{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}.csub.newtag{color:#e8664a}.cav{width:38px;height:38px;font-size:15px;flex:none;margin-right:10px}#clientList .cpanel.dragging{position:relative;z-index:5;box-shadow:0 10px 30px #0008;opacity:.95}#clientList .cpanel{touch-action:pan-y;user-select:none;-webkit-user-select:none}
 .copyfrom{display:flex;align-items:center;gap:8px;margin:0 0 12px}.copyfrom.hide{display:none}.copyfrom span{white-space:nowrap}.copyfrom select{flex:1;min-width:0;margin:0;min-height:40px}.csub.quiet{color:#e8a33d}
 .cacts{flex-direction:column;align-items:stretch;gap:6px;padding:4px 0 14px;border-top:1px solid var(--line)}.cacts:not(.hide){display:flex}
 .cacts textarea{margin-top:6px;font-size:15px}textarea{font-family:inherit}.cbtns{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:4px}.cbtns .link{padding:6px 0;min-height:0}.cbtns .danger{color:#e8664a}
@@ -736,7 +736,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023214952';
+const BUILD = '20261023215348';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2348,6 +2348,38 @@ function syncSavedClients() {
   ['lastAs', 'openOn'].forEach(k => { const v = store(k); if (v && v !== 'me' && v !== 'last' && ids.indexOf(v) < 0) store(k, null); });
   renderRoleTag(); // the client buttons at the top
 }
+/* My Clients: press and hold a client (about half a second), then drag up or down. A quick tap opens them. */
+let clientDragged = false;
+(function dragClients(list) {
+  let el = null, timer = 0, startY = 0, sy = 0, pid = 0;
+  list.addEventListener('pointerdown', e => {
+    const t = e.target.closest('.cpanel'); if (!t || e.target.closest('button, textarea, input, .cacts')) return;
+    startY = e.clientY; pid = e.pointerId; clearTimeout(timer);
+    timer = setTimeout(() => {
+      if (list.querySelectorAll('.cpanel').length < 2) return;
+      el = t; sy = startY; el.classList.add('dragging'); try { el.setPointerCapture(pid); } catch (x) {}
+      if (navigator.vibrate) navigator.vibrate(10);
+    }, 400);
+  });
+  list.addEventListener('pointermove', e => {
+    if (!el) { if (Math.abs(e.clientY - startY) > 8) clearTimeout(timer); return; } // moved first = scrolling
+    const next = el.nextElementSibling, prev = el.previousElementSibling, top = el.offsetTop, dy = e.clientY - sy;
+    if (next && next.classList.contains('cpanel') && dy > next.offsetHeight / 2) list.insertBefore(next, el);
+    else if (prev && -dy > prev.offsetHeight / 2) list.insertBefore(el, prev);
+    sy += el.offsetTop - top; el.style.transform = `translateY(${e.clientY - sy}px)`;
+  });
+  const drop = () => {
+    clearTimeout(timer); if (!el) return;
+    el.style.transform = ''; el.classList.remove('dragging'); el = null; clientDragged = true; setTimeout(() => clientDragged = false, 80);
+    const ids = $$('.cpanel', list).map(p => p.dataset.cid);
+    if (ids.join() === (S.clients || []).map(c => c.id).join()) return;
+    S.clients = ids.map(id => S.clients.find(c => c.id === id)); renderAccount(); // numbers and the buttons at the top follow at once
+    api('orderClients', { ids }).then(l => { S.clients = l; }).catch(() => {});
+  };
+  list.addEventListener('pointerup', drop); list.addEventListener('pointercancel', drop);
+  list.addEventListener('touchmove', e => { if (el) e.preventDefault(); }, { passive: false });
+  list.addEventListener('contextmenu', e => { if (e.target.closest('.cpanel')) e.preventDefault(); });
+})($('#clientList'));
 function renderAccount() {
   syncSavedClients();
   if ($('#reqList')) $('#reqList').innerHTML = (S.requests || []).map(r => `<div class="crow" style="cursor:default"><b class="grow">${esc(r.name)}</b><span class="small muted">Request sent · waiting</span><button class="link" data-unreq="${r.id}">Cancel</button></div>`).join('');
@@ -2367,16 +2399,17 @@ function renderAccount() {
       <div class="swatches">${CLIENT_COLORS.map(k => `<button type="button" data-clr="${k}" data-cid="${c.id}" class="${(c.color || CLIENT_COLORS[0]) === k ? 'on' : ''}" style="background:${k}" aria-label="Colour"></button>`).join('')}</div>
       <label class="small">Private note<textarea data-note="${c.id}" rows="2" maxlength="500" placeholder="e.g. Knee injury, avoid deep squats">${esc(c.note || '')}</textarea></label>
       <div class="cbtns">
-        ${i > 0 ? `<button class="link" data-mv="${c.id}" data-by="-1">Move up</button>` : ''}${i < cl.length - 1 ? `<button class="link" data-mv="${c.id}" data-by="1">Move down</button>` : ''}
+
         <button class="link" data-reset="${c.id}">Send new invite</button><button class="link danger" data-rm="${c.id}">Remove</button>
       </div></div>`;
   $('#clientList').innerHTML = cl.map((c, i) => {
     const act = lastActive(c.last), sub = c.expired ? 'Invite expired · send a new one' : c.invited ? 'Invited · not joined yet' : c.news && c.news.length ? 'New: ' + c.news.map(esc).join(' · ') : act.text;
-    return `<div class="cpanel"><div class="crow" data-open="${c.id}"><span class="cnum">#${i + 1}</span><i class="cdot" style="background:${c.color || CLIENT_COLORS[0]}"></i>
+    return `<div class="cpanel" data-cid="${c.id}"><div class="crow" data-open="${c.id}"><span class="cnum">#${i + 1}</span><span class="avatar cav" data-cav="${c.id}" style="box-shadow:0 0 0 2px ${c.color || CLIENT_COLORS[0]}"></span>
       <div class="grow" style="min-width:0"><b>${esc(c.name)}</b><div class="csub${c.news && c.news.length && !c.invited ? ' newtag' : (!c.invited && act.quiet) || c.expired ? ' quiet' : ''}">${sub}</div></div>
       <button class="lk-nav" data-openc="${c.id}">Open</button><button class="link" data-more="${c.id}" aria-label="More options">⋯</button></div>${acts(c, i)}</div>`;
   }).join('') || '<div class="small muted">No clients yet.</div>';
-  $$('#clientList [data-open]').forEach(r => r.onclick = e => { if (!e.target.closest('[data-more]')) switchTo(r.dataset.open); });
+  cl.forEach(c => paintAvatar($(`#clientList [data-cav="${c.id}"]`), c, ''));
+  $$('#clientList [data-open]').forEach(r => r.onclick = e => { if (clientDragged) return; if (!e.target.closest('[data-more]')) switchTo(r.dataset.open); });
   $$('#clientList [data-more]').forEach(b => b.onclick = () => $(`#clientList [data-acts="${b.dataset.more}"]`).classList.toggle('hide'));
   const keepOpen = id => { const el = $(`#clientList [data-acts="${id}"]`); if (el) el.classList.remove('hide'); };
   $$('#clientList [data-clr]').forEach(b => b.onclick = () => busy(b, async () => {
