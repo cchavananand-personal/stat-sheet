@@ -33,8 +33,9 @@
 html,body,button,a,label,input,select,textarea{touch-action:manipulation} /* no double-tap zoom */
 /* trainer looking at a client: blue accent everywhere, so it never looks like your own profile */
 body.tmode{--accent:#4f8df2;--accent-ink:#fff;--tint:#4f8df226}
-body.tmode #trainerBar{background:linear-gradient(#4f8df21a,#4f8df20d),var(--bg);border-bottom-color:#4f8df255}
-body.tmode header{background:linear-gradient(#4f8df214,transparent)}
+body.tmode #trainerBar{background:linear-gradient(color-mix(in srgb,var(--accent) 10%,transparent),color-mix(in srgb,var(--accent) 5%,transparent)),var(--bg);border-bottom-color:color-mix(in srgb,var(--accent) 35%,transparent)}
+body.tmode .avatar.t{background:var(--accent)}
+body.tmode header{background:linear-gradient(color-mix(in srgb,var(--accent) 8%,transparent),transparent)}
 body{margin:0;background:var(--bg);padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 /* trainer mode: C | T toggle in the header, and a row of clients under it (scrolls sideways when there are many) */
 #tab-clients summary{display:none}#tab-clients #openOnRow{margin:0}
@@ -44,7 +45,10 @@ body{margin:0;background:var(--bg);padding-bottom:calc(76px + env(safe-area-inse
 #modeSeg .mb{margin:0 8px 0 0;opacity:.5}#modeSeg button.on{background:var(--card);color:var(--text);box-shadow:0 1px 3px #0003}#modeSeg button.on .mb{opacity:1}
 #clientBar{display:flex;gap:8px;overflow-x:auto;padding-top:8px;scrollbar-width:none;max-width:648px;margin:auto}#clientBar::-webkit-scrollbar{display:none}
 #clientBar button{flex:none;border-radius:99px;padding:6px 16px;min-height:34px;background:var(--soft);color:var(--text);font-weight:700;white-space:nowrap}
-#clientBar button.on{background:#4f8df2;color:#fff}#clientBar .empty{padding:6px 0;font-size:14px;white-space:nowrap}
+#clientBar button.on{background:var(--accent);color:#fff}
+.cdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:1px}
+.swatches{display:flex;gap:10px;flex-wrap:wrap;padding:4px 0 10px}.swatches button{width:30px;height:30px;min-height:0;padding:0;border-radius:50%;border:2px solid transparent}
+.swatches button.on{border-color:var(--text);box-shadow:0 0 0 2px var(--card) inset}#clientBar .empty{padding:6px 0;font-size:14px;white-space:nowrap}
 header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px;max-width:680px;margin:auto}
 .brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:.05em;font-size:14px;min-width:0}.brand b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.brand span{color:var(--accent)}
 .role{font-size:12px;color:var(--muted);background:var(--soft);padding:5px 10px;border-radius:99px}
@@ -294,6 +298,7 @@ button.loading img,button.loading svg{opacity:0}
 #swList button.on{color:var(--accent)}
 .conn{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
 .crow{display:flex;align-items:center;gap:10px;min-height:52px;border-bottom:1px solid var(--line);cursor:pointer}
+#tab-clients #clientList .crow:nth-last-child(2){border-bottom:0}#newClientCard #clientForm{margin-top:0!important}
 .crow b{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.crow .small{white-space:nowrap}
 .crow .link{font-size:20px;padding:4px 10px;min-height:0}
 .ndot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#e8664a;margin-left:7px;vertical-align:2px}
@@ -329,6 +334,9 @@ body.tmode [data-go^="more"]{display:none} /* Client Profile has no More tab */
 .cidef.off b{color:var(--muted);font-weight:600}
 .cidef{display:flex;align-items:center;gap:8px;min-height:44px;border-bottom:1px solid var(--line)}.cidef b{flex:1}.cidef .link{min-height:0;padding:4px 8px}
 #ciAdd{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}#ciAdd .wide{grid-column:1/-1}
+.ld{color:var(--accent)!important;font-weight:650;display:flex;align-items:center;justify-content:center;gap:8px}
+.ld::before{content:"";width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:spin .7s linear infinite;flex:none}
+#bootMsg{color:var(--accent);font-weight:600}#boot .spinner{border-color:var(--accent);border-right-color:transparent}
 .grp{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--muted);margin:20px 4px 8px}
 .cnum{font-size:13px;font-weight:800;opacity:.55;margin-right:6px;font-variant-numeric:tabular-nums}
 .cacts{display:flex;gap:16px;padding:6px 0 12px}.cacts .link{padding:0;min-height:0}
@@ -569,7 +577,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 
   <!-- MORE -->
   <!-- CLIENTS (trainer mode): the clients card and "Open the app on" move here when the page starts -->
-  <section id="tab-clients" class="hide"><h2>Clients</h2>
+  <section id="tab-clients" class="hide"><h2>My Clients</h2>
     <div class="card" id="codeCard"><div class="row between"><div><div class="small muted">Your trainer code</div><b id="tCode" style="font-size:20px;letter-spacing:.06em">…</b></div>
       <div class="row" style="gap:6px"><button id="codeShare" class="primary" style="min-height:40px">Share</button><button id="codeNew" class="link" style="min-height:0">New code</button></div></div>
       <p class="small muted" style="margin:8px 0 0">People who already use Stat Sheet enter it in More › Trainer to become your client.</p></div>
@@ -578,13 +586,13 @@ button.primary.trn{background:#4f8df2;color:#fff}
 
   <section id="tab-more" class="hide">
     <h2>More</h2>
-    <p class="grp">TRAINER</p>
+    <p class="grp">MY TRAINER</p>
     <div class="card" id="myTrainer"></div>
     <div class="card" id="trainerMode"></div>
     <p class="grp">CUSTOMIZE</p>
     <details class="card" id="chartsCard"><summary><i data-ic="chart"></i>Custom Graphs</summary><div id="chartsBox" class="small"></div></details>
     <details class="card" id="ciDefsCard"><summary><i data-ic="sliders"></i>Custom Parameters</summary><div id="ciDefs" class="small"></div></details>
-    <p class="grp">YOUR DATA</p>
+    <p class="grp">MY DATA</p>
     <details class="card" id="histCard"><summary><i data-ic="file"></i>Full History Export</summary><div class="small">
       <p style="margin-top:0">Every day in one file: weight, body fat, meals, workouts (every set), activity, and notes from you and your trainer, plus your goals, meal plan and training rotation. Paste it into ChatGPT, Claude or another AI and ask for advice.</p>
       <button class="primary" id="histCopy" style="width:100%">Copy all</button>
@@ -614,7 +622,13 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <details class="card" id="connDetails"><summary><i data-ic="watch"></i>Devices &amp; apps</summary><div id="connBox" class="small"></div></details>
 
     <p class="grp">APP</p>
-    <details class="card"><summary><i data-ic="phone"></i>Home-screen icon</summary><div>
+    <details class="card"><summary><i data-ic="help"></i>How to use</summary><div class="small" style="line-height:1.55">
+      <p style="margin-top:0"><b>Progress</b>: your weight and body fat trends, photos and every entry.</p>
+      <p><b>Today</b>: pick a day on the calendar, then log <b>Weight</b>, <b>Meals</b> (tick what you ate from your plan) or <b>Workout</b> (body parts, then sets). Notes with your trainer are at the bottom.</p>
+      <p><b>Planner</b>: your meal plan, workout rotation and goals.</p>
+      <p><b>Your photo</b> (top right): edit your profile, dark mode, share or export, change PIN, sign out.</p>
+      <p>Everything saves by itself; there is no Save button to forget.</p>
+      <p style="margin:14px 0 8px"><b>Add to your home screen</b></p>
       <div class="row" style="align-items:flex-start;gap:14px">
         <img id="appIcon" alt="App icon" style="width:84px;height:84px;border-radius:19px;background:var(--soft);flex:none">
         <ol class="small" style="margin:0;padding-left:18px;line-height:1.55">
@@ -623,13 +637,6 @@ button.primary.trn{background:#4f8df2;color:#fff}
           <li>It gets this icon and opens full-screen, like a normal app.</li>
         </ol>
       </div>
-    </div></details>
-    <details class="card"><summary><i data-ic="help"></i>How to use</summary><div class="small" style="line-height:1.55">
-      <p style="margin-top:0"><b>Progress</b>: your weight and body fat trends, photos and every entry.</p>
-      <p><b>Today</b>: pick a day on the calendar, then log <b>Weight</b>, <b>Meals</b> (tick what you ate from your plan) or <b>Workout</b> (body parts, then sets). Notes with your trainer are at the bottom.</p>
-      <p><b>Planner</b>: your meal plan, workout rotation and goals.</p>
-      <p><b>Your photo</b> (top right): edit your profile, dark mode, share or export, change PIN, sign out.</p>
-      <p style="margin-bottom:0">Everything saves by itself; there is no Save button to forget.</p>
     </div></details>
     <details class="card" id="aboutCard"><summary><i data-ic="info"></i>About</summary><div class="small">
       <p style="margin-top:0">Stat Sheet · version <b id="buildNo"></b></p>
@@ -658,7 +665,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
   <button id="mSignIn">Sign in</button>
 </div></div>
 <div id="profSheet" class="hide"><div class="psheet">
-  <div class="row between"><button class="link" id="profClose">Cancel</button><b>Edit profile</b><span style="width:64px"></span></div>
+  <div class="row between"><button class="link" id="profClose">Cancel</button><b>My Profile</b><span style="width:64px"></span></div>
   <label class="pphoto"><span class="avatar xl" id="profAv"></span><input type="file" accept="image/*" id="profFile"><span>Change photo</span></label>
   <button class="link hide" id="profRemove" style="margin:-6px auto 6px;display:block">Remove photo</button>
   <form id="profileForm">
@@ -685,7 +692,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023171046';
+const BUILD = '20261023173514';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -824,7 +831,7 @@ async function hydrate(root) {
 const imgTag = (thumb, full, cls, cap) => thumb ? `<img class="${cls||''}" data-pid="${esc(thumb)}" data-full="${esc(full)}" data-cap="${esc(cap||'')}" alt="">` : '';
 document.addEventListener('click', e => { const im = e.target.closest('img[data-full]'); if (im) openPhoto(im.dataset.full, im.dataset.cap); });
 async function openPhoto(id, cap) {
-  const lb = $('#lightbox'); lb.innerHTML = '<div>Loading…</div>'; lb.classList.remove('hide');
+  const lb = $('#lightbox'); lb.innerHTML = '<div class="ld">Loading…</div>'; lb.classList.remove('hide');
   await loadPhotos([id]);
   lb.innerHTML = `<img src="${PHOTOS[id] || ''}"><div style="margin-top:10px">${esc(cap)}</div><div class="small" style="opacity:.6;margin-top:4px">Tap to close</div>`;
 }
@@ -842,10 +849,14 @@ const TABS = !OWNER ? [['progress','Progress'],['today','Today']]
   : ROLE === 'trainer' ? [['progress','Progress'],['today','Today'],['meals','Planner'],['clients','Clients']] // trainer mode
   : [['progress','Progress'],['today','Today'],['meals','Planner'],['more','More']];
 $('#nav').innerHTML = TABS.map(([id, label]) => `<button data-t="${id}"><svg viewBox="0 0 24 24">${ICONS[id]}</svg>${label}</button>`).join('');
-if (ROLE === 'trainer') document.body.classList.add('tmode'); // colour from the first paint
+if (ROLE === 'trainer') { document.body.classList.add('tmode'); const c0 = store('clr-' + AS); if (c0) document.body.style.setProperty('--accent', c0); } // colour from the first paint
 if (ROLE === 'trainer') { // trainer mode: the Clients tab holds the client list and where the app opens
   const tab = $('#tab-clients'), card = $('#clientsCard');
   card.open = true; tab.insertBefore(card, $('#openOnCard'));
+  // inviting a new client is its own panel, under the list of clients (user, 2026-10-23)
+  const nc = document.createElement('div'); nc.className = 'card'; nc.id = 'newClientCard';
+  nc.append($('#clientForm'), $('#inviteOut'), $('p.small.muted', card));
+  tab.insertBefore(nc, $('#openOnCard'));
 }
 if (!OWNER) { document.body.classList.add('ro');
 $$('#bodyForm input').forEach(i => i.readOnly = true); }
@@ -860,13 +871,15 @@ function renderRoleTag() {
   // trainers: C | T toggle; in T, one tap per client
   $('#trainerBar').classList.toggle('hide', !trainer);
   document.body.classList.toggle('tmode', viewingClient());
+  const me = viewingClient() && (S.clients || []).find(c => c.id === S.target.id), col = me && me.color;
+  if (col) { document.body.style.setProperty('--accent', col); store('clr-' + S.target.id, col); } else document.body.style.removeProperty('--accent');
   $$('#modeSeg button').forEach(b => b.classList.toggle('on', (b.dataset.m === 't') === viewingClient()));
   const fresh = (S.clients || []).filter(c => c.news && c.news.length && c.id !== S.target.id);
   $('#tBadge').textContent = fresh.length; $('#tBadge').classList.toggle('hide', !fresh.length);
   const bar = $('#clientBar');
   bar.classList.toggle('hide', !viewingClient());
   if (viewingClient()) {
-    bar.innerHTML = (S.clients || []).map((c, i) => `<button data-as="${c.id}" class="${c.id === S.target.id ? 'on' : ''}"><span class="cnum">#${i + 1}</span>${esc(c.name)}${c.news && c.news.length && c.id !== S.target.id ? '<i class="ndot"></i>' : ''}</button>`).join('');
+    bar.innerHTML = (S.clients || []).map((c, i) => `<button data-as="${c.id}" class="${c.id === S.target.id ? 'on' : ''}">${c.id === S.target.id ? '' : `<i class="cdot" style="background:${c.color || CLIENT_COLORS[0]}"></i>`}<span class="cnum">#${i + 1}</span>${esc(c.name)}${c.news && c.news.length && c.id !== S.target.id ? '<i class="ndot"></i>' : ''}</button>`).join('');
     $$('button', bar).forEach(b => b.onclick = () => b.dataset.as !== S.target.id && switchTo(b.dataset.as));
     const on = $('.on', bar); if (on) on.scrollIntoView({ inline: 'center', block: 'nearest' });
   }
@@ -933,7 +946,7 @@ function renderProgress() {
 /** Latest progress photos under the body-fat chart; tap one to open the gallery on that day. */
 async function renderPhotoStrip() {
   const el = $('#tStrip');
-  if (!el.children.length) el.innerHTML = '<div class="empty">Loading photos…</div>';
+  if (!el.children.length) el.innerHTML = '<div class="empty ld">Loading photos…</div>';
   const list = await api('gallery');
   if (!list.length) { el.innerHTML = `<div class="empty">No photos yet. Add one in Today › Log weight.</div>`; return; }
   const from = Math.max(0, list.length - 12);
@@ -1133,7 +1146,7 @@ const NTD = {}; // date → that day's notes; the whole month arrives with the c
 async function loadDayNotes() {
   const want = wSel;
   if (NTD[want]) renderDayNotes(NTD[want]);
-  else $('#notes').innerHTML = '<div class="empty">Loading…</div>';
+  else $('#notes').innerHTML = '<div class="empty ld">Loading…</div>';
   try {
     const list = await api('notesFor', { date: want });
     NTD[want] = list; if (want === wSel) renderDayNotes(list);
@@ -1203,7 +1216,7 @@ async function renderCheckins() {
   box.classList.toggle('hide', !ciOpen);
   if (!ciOpen) return;
   if (!v) {
-    box.innerHTML = '<div class="small muted" style="padding:8px 0">Loading…</div>';
+    box.innerHTML = '<div class="ld" style="padding:8px 0">Loading…</div>';
     try { CI[date] = await api('checkins', { date }); } catch (e) { box.innerHTML = ''; return; }
     if (date === wSel) renderCheckins();
     return;
@@ -1247,7 +1260,7 @@ $('#ciDefsCard').addEventListener('toggle', e => { if (e.target.open) renderCiDe
 /** More › Customize › Progress graphs: Weight and Body fat always; add any of these underneath. */
 async function renderChartsBox() {
   const box = $('#chartsBox'), list = chartList();
-  if (!CD) { box.innerHTML = '<p class="muted" style="margin:0">Loading…</p>'; try { CD = await api('chartData'); } catch (e) { return; } }
+  if (!CD) { box.innerHTML = '<p class="ld" style="margin:0">Loading…</p>'; try { CD = await api('chartData'); } catch (e) { return; } }
   const opts = [['volume', 'Training volume'], ['steps', 'Steps'], ['kcal', 'Calories eaten']]
     .concat(CD.exercises.map(e => ['e1rm:' + e[0], 'Strength · ' + e[1]]))
     .concat(ciDefs().map(f => ['check:' + f.key, f.name]));
@@ -1365,7 +1378,7 @@ function wkSync(date, call) {
 async function loadWorkout() {
   const want = wSel;
   if (WKD[wSel]) renderWorkout(WKD[wSel]); // instant from the month already loaded
-  else { renderWorkout([], true); $('#wkSum').textContent = 'Loading…'; }
+  else { renderWorkout([], true); $('#wkSum').innerHTML = '<span class="ld" style="justify-content:flex-start">Loading…</span>'; }
   const list = await api('workouts', { date: want }).catch(() => null);
   if (!list || wkPending) return;
   WKD[want] = list;
@@ -1634,7 +1647,7 @@ async function loadDayMeals() {
   const want = wSel;
   if (wSel !== TODAY) { // don't leave the previous day's meals on screen while this one loads
     $('#mTotals').innerHTML = ''; $('#mPlan').innerHTML = '';
-    $('#mList').innerHTML = '<div class="empty">Loading…</div>'; $('#mListCard').classList.remove('hide');
+    $('#mList').innerHTML = '<div class="empty ld">Loading…</div>'; $('#mListCard').classList.remove('hide');
   }
   const list = wSel === TODAY ? S.meals : await api('meals', { date: wSel });
   if (want === wSel && logMode === 'meal') renderMeals(list);
@@ -1751,7 +1764,7 @@ function renderGoals() {
   drawCustomGoals(custom);
   const extras = ['goalWaist', 'goalSteps', 'goalWater', 'goalSleep', 'goalWorkouts', 'goalLift', 'goalWhy'].filter(k => S.profile[k]).length + custom.length;
   $('#goalsMore').textContent = $('#goalsExtra').classList.contains('hide') ? 'More goals' + (extras ? ' · ' + extras + ' set' : '') + ' ›' : 'Fewer goals ‹';
-  $('#goalsTitle').textContent = viewingClient() ? S.target.name + "'s goals" : 'Your goals';
+  $('#goalsTitle').textContent = viewingClient() ? S.target.name + "'s goals" : 'My goals';
 }
 /* custom goals: any name + value, e.g. "Body weight squat: 30 reps" */
 function drawCustomGoals(list) {
@@ -1801,7 +1814,7 @@ document.addEventListener('click', e => {
 });
 async function openGallery(start) {
   $('#gallery').classList.remove('hide'); document.body.style.overflow = 'hidden';
-  $('#gStage').innerHTML = '<div style="margin:auto;color:#8a93a3">Loading…</div>'; $('#gStrip').innerHTML = ''; $('#gCap').innerHTML = '';
+  $('#gStage').innerHTML = '<div class="ld" style="margin:auto">Loading…</div>'; $('#gStrip').innerHTML = ''; $('#gCap').innerHTML = '';
   G.list = await api('gallery');
   if (!G.list.length) {
     $('#gStage').innerHTML = '<div style="margin:auto;padding:24px;text-align:center;color:#8a93a3">No progress photos yet.<br>Add one from the Weight tab.</div>'; return;
@@ -1900,7 +1913,7 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('click', e => { if (e.target.closest('[data-entries]')) $('#logCard').scrollIntoView({ behavior: 'smooth' }); });
 async function loadLog() {
-  if (!E.list.length) $('#eList').innerHTML = '<div class="empty" style="padding:16px">Loading…</div>';
+  if (!E.list.length) $('#eList').innerHTML = '<div class="empty ld" style="padding:16px">Loading…</div>';
   E.list = await api('entries'); renderEntries();
 }
 segment('eMetric', E.metric, m => { E.metric = m; renderEntries(); });
@@ -2043,7 +2056,7 @@ $('#connDetails').addEventListener('toggle', e => { if (e.target.open) renderCon
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && $('#connDetails').open) renderConnections(); });
 async function renderConnections() {
   const box = $('#connBox');
-  if (!box.innerHTML) box.innerHTML = '<p class="muted" style="margin-top:0">Loading…</p>';
+  if (!box.innerHTML) box.innerHTML = '<p class="ld" style="margin-top:0">Loading…</p>';
   const c = await api('connections'), a = c.apple;
   const svc = (pv, what) => {
     const x = c.providers[pv];
@@ -2145,12 +2158,16 @@ function renderAccount() {
       .map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('');
     $('#openOn').value = store('openOn') || 'me';
   }
-  $('#clientList').innerHTML = (S.clients || []).map((c, i) => `<div class="crow" data-open="${c.id}"><span class="cnum">#${i + 1}</span><b>${esc(c.name)}</b>
+  $('#clientList').innerHTML = (S.clients || []).map((c, i) => `<div class="crow" data-open="${c.id}"><span class="cnum">#${i + 1}</span><i class="cdot" style="background:${c.color || CLIENT_COLORS[0]}"></i><b>${esc(c.name)}</b>
       ${c.news && c.news.length && c.id !== S.target.id ? '<span class="small newtag">New: ' + c.news.map(esc).join(' · ') + '</span>' : c.invited ? '<span class="small muted">Invited</span>' : ''}<button class="link" data-more="${c.id}" aria-label="More">⋯</button></div>
-      <div class="cacts hide" data-acts="${c.id}"><button class="link" data-reset="${c.id}">Send new invite</button><button class="link" data-rm="${c.id}">Remove</button></div>`).join('')
+      <div class="cacts hide" data-acts="${c.id}" style="flex-direction:column;align-items:flex-start;gap:6px"><span class="small muted">Colour</span><div class="swatches">${CLIENT_COLORS.map(k => `<button type="button" data-clr="${k}" data-cid="${c.id}" class="${(c.color || CLIENT_COLORS[0]) === k ? 'on' : ''}" style="background:${k}" aria-label="Colour"></button>`).join('')}</div><div style="display:flex;gap:16px"><button class="link" data-reset="${c.id}">Send new invite</button><button class="link" data-rm="${c.id}">Remove</button></div></div>`).join('')
     || '<div class="small muted">No clients yet.</div>';
   $$('#clientList [data-open]').forEach(r => r.onclick = e => { if (!e.target.closest('[data-more]')) switchTo(r.dataset.open); });
   $$('#clientList [data-more]').forEach(b => b.onclick = () => $(`#clientList [data-acts="${b.dataset.more}"]`).classList.toggle('hide'));
+  $$('#clientList [data-clr]').forEach(b => b.onclick = () => busy(b, async () => {
+    S.clients = await api('setClientColor', { id: b.dataset.cid, color: b.dataset.clr }); renderAccount();
+    $(`#clientList [data-acts="${b.dataset.cid}"]`).classList.remove('hide'); renderRoleTag();
+  }));
   $$('#clientList [data-reset]').forEach(b => b.onclick = () => {
     const c = S.clients.find(x => x.id === b.dataset.reset);
     if (confirm('Send ' + c.name + ' a new invite? Their PIN is cleared and their phones are signed out; they set a new PIN with the link.'))
@@ -2179,6 +2196,7 @@ $('#pinForm').onsubmit = e => {
   e.preventDefault(); const f = e.target;
   busy($('button', f), async () => { await api('changePin', { pin: f.pin.value }); f.reset(); f.classList.add('hide'); toast('PIN changed'); });
 };
+const CLIENT_COLORS = ['#4f8df2', '#9b7cf2', '#e0679b', '#e8664a', '#d4ad2a', '#3fa9b8', '#6366f1', '#64748b']; // same list as the server
 /** A round avatar: the person's photo if they have one, otherwise their initial. */
 /** Outline icons (24-unit grid, drawn with strokes). */
 const ICONS_UI = {
