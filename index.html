@@ -28,8 +28,15 @@
   --soft:#1f2724;--tint:#173a2d;--accent:#3fb58a;--accent-ink:#06120d;--w:#3fb58a;--bf:#e5a24a;--m:#8f9bf0;--s:#4fb0f2}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;background:var(--bg);padding-bottom:calc(76px + env(safe-area-inset-bottom))}
-#viewBar{position:sticky;top:0;z-index:20;display:block;width:100%;border:0;border-radius:0;background:#4f8df2;color:#fff;
-  font-weight:700;font-size:14px;min-height:36px;padding:8px 16px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* trainer mode: C | T toggle in the header, and a row of clients under it (scrolls sideways when there are many) */
+#tab-clients summary{display:none}#tab-clients #openOnRow{margin:0}
+#trainerBar{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding:6px 16px 8px}
+#modeSeg{display:flex;gap:4px;padding:3px;border-radius:12px;background:var(--soft);max-width:648px;margin:auto}
+#modeSeg button{flex:1;min-height:36px;padding:0 8px;border-radius:9px;background:none;font-size:14px;font-weight:700;color:var(--muted);white-space:nowrap}
+#modeSeg .mb{margin:0 8px 0 0;opacity:.5}#modeSeg button.on{background:var(--card);color:var(--text);box-shadow:0 1px 3px #0003}#modeSeg button.on .mb{opacity:1}
+#clientBar{display:flex;gap:8px;overflow-x:auto;padding-top:8px;scrollbar-width:none;max-width:648px;margin:auto}#clientBar::-webkit-scrollbar{display:none}
+#clientBar button{flex:none;border-radius:99px;padding:6px 16px;min-height:34px;background:var(--soft);color:var(--text);font-weight:700;white-space:nowrap}
+#clientBar button.on{background:#4f8df2;color:#fff}#clientBar .empty{padding:6px 0;font-size:14px;white-space:nowrap}
 header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px;max-width:680px;margin:auto}
 .brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:.05em;font-size:14px;min-width:0}.brand b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.brand span{color:var(--accent)}
 .role{font-size:12px;color:var(--muted);background:var(--soft);padding:5px 10px;border-radius:99px}
@@ -272,7 +279,10 @@ button.primary.trn{background:#4f8df2;color:#fff}
   </svg><b id="brandName">STAT SHEET</b></div>
   <div class="row" style="gap:8px"><div class="role hide" id="roleTag"></div><button class="iconbtn" id="menuBtn" aria-label="More options">⋯</button></div>
 </header>
-<button id="viewBar" class="hide"></button>
+<div id="trainerBar" class="hide">
+  <div id="modeSeg"><button data-m="c"><span class="mb c">C</span>Personal</button><button data-m="t"><span class="mb t">T</span>Clients</button></div>
+  <nav id="clientBar" class="hide" aria-label="Clients"></nav>
+</div>
 <main>
   <!-- PROGRESS (first tab): trend graphs on top, analytics below -->
   <section id="tab-progress">
@@ -438,6 +448,9 @@ button.primary.trn{background:#4f8df2;color:#fff}
   </section>
 
   <!-- MORE -->
+  <!-- CLIENTS (trainer mode): the clients card and "Open the app on" move here when the page starts -->
+  <section id="tab-clients" class="hide"><h2>Clients</h2></section>
+
   <section id="tab-more" class="hide">
     <h2>More</h2>
     <details class="card" open><summary>Profile &amp; goals</summary><div>
@@ -531,7 +544,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023153905';
+const BUILD = '20261023154228';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -676,28 +689,48 @@ const ICONS = {
   progress: '<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/>',
   today: '<rect x="3.5" y="4.5" width="17" height="16" rx="3"/><path d="M3.5 9.5h17M8 2.5v4M16 2.5v4"/><path d="M9 15l2 2 4-4"/>',
   meals: '<rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4V2.8h6V4M9 10h6M9 14h6M9 18h3"/>',
-  more: '<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>'
+  more: '<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
+  clients: '<circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 13.6c2.9.1 5 1.9 5 4.9"/>'
 };
-const TABS = OWNER ? [['progress','Progress'],['today','Today'],['meals','Plan'],['more','More']] : [['progress','Progress'],['today','Today']];
+const TABS = !OWNER ? [['progress','Progress'],['today','Today']]
+  : ROLE === 'trainer' ? [['progress','Progress'],['today','Today'],['meals','Plan'],['clients','Clients']] // trainer mode
+  : [['progress','Progress'],['today','Today'],['meals','Plan'],['more','More']];
 $('#nav').innerHTML = TABS.map(([id, label]) => `<button data-t="${id}"><svg viewBox="0 0 24 24">${ICONS[id]}</svg>${label}</button>`).join('');
+if (ROLE === 'trainer') { // trainer mode: the Clients tab holds the client list and where the app opens
+  const tab = $('#tab-clients'), card = $('#clientsCard'), box = document.createElement('div');
+  card.open = true; tab.append(card);
+  box.className = 'card'; box.append($('#openOnRow')); tab.append(box);
+}
 if (!OWNER) { document.body.classList.add('ro');
 $$('#bodyForm input').forEach(i => i.readOnly = true); }
 if (ROLE === 'guest') $('#noteForm').classList.add('hide');
 function renderRoleTag() {
   const t = $('#roleTag');
   // C = your own stats (client mode) · T = a client's stats (trainer mode)
-  t.innerHTML = ROLE === 'guest' ? 'Sign in'
-    : S.me && S.me.trainer ? '<span class="mb ' + (viewingClient() ? 't">T' : 'c">C') + '</span>' + esc(S.target.name) + ' ▾'
-    : S.me && S.pinsOn ? esc(S.me.name) : '';
+  const trainer = !!(S.me && S.me.trainer);
+  t.innerHTML = ROLE === 'guest' ? 'Sign in' : !trainer && S.me && S.pinsOn ? esc(S.me.name) : '';
   t.classList.toggle('hide', !t.textContent);
   // title: TRAINER X CLIENT only in trainer mode; otherwise just the app name
   $('#brandName').innerHTML = viewingClient() ? esc(S.me.name.toUpperCase()) + ' <span>X</span> ' + esc(S.target.name.toUpperCase()) : 'STAT SHEET';
-  const bar = $('#viewBar'); // trainer mode: always visible whose data you're changing
+  // trainers: C | T toggle; in T, one tap per client
+  $('#trainerBar').classList.toggle('hide', !trainer);
+  $$('#modeSeg button').forEach(b => b.classList.toggle('on', (b.dataset.m === 't') === viewingClient()));
+  const bar = $('#clientBar');
   bar.classList.toggle('hide', !viewingClient());
-  if (viewingClient()) bar.textContent = 'Viewing ' + S.target.name + ' · Switch';
+  if (viewingClient()) {
+    bar.innerHTML = (S.clients || []).map(c => `<button data-as="${c.id}" class="${c.id === S.target.id ? 'on' : ''}">${esc(c.name)}</button>`).join('');
+    $$('button', bar).forEach(b => b.onclick = () => b.dataset.as !== S.target.id && switchTo(b.dataset.as));
+    const on = $('.on', bar); if (on) on.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }
 }
-$('#viewBar').onclick = () => showSwitch();
-$('#roleTag').onclick = () => ROLE === 'guest' ? showWho() : S.me && S.me.trainer ? showSwitch() : WHO && confirm('Sign out of this phone?') && setWho(null);
+$$('#modeSeg button').forEach(b => b.onclick = () => {
+  if ((b.dataset.m === 't') === viewingClient()) return;
+  if (b.dataset.m === 'c') return switchTo(S.me.id);
+  const ids = (S.clients || []).map(c => c.id), last = store('lastAs');
+  if (!ids.length) return toast('No clients yet. Add one in More › Clients.', true);
+  switchTo(ids.indexOf(last) >= 0 ? last : ids[0]);
+});
+$('#roleTag').onclick = () => ROLE === 'guest' ? showWho() : WHO && confirm('Sign out of this phone?') && setWho(null);
 /** Trainer: switch between your own stats and each client's. */
 function showSwitch() {
   const cur = S.target && S.target.id, rows = [{ id: S.me.id, name: S.me.name, me: true }].concat(S.clients || []);
@@ -713,7 +746,7 @@ function show(id, keepScroll) {
   $$('#nav button').forEach(b => b.classList.toggle('on', b.dataset.t === id));
   $$('main > section').forEach(s => s.classList.toggle('hide', s.id !== 'tab-' + id));
   if (!keepScroll) window.scrollTo(0, 0);
-  ({ progress: renderProgress, today: renderToday, meals: renderMealsTab, more: renderMore })[id]();
+  ({ progress: renderProgress, today: renderToday, meals: renderMealsTab, more: renderMore, clients: renderAccount })[id]();
 }
 $('#nav').onclick = e => { const b = e.target.closest('button'); if (b) show(b.dataset.t); };
 
