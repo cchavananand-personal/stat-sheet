@@ -514,7 +514,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023151223';
+const BUILD = '20261023151304';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1691,6 +1691,8 @@ async function renderConnections() {
     e.preventDefault();
     busy($('button', f), async () => { await api('setupService', Object.assign({ provider: f.dataset.setup }, formObj(f))); toast('Switched on'); renderConnections(); });
   });
+  $$('[data-svcoff]', box).forEach(b => b.onclick = () => confirm('Switch this service off for everyone? People stay linked but nothing syncs until it is on again.') &&
+    busy(b, async () => { await api('setupService', { provider: b.dataset.svcoff, off: true }); renderConnections(); }));
   const sf = $('#shortcutForm', box);
   if (sf) sf.onsubmit = e => { e.preventDefault(); busy($('button', sf), async () => { await api('setShortcutUrl', formObj(sf)); toast('Saved'); renderConnections(); }); };
 }
@@ -1705,7 +1707,7 @@ function adminBox(ad) {
       <b>${x.name}</b> ${x.ready ? '✅ on' : ''}
       <p style="margin:4px 0">Register a free app at <a href="${x.register}" target="_blank">${x.register.replace('https://', '')}</a>. ${tips[x.id] || ''} Then paste:</p>
       <div class="grid2"><label>Client ID<input name="clientId" autocomplete="off"></label><label>Client secret<input name="clientSecret" type="password" autocomplete="off"></label></div>
-      <button class="primary" style="width:100%;margin-top:8px">${x.ready ? 'Replace keys' : 'Switch on ' + x.name}</button></form>`).join('')}
+      <button class="primary" style="width:100%;margin-top:8px">${x.ready ? 'Replace keys' : 'Switch on ' + x.name}</button>${x.ready ? `<button type="button" class="link" data-svcoff="${x.id}" style="width:100%">Switch ${x.name} off</button>` : ''}</form>`).join('')}
     <form id="shortcutForm" style="margin-top:14px"><b>Apple Health Shortcut link</b> (optional)
       <p style="margin:4px 0">Build the Shortcut once on your iPhone (steps above, with the key as an <i>Import Question</i>), share it, and paste the iCloud link: everyone else then sets up in one tap.</p>
       <label>iCloud link<input name="url" value="${esc(ad.shortcutUrl)}" placeholder="https://www.icloud.com/shortcuts/…"></label>
