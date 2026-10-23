@@ -504,7 +504,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023143356';
+const BUILD = '20261023143931';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -527,6 +527,8 @@ const QS = new URLSearchParams(location.search);
 const store = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} };
 const WHO = (() => { try { return JSON.parse(store('who')) || null; } catch (e) { return null; } })();
 const PINS_ON = store('pinsOn') === '1';
+const clientName = () => (typeof S !== 'undefined' && S.profile && S.profile.name) || 'Client';
+const trainerName = () => (typeof S !== 'undefined' && S.profile && S.profile.trainerName) || 'Trainer';
 const KEY = QS.get('k') || (WHO && WHO.key) || '';
 const ROLE = QS.get('view') === 'trainer' ? 'trainer' : WHO ? WHO.role : PINS_ON ? 'guest' : 'owner', OWNER = ROLE === 'owner';
 const $ = (s, el) => (el || document).querySelector(s);
@@ -640,7 +642,7 @@ const ICONS = {
 const TABS = OWNER ? [['progress','Progress'],['today','Today'],['meals','Plan'],['more','More']] : [['progress','Progress'],['today','Today']];
 $('#nav').innerHTML = TABS.map(([id, label]) => `<button data-t="${id}"><svg viewBox="0 0 24 24">${ICONS[id]}</svg>${label}</button>`).join('');
 if (!OWNER) { document.body.classList.add('ro');
-$$('#bodyForm input').forEach(i => i.readOnly = true); $('#roleTag').textContent = ROLE === 'trainer' ? 'Trainer' : 'Viewing · Sign in'; $('#roleTag').classList.remove('hide'); }
+$$('#bodyForm input').forEach(i => i.readOnly = true); $('#roleTag').textContent = ROLE === 'trainer' ? trainerName() : 'Viewing · Sign in'; $('#roleTag').classList.remove('hide'); }
 if (ROLE === 'guest') $('#noteForm').classList.add('hide');
 $('#roleTag').onclick = () => ROLE === 'guest' ? showWho() : WHO && confirm('Sign out of this phone?') && setWho(null);
 let curTab = 'progress';
@@ -866,8 +868,8 @@ function renderDayNotes(list) {
   const sec = (cls, title, notes, none) => `<div class="nsec ${cls}"><h4>${title}</h4>` +
     (notes.map(n => `<div class="nitem">${esc(n.text)}<small>${esc(time(n))}</small></div>`).join('') || `<div class="nnone">${none}</div>`) + '</div>';
   const tr = list.filter(n => n.author === 'Trainer'), me = list.filter(n => n.author !== 'Trainer');
-  $('#notes').innerHTML = sec('tr', ROLE === 'trainer' ? 'You (trainer)' : 'Trainer', tr, 'No notes from the trainer.')
-    + sec('me', OWNER ? 'You' : esc(S.profile.name || 'Client'), me, OWNER ? 'No notes from you.' : 'No notes from the client.');
+  $('#notes').innerHTML = sec('tr', esc(trainerName()) + (ROLE === 'trainer' ? ' · you' : ' · trainer'), tr, 'No notes from ' + esc(trainerName()) + '.')
+    + sec('me', esc(clientName()) + (OWNER ? ' · you' : ' · client'), me, 'No notes from ' + esc(clientName()) + '.');
 }
 $('#noteForm').onsubmit = e => {
   e.preventDefault(); const f = e.target, date = wSel;
@@ -1514,8 +1516,8 @@ function renderEntries() {
   const all = E.list.filter(x => num(x[k]) != null || x.thumbId || x.notes), rows = all.slice(0, E.shown);
   $('#eList').innerHTML = rows.map(x => `<div class="ent">
     <div class="grow" data-goto="${x.date}"><b>${num(x[k]) != null ? +x[k] + u : '—'}</b><small>${nice(x.date, {weekday:'long', day:'numeric', month:'long', year:'numeric'})}</small>
-      ${x.noteT ? `<div class="enote tr"><span>Trainer</span> ${esc(x.noteT)}</div>` : ''}
-      ${x.noteM ? `<div class="enote me"><span>${OWNER ? 'You' : esc(S.profile.name || 'Client')}</span> ${esc(x.noteM)}</div>` : ''}</div>
+      ${x.noteT ? `<div class="enote tr"><span>${esc(trainerName())}</span> ${esc(x.noteT)}</div>` : ''}
+      ${x.noteM ? `<div class="enote me"><span>${esc(clientName())}</span> ${esc(x.noteM)}</div>` : ''}</div>
     ${x.thumbId ? `<img data-pid="${esc(x.thumbId)}" data-gd="${x.date}" alt="">`
       : OWNER ? `<label class="add" aria-label="Add photo"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-5-5-9 8"/></svg><input type="file" accept="${IMG_ACCEPT}" data-up="${x.date}"></label>` : ''}
   </div>`).join('') + (all.length > rows.length ? `<button class="link" id="eMore" style="width:100%;padding:14px">Show older entries (${all.length - rows.length})</button>` : '')
@@ -1657,13 +1659,15 @@ function setWho(w) {
   location.replace(location.pathname); // drop any old ?view=trainer&k=… so everyone ends up on the same link
 }
 function showWho() {
+  $('#whoPick [data-who=owner]').textContent = 'I\x27m ' + clientName() + ' (client)';
+  $('#whoPick [data-who=trainer]').textContent = 'I\x27m ' + trainerName() + ' (trainer)';
   $('#who').classList.remove('hide'); $('#whoPick').classList.remove('hide'); $('#whoPin').classList.add('hide');
 }
 $$('#whoPick [data-who]').forEach(b => b.onclick = () => {
   const who = b.dataset.who;
   if (who === 'guest') { if (ROLE === 'guest') { store('who', JSON.stringify({ role: 'guest', key: '' })); $('#who').classList.add('hide'); } else setWho({ role: 'guest', key: '' }); return; }
   const f = $('#whoPin'); f.dataset.who = who; f.reset();
-  $('#whoAs').textContent = who === 'trainer' ? 'Trainer PIN' : 'Client PIN';
+  $('#whoAs').textContent = (who === 'trainer' ? trainerName() : clientName()) + '\x27s PIN';
   $('#whoPick').classList.add('hide'); f.classList.remove('hide'); f.pin.focus();
 });
 $('#whoBack').onclick = showWho;
