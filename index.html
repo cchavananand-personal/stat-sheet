@@ -41,12 +41,11 @@ body{margin:0;background:var(--bg);padding-bottom:calc(76px + env(safe-area-inse
 #tab-clients summary{display:none}body.on-clients #clientBar{display:none!important}#tab-clients #openOnRow{margin:0}
 #peerBar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:linear-gradient(#e8a33d22,#e8a33d14),var(--bg);border-bottom:1px solid #e8a33d55;font-size:14px;white-space:nowrap}
 #peerBar.hide{display:none}#peerBar b{color:#e8a33d}#peerBar .lk-open{color:#e8a33d}
-.rk-row{display:grid;grid-template-columns:22px 26px 1fr 64px;align-items:center;gap:8px;padding:7px 0}
+.rk-row{display:grid;grid-template-columns:22px 26px 1fr 44px;align-items:center;gap:8px;padding:7px 0}
 .rk-row .avatar{width:26px;height:26px;font-size:12px}.rk-row .n{font-weight:800;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums}
 .rk-bar{height:10px;border-radius:99px;background:var(--soft);overflow:hidden;margin-top:4px}.rk-bar i{display:block;height:100%;border-radius:99px;background:color-mix(in srgb,var(--text) 35%,transparent)}
 .rk-row.me .rk-bar i{background:var(--accent)}.rk-row.me b{color:var(--accent)}.rk-row b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
-.rk-val{text-align:right;font-weight:800;font-variant-numeric:tabular-nums;font-size:14px}
-.rk-tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.rk-tiles div{background:var(--soft);border-radius:12px;padding:10px 12px}.rk-tiles b{display:block;font-size:20px}.rk-tiles small{color:var(--muted);font-size:12px}
+.rk-val{text-align:right;font-weight:800;font-variant-numeric:tabular-nums;font-size:18px}
 #trainerBar{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding:6px 16px 8px}
 #modeSeg{display:flex;gap:4px;padding:3px;border-radius:12px;background:var(--soft);max-width:648px;margin:auto}
 #modeSeg button{flex:1;min-height:36px;padding:0 8px;border-radius:9px;background:none;font-size:14px;font-weight:700;color:var(--muted);white-space:nowrap}
@@ -602,8 +601,8 @@ button.primary.trn{background:#4f8df2;color:#fff}
   <section id="tab-clients" class="hide"><h2>My Clients</h2>
     <div class="card" id="codeCard"><div class="row between"><div><div class="small muted">Your trainer code</div><b id="tCode" style="font-size:20px;letter-spacing:.06em">…</b></div>
       <div class="row" style="gap:6px"><button id="codeShare" class="primary" style="min-height:40px">Share</button><button id="codeNew" class="link" style="min-height:0">New code</button></div></div>
-      <p class="small muted" style="margin:8px 0 0">People who already use Stat Sheet enter it in More › Trainer to become your client.</p></div>
-    <details class="card" id="clientRankCard"><summary><i data-ic="bars"></i>Client Rankings</summary><div id="clientRankBox" class="small"></div></details>
+      <p class="small muted" style="margin:8px 0 0">People who already use Stat Sheet enter it in More › My Trainer to become your client.</p></div>
+    <div class="card" id="clientRankCard"><div id="clientRankBox" class="small"></div></div>
     <div class="card" id="openOnCard"><label id="openOnRow" style="margin:0">Open the app on<select id="openOn"></select></label></div>
   </section>
 
@@ -718,7 +717,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023175736';
+const BUILD = '20261023175957';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -885,6 +884,8 @@ if (ROLE === 'trainer') { // trainer mode: the Clients tab holds the client list
   const nc = document.createElement('div'); nc.className = 'card'; nc.id = 'newClientCard';
   nc.append($('#clientForm'), $('#inviteOut'), $('p.small.muted', card));
   tab.insertBefore(nc, $('#openOnCard'));
+  const grp = t => Object.assign(document.createElement('p'), { className: 'grp', textContent: t });
+  tab.append(grp('CLIENTS'), card, nc, grp('CLIENT RANKING'), $('#clientRankCard'), grp('TRAINER SETTINGS'), $('#codeCard'), $('#openOnCard'));
 }
 if (!OWNER) { document.body.classList.add('ro');
 $$('#bodyForm input').forEach(i => i.readOnly = true); }
@@ -940,7 +941,7 @@ function show(id, keepScroll) {
   $$('main > section').forEach(s => s.classList.toggle('hide', s.id !== 'tab-' + id));
   if (!keepScroll) window.scrollTo(0, 0);
   document.body.classList.toggle('on-clients', id === 'clients'); paintMode();
-  ({ progress: renderProgress, today: renderToday, meals: renderMealsTab, more: renderMore, clients: () => { renderAccount(); renderCode(); } })[id]();
+  ({ progress: renderProgress, today: renderToday, meals: renderMealsTab, more: renderMore, clients: () => { renderAccount(); renderCode(); renderRanking($('#clientRankBox'), 'clients'); } })[id]();
 }
 $('#nav').onclick = e => { const b = e.target.closest('button'); if (b) show(b.dataset.t); };
 
@@ -2043,36 +2044,22 @@ async function renderPeers() {
     navigator.share ? navigator.share({ text: t }).catch(() => {}) : (navigator.clipboard && navigator.clipboard.writeText(t), toast('Copied')); };
   try { $('#pCode').textContent = await api('myPeerCode', {}); } catch (e) {}
 }
-/* Rankings over the last 30 days. Progress: you + your peers. My Clients: a trainer's clients. */
-const RANK_METRICS = [
-  { k: 'workouts', label: 'Workouts', short: 'Workout days', unit: ' d', hint: 'workout days', better: 1 },
-  { k: 'streak', label: 'Streak', short: 'Weigh-in streak', unit: ' d', hint: 'days in a row with a weigh-in', better: 1 },
-  { k: 'weighIns', label: 'Weigh-ins', short: 'Weigh-ins', unit: '', hint: 'weigh-ins', better: 1 },
-  { k: 'bfChange', label: 'Body fat', short: 'Body fat change', unit: '%', hint: 'body-fat change, biggest drop first', better: -1 }];
-let rankMetric = 'workouts';
+/* Rankings: one Consistency score (0–100) over the last 30 days. Half is workout days (16 = 4 a week = full marks),
+   half is weigh-ins (one a day = full marks). More › Rankings: you + your peers. My Clients: a trainer's clients. */
+const consistency = r => Math.round(Math.min((r.workouts || 0) / 16, 1) * 50 + Math.min((r.weighIns || 0) / 30, 1) * 50);
 async function renderRanking(box, group) {
   if (!box.dataset.loaded) box.innerHTML = '<div class="ld" style="padding:8px 0">Loading…</div>';
   let rows; try { rows = await api('ranking', { group }); } catch (e) { return; }
   box.dataset.loaded = '1';
-  const m = RANK_METRICS.find(x => x.k === rankMetric) || RANK_METRICS[0];
-  const fmt = v => v == null ? '–' : (m.k === 'bfChange' && v > 0 ? '+' : '') + fmtN(v, m.k === 'bfChange' ? 1 : 0) + m.unit;
-  if (group === 'peers' && rows.length <= 1) { // only you so far: your numbers, and how to compare
-    const r = rows[0] || {};
-    box.innerHTML = `<p class="small muted" style="margin:0">Your last 30 days</p>
-      <div class="rk-tiles">${RANK_METRICS.map(x => `<div><b>${x.k === 'bfChange' && r[x.k] > 0 ? '+' : ''}${r[x.k] == null ? '–' : fmtN(r[x.k], x.k === 'bfChange' ? 1 : 0) + x.unit}</b><small>${x.short}</small></div>`).join('')}</div>
-      <div class="lkrow" style="text-align:left;margin:0"><button class="lk-nav" data-go="more:peersCard">Add peers above to compare</button></div>`;
-    return;
-  }
-  if (!rows.length) { box.innerHTML = `<p class="small muted" style="margin:0">Invite clients to see them ranked here.</p>`; return; }
-  const sorted = rows.slice().sort((a, b) => (a[m.k] == null) - (b[m.k] == null) || m.better * ((b[m.k] || 0) - (a[m.k] || 0)));
-  const max = Math.max(1e-9, ...sorted.map(r => Math.abs(r[m.k] || 0)));
-  box.innerHTML = `<div class="seg" style="margin:0 0 4px">${RANK_METRICS.map(x => `<button data-rk="${x.k}" class="${x.k === m.k ? 'on' : ''}">${x.label}</button>`).join('')}</div>
-    <p class="small muted" style="margin:0 0 6px">${m.hint} · last 30 days</p>
-    ${sorted.map((r, i) => `<div class="rk-row${r.me ? ' me' : ''}"><span class="n">${r[m.k] == null ? '–' : i + 1}</span><span class="avatar" data-rkav="${r.id}"></span>
-      <div style="min-width:0"><b>${esc(r.me ? r.name + ' (you)' : r.name)}</b><div class="rk-bar"><i style="width:${r[m.k] == null ? 0 : Math.max(4, Math.abs(r[m.k]) / max * 100)}%"></i></div></div>
-      <span class="rk-val">${fmt(r[m.k])}</span></div>`).join('')}`;
+  const how = '<p class="small muted" style="margin:0 0 6px">Consistency score, last 30 days: workouts (4 a week = 50) + weigh-ins (daily = 50)</p>';
+  const sub = r => (r.workouts || 0) + ' workout' + (r.workouts === 1 ? '' : 's') + ' · ' + (r.weighIns || 0) + ' weigh-in' + (r.weighIns === 1 ? '' : 's');
+  if (!rows.length) { box.innerHTML = '<p class="small muted" style="margin:0">Invite clients to see them ranked here.</p>'; return; }
+  const sorted = rows.map(r => Object.assign({ score: consistency(r) }, r)).sort((x, y) => y.score - x.score);
+  box.innerHTML = how + sorted.map((r, i) => `<div class="rk-row${r.me ? ' me' : ''}"><span class="n">${i + 1}</span><span class="avatar" data-rkav="${r.id}"></span>
+      <div style="min-width:0"><b>${esc(r.me ? r.name + ' (you)' : r.name)}</b><div class="rk-bar"><i style="width:${Math.max(3, r.score)}%"></i></div><small class="muted" style="font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sub(r)}</small></div>
+      <span class="rk-val">${r.score}</span></div>`).join('')
+    + (group === 'peers' && rows.length <= 1 ? '<div class="lkrow" style="text-align:left;margin:6px 0 0"><button class="lk-nav" data-go="more:peersCard">Add peers above to compare</button></div>' : '');
   sorted.forEach(r => paintAvatar($(`[data-rkav="${r.id}"]`, box), r, r.me ? 'c' : ''));
-  $$('[data-rk]', box).forEach(b => b.onclick = () => { rankMetric = b.dataset.rk; renderRanking(box, group); });
 }
 function renderMore() {
   renderPeers();
@@ -2228,7 +2215,6 @@ function setWho(w) {
   clearSaved();
   location.replace(location.pathname); // drop any old ?view=trainer&k=… so everyone ends up on the same link
 }
-$('#clientRankCard').ontoggle = () => $('#clientRankCard').open && renderRanking($('#clientRankBox'), 'clients');
 $('#peerBack').onclick = () => switchTo(S.me.id);
 $('#whoNew').onclick = () => {
   const signing = $('#signForm').classList.toggle('hide') === false;
