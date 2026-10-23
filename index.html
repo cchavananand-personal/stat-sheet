@@ -729,7 +729,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023194354';
+const BUILD = '20261023200950';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2303,9 +2303,9 @@ function renderAccount() {
       </div></div>`;
   if ($('#addNum')) $('#addNum').textContent = '#' + (cl.length + 1);
   $('#clientList').innerHTML = cl.map((c, i) => {
-    const act = lastActive(c.last), sub = c.invited ? 'Invited · not joined yet' : c.news && c.news.length ? 'New: ' + c.news.map(esc).join(' · ') : act.text;
+    const act = lastActive(c.last), sub = c.expired ? 'Invite expired · send a new one' : c.invited ? 'Invited · not joined yet' : c.news && c.news.length ? 'New: ' + c.news.map(esc).join(' · ') : act.text;
     return `<div class="cpanel"><div class="crow" data-open="${c.id}"><span class="cnum">#${i + 1}</span><i class="cdot" style="background:${c.color || CLIENT_COLORS[0]}"></i>
-      <div class="grow" style="min-width:0"><b>${esc(c.name)}</b><div class="csub${c.news && c.news.length && !c.invited ? ' newtag' : !c.invited && act.quiet ? ' quiet' : ''}">${sub}</div></div>
+      <div class="grow" style="min-width:0"><b>${esc(c.name)}</b><div class="csub${c.news && c.news.length && !c.invited ? ' newtag' : (!c.invited && act.quiet) || c.expired ? ' quiet' : ''}">${sub}</div></div>
       <button class="lk-nav" data-openc="${c.id}">Open</button><button class="link" data-more="${c.id}" aria-label="More options">⋯</button></div>${acts(c, i)}</div>`;
   }).join('') || '<div class="small muted">No clients yet.</div>';
   $$('#clientList [data-open]').forEach(r => r.onclick = e => { if (!e.target.closest('[data-more]')) switchTo(r.dataset.open); });
@@ -2328,7 +2328,7 @@ function renderAccount() {
   });
   $$('#clientList [data-rm]').forEach(b => b.onclick = () => {
     const c = S.clients.find(x => x.id === b.dataset.rm);
-    if (confirm('Take ' + c.name + ' off your clients? Their data is kept.')) busy(b, async () => { S.clients = await api('removeClient', { id: c.id }); renderAccount(); });
+    if (confirm(c.invited ? 'Delete ' + c.name + "'s invite?" : 'Take ' + c.name + ' off your clients?')) busy(b, async () => { S.clients = await api('removeClient', { id: c.id }); renderAccount(); });
   });
 }
 async function renderCode(renew) { $('#tCode').textContent = await api('myTrainerCode', renew ? { renew: true } : {}); }
