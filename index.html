@@ -207,6 +207,13 @@ nav button.on{color:var(--accent)}
 #menu .sheet b{display:block;font-size:12px;color:var(--muted);padding:8px 10px 4px;letter-spacing:.04em}
 #menu .sheet button{display:block;width:100%;text-align:left;background:none;min-height:46px;padding:10px;font-weight:600}
 #menu .sheet button:active{background:var(--soft)}
+.avatar{width:40px;height:40px;border-radius:50%;padding:0;display:grid;place-items:center;background:var(--soft);color:var(--text);font-weight:800;font-size:16px;flex:none}
+.avatar.c{background:#3fb58a;color:#fff}.avatar.t{background:#4f8df2;color:#fff}.avatar.big{width:44px;height:44px;font-size:18px}
+#menu .me{display:flex;align-items:center;gap:12px;padding:10px 10px 12px;border-bottom:1px solid var(--line);margin-bottom:4px}
+#menu .me #meName{font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#menu .me small{padding:0;font-size:13px}
+#menu .sheet .danger{color:#e8664a}
+#menu #pinForm{display:flex;gap:8px;padding:4px 10px 10px}#menu #pinForm.hide{display:none}#menu #pinForm input{flex:1;min-width:0;margin:0}
+#menu #pinForm button{width:auto;min-height:44px;padding:0 16px;text-align:center}
 #menu .sheet small{display:block;color:var(--muted);font-size:12px;padding:6px 10px 8px;line-height:1.4}
 .seg.go{padding:4px}.seg.go button{min-height:48px;font-size:16px;font-weight:700}
 .seg.go button.on{background:var(--accent);color:var(--accent-ink);box-shadow:none}
@@ -288,7 +295,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <g transform="translate(420 520) rotate(-32) scale(.86)" fill="#fff"><rect x="-290" y="-26" width="580" height="52" rx="26"/><rect x="-262" y="-138" width="84" height="276" rx="34"/><rect x="-168" y="-102" width="60" height="204" rx="26"/><rect x="178" y="-138" width="84" height="276" rx="34"/><rect x="108" y="-102" width="60" height="204" rx="26"/></g>
     <path d="M110 872H380L428 800L490 944L548 836L580 872H914" fill="none" stroke="#6ff3c4" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
   </svg><b id="brandName">STAT SHEET</b></div>
-  <div class="row" style="gap:8px"><div class="role hide" id="roleTag"></div><button class="iconbtn" id="menuBtn" aria-label="More options">⋯</button></div>
+  <div class="row" style="gap:8px"><div class="role hide" id="roleTag"></div><button class="avatar" id="menuBtn" aria-label="Account">?</button></div>
 </header>
 <div id="trainerBar" class="hide">
   <div id="modeSeg"><button data-m="c"><span class="mb c">C</span>Personal profile</button><button data-m="t"><span class="mb t">T</span>Clients profile</button></div>
@@ -460,7 +467,9 @@ button.primary.trn{background:#4f8df2;color:#fff}
 
   <!-- MORE -->
   <!-- CLIENTS (trainer mode): the clients card and "Open the app on" move here when the page starts -->
-  <section id="tab-clients" class="hide"><h2>Clients</h2></section>
+  <section id="tab-clients" class="hide"><h2>Clients</h2>
+    <div class="card" id="openOnCard"><label id="openOnRow" style="margin:0">Open the app on<select id="openOn"></select></label></div>
+  </section>
 
   <section id="tab-more" class="hide">
     <h2>More</h2>
@@ -486,16 +495,6 @@ button.primary.trn{background:#4f8df2;color:#fff}
       <button class="primary" id="impBtn" disabled style="width:100%">Import</button>
     </div></details>
 
-    <details class="card" id="accountCard"><summary>Account</summary><div>
-      <p class="small muted" id="pinState" style="margin-top:0"></p>
-      <form id="pinForm" class="hide" style="display:flex;gap:8px;align-items:flex-end">
-        <label class="grow">New PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits"></label>
-        <button class="primary">Change</button>
-      </form>
-      <label id="openOnRow" class="hide" style="margin-top:10px">Open the app on<select id="openOn"></select></label>
-      <button class="link hide" id="signOut" style="width:100%;margin-top:8px">Sign out of this phone</button>
-    </div></details>
-
     <details class="card hide" id="clientsCard"><summary>Clients</summary><div>
       <div id="clientList"></div>
       <form id="clientForm" style="display:flex;gap:8px;align-items:flex-end;margin-top:12px">
@@ -504,18 +503,6 @@ button.primary.trn{background:#4f8df2;color:#fff}
       </form>
       <div id="inviteOut" class="hide"></div>
       <p class="small muted" style="margin-bottom:0">Clients set their own PIN from the invite link. You never see it.</p>
-    </div></details>
-
-    <details class="card"><summary>Share</summary><div>
-      <label>App link (one link for everyone)<input id="appUrl" readonly onclick="this.select()"></label>
-      <button class="primary" id="copyApp" style="width:100%;margin:10px 0 18px">Copy app link</button>
-      <p class="small muted" style="margin-top:0"><b>Trainer link</b>: view-only plus notes, if you want someone to look without editing.</p>
-      <form id="shareForm">
-        <label>Trainer email<input type="email" name="email" required autocomplete="email"></label>
-        <button class="primary">Email the link</button>
-      </form>
-      <label style="margin-top:14px">Trainer link<input id="trainerUrl" readonly onclick="this.select()"></label>
-      <div class="grid2" style="margin-top:10px"><button id="copyLink">Copy link</button><button id="rotateLink">Reset link</button></div>
     </div></details>
 
     <details class="card" id="connDetails"><summary>Connections · Garmin, WHOOP, Fitbit…</summary><div id="connBox" class="small"></div></details>
@@ -534,12 +521,19 @@ button.primary.trn{background:#4f8df2;color:#fff}
 </main>
 
 <div id="menu" class="hide"><div class="sheet">
-  <b>EXPORT</b>
-  <button data-x="report">📄 Progress report (PDF)</button>
-  <button data-x="body">📊 Body data (CSV · FitDays format)</button>
-  <button data-x="meals">🍽️ Meal log (CSV)</button>
-  <button data-x="plan">🗒️ Meal plan (PDF)</button>
-  <small id="menuNote">A copy of each export is also saved to your Google Drive (Keng X Yoon · Stat Sheet — Photos › Exports).</small>
+  <div class="me"><span class="avatar big" id="meAv"></span><div class="grow"><div id="meName"></div><small id="meRole"></small></div></div>
+  <b id="exportTitle">EXPORT</b>
+  <button data-x="report">📄 Progress report</button>
+  <button data-x="body">📊 Body data · CSV</button>
+  <button data-x="meals">🍽️ Meal log · CSV</button>
+  <button data-x="plan">🗒️ Meal plan</button>
+  <small id="menuNote" class="hide"></small>
+  <b>ACCOUNT</b>
+  <button id="mPin">🔑 Change PIN</button>
+  <form id="pinForm" class="hide"><input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="New PIN · 4–6 digits"><button class="primary">Save</button></form>
+  <button id="mLink">🔗 Copy app link</button>
+  <button id="signOut" class="danger">Sign out</button>
+  <button id="mSignIn">Sign in</button>
 </div></div>
 <div id="gallery" class="hide">
   <div class="g-top"><button id="gClose" aria-label="Back">←</button><b>Progress Gallery</b><span style="width:46px"></span></div>
@@ -555,7 +549,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023155315';
+const BUILD = '20261023155820';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -708,9 +702,8 @@ const TABS = !OWNER ? [['progress','Progress'],['today','Today']]
   : [['progress','Progress'],['today','Today'],['meals','Plan'],['more','More']];
 $('#nav').innerHTML = TABS.map(([id, label]) => `<button data-t="${id}"><svg viewBox="0 0 24 24">${ICONS[id]}</svg>${label}</button>`).join('');
 if (ROLE === 'trainer') { // trainer mode: the Clients tab holds the client list and where the app opens
-  const tab = $('#tab-clients'), card = $('#clientsCard'), box = document.createElement('div');
-  card.open = true; tab.append(card);
-  box.className = 'card'; box.append($('#openOnRow')); tab.append(box);
+  const tab = $('#tab-clients'), card = $('#clientsCard');
+  card.open = true; tab.insertBefore(card, $('#openOnCard'));
 }
 if (!OWNER) { document.body.classList.add('ro');
 $$('#bodyForm input').forEach(i => i.readOnly = true); }
@@ -719,8 +712,7 @@ function renderRoleTag() {
   const t = $('#roleTag');
   // C = your own stats (client mode) · T = a client's stats (trainer mode)
   const trainer = !!(S.me && S.me.trainer);
-  t.innerHTML = ROLE === 'guest' ? 'Sign in' : !trainer && S.me && S.pinsOn ? esc(S.me.name) : '';
-  t.classList.toggle('hide', !t.textContent);
+  t.classList.add('hide'); renderMenu(); // the profile button (top right) shows who you are
   // title: TRAINER X CLIENT only in trainer mode; otherwise just the app name
   $('#brandName').innerHTML = viewingClient() ? esc(S.me.name.toUpperCase()) + ' <span>X</span> ' + esc(S.target.name.toUpperCase()) : 'STAT SHEET';
   // trainers: C | T toggle; in T, one tap per client
@@ -778,7 +770,7 @@ $$('#menu [data-x]').forEach(b => b.onclick = () => busy(b, async () => {
   const url = URL.createObjectURL(new Blob([bytes], { type: r.mime }));
   const a = document.createElement('a'); a.href = url; a.download = r.name; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 60000);
-  $('#menuNote').innerHTML = `Saved <b>${esc(r.name)}</b>. Not downloading? <a href="${esc(r.url)}" target="_blank">Open it in Google Drive</a>.`;
+  $('#menuNote').innerHTML = `Saved <b>${esc(r.name)}</b>. Not downloading? <a href="${esc(r.url)}" target="_blank">Open it in Google Drive</a>.`; $('#menuNote').classList.remove('hide');
   toast('Exported ' + r.name);
 }));
 
@@ -1650,7 +1642,6 @@ function renderMore() {
   const f = $('#profileForm');
   [...f.elements].forEach(el => { if (el.name && S.profile[el.name] != null) el.value = S.profile[el.name]; });
   if (!$('#appIcon').src) $('#appIcon').src = 'icon-512.png';
-  api('shareInfo').then(i => { $('#trainerUrl').value = i.url; $('#appUrl').value = i.appUrl; if (i.email) $('#shareForm').email.value = i.email; });
 }
 $('#profileForm').onsubmit = e => {
   e.preventDefault(); const f = e.target;
@@ -1696,14 +1687,6 @@ $('#impBtn').onclick = e => {
 };
 
 /* share */
-$('#shareForm').onsubmit = e => {
-  e.preventDefault(); const f = e.target;
-  busy($('button', f), async () => { const r = await api('share', { email: f.email.value }); $('#trainerUrl').value = r.url; toast('Link sent'); });
-};
-$('#copyApp').onclick = () => { const i = $('#appUrl'); i.select(); document.execCommand('copy'); toast('App link copied'); };
-$('#copyLink').onclick = () => { const i = $('#trainerUrl'); i.select(); document.execCommand('copy'); toast('Link copied'); };
-$('#rotateLink').onclick = e => confirm('Make a new trainer link? The old one stops working.') &&
-  busy(e.target, async () => { $('#trainerUrl').value = (await api('rotateTrainerKey')).url; toast('New link made'); });
 
 /* Connections: link WHOOP / Fitbit (their sign-in page), or send Apple Health data (Garmin, FitDays scale, Oura…)
    from an iPhone Shortcut with your own key. The app admin switches each service on once (box at the bottom). */
@@ -1807,12 +1790,9 @@ $('#whoPin').onsubmit = e => {
   });
 };
 function renderAccount() {
-  $('#pinState').textContent = !S.pinsOn ? 'Sign-in is off: the app is fully open.'
-    : S.me ? 'Signed in as ' + S.me.name + (S.me.trainer ? ' (trainer)' : '') + ' on this phone.' : 'Not signed in.';
-  $('#pinForm').classList.toggle('hide', !(S.me && !viewingClient()));
-  $('#signOut').classList.toggle('hide', !WHO);
-  $('#clientsCard').classList.toggle('hide', !(S.me && S.me.trainer));
-  $('#openOnRow').classList.toggle('hide', !(S.me && S.me.trainer));
+  // clients live in the Clients tab; in Personal › More only as "invite your first client"
+  $('#clientsCard').classList.toggle('hide', !(S.me && S.me.trainer && (viewingClient() || !(S.clients || []).length)));
+  $('#clientsCard summary').textContent = (S.clients || []).length ? 'Clients' : 'Invite your first client';
   if (S.me && S.me.trainer) {
     $('#openOn').innerHTML = [['me', 'My stats'], ['last', 'Last client I viewed']].concat((S.clients || []).map(c => [c.id, c.name]))
       .map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('');
@@ -1846,8 +1826,24 @@ function showInvite(r) {
 }
 $('#pinForm').onsubmit = e => {
   e.preventDefault(); const f = e.target;
-  busy($('button', f), async () => { await api('changePin', { pin: f.pin.value }); f.reset(); toast('PIN changed'); });
+  busy($('button', f), async () => { await api('changePin', { pin: f.pin.value }); f.reset(); f.classList.add('hide'); toast('PIN changed'); });
 };
+/** The profile menu: who's signed in, export (of the stats on screen), account. */
+function renderMenu() {
+  const me = S.me, av = (me ? me.name : '?').charAt(0).toUpperCase(), cls = viewingClient() ? 't' : me ? 'c' : '';
+  $('#menuBtn').textContent = av; $('#menuBtn').className = 'avatar ' + cls;
+  $('#meAv').textContent = av; $('#meAv').className = 'avatar big ' + cls;
+  $('#meName').textContent = me ? me.name : 'Not signed in';
+  $('#meRole').textContent = !me ? 'Viewing only' : me.trainer ? (viewingClient() ? 'Trainer · viewing ' + S.target.name : 'Trainer · personal profile') : 'Client';
+  $('#exportTitle').textContent = viewingClient() ? 'EXPORT ' + S.target.name.toUpperCase() + "'S DATA" : 'EXPORT';
+  $$('#menu [data-x], #exportTitle').forEach(b => b.classList.toggle('hide', !OWNER));
+  $('#mPin').classList.toggle('hide', !me || viewingClient()); // your own PIN, from your own profile
+  $('#signOut').classList.toggle('hide', !WHO || ROLE === 'guest');
+  $('#mSignIn').classList.toggle('hide', ROLE !== 'guest');
+}
+$('#mPin').onclick = () => { $('#pinForm').classList.toggle('hide'); $('#pinForm').pin.focus(); };
+$('#mLink').onclick = () => { const u = location.origin + location.pathname; navigator.clipboard ? navigator.clipboard.writeText(u) : prompt('App link', u); toast('App link copied'); };
+$('#mSignIn').onclick = () => { $('#menu').classList.add('hide'); showWho(); };
 $('#clientForm').onsubmit = e => {
   e.preventDefault(); const f = e.target, x = formObj(f);
   busy($('button', f), async () => { const r = await api('addClient', x); S.clients = r.clients; f.reset(); renderAccount(); showInvite(r); });
