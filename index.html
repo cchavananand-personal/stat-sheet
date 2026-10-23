@@ -320,6 +320,8 @@ button.loading img,button.loading svg{opacity:0}
 #newClientCard #clientForm{align-items:center!important}#newClientCard #clientForm label{margin:0}#newClientCard #clientForm .cnum{color:var(--accent);font-weight:800;min-width:26px}.addway b{font-size:15px}.addway p{margin:2px 0 10px}
 #newClientCard .row.between{flex-direction:column;align-items:stretch;gap:10px}#newClientCard .row.between>.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}#newClientCard .row.between button{white-space:nowrap;min-height:44px!important}
 .codeline{display:flex;align-items:center;gap:10px}#newClientCard .codeline button{min-height:32px!important}.codeline button.link.link{min-height:32px;padding:4px 10px;font-size:13px}
+.reqform{display:flex;gap:8px;align-items:stretch}.reqform input{flex:1;min-width:0;margin:0}.reqform button{min-height:46px;white-space:nowrap}#reqList .crow{gap:10px;padding:8px 0}
+#coachReq{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:45;background:var(--card);border:1px solid var(--accent);border-radius:16px;padding:14px;box-shadow:0 8px 30px #0006;display:grid;gap:10px}#coachReq.hide{display:none}#coachReq .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}#coachReq button{min-height:44px}
 .addor{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:13px}.addor::before{content:"";flex:1;height:1px;background:var(--line)}
 .crow b{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.crow .small{white-space:nowrap}
 .crow .link{font-size:20px;padding:4px 10px;min-height:0}
@@ -704,6 +706,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
   <button id="signOut" class="danger"><i data-ic="logout"></i>Sign out · switch account</button>
   <button id="mSignIn">Sign in</button>
 </div></div>
+<div id="coachReq" class="hide"></div>
 <div id="profSheet" class="hide"><div class="psheet">
   <div class="row between"><button class="link" id="profClose">Cancel</button><b>My Profile</b><span style="width:64px"></span></div>
   <label class="pphoto"><span class="avatar xl" id="profAv"></span><input type="file" accept="image/*" id="profFile"><span>Change Photo</span></label>
@@ -731,7 +734,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023213134';
+const BUILD = '20261023213437';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -902,7 +905,11 @@ if (ROLE === 'trainer') { // trainer mode: the Clients tab holds the client list
   const nc = document.createElement('div'); nc.className = 'card'; nc.id = 'newClientCard';
   const how = (t, d) => Object.assign(document.createElement('div'), { className: 'addway', innerHTML: (t ? `<b>${t}</b>` : '') + `<p class="small muted">${d}</p>` });
   $('p.small.muted', card).remove();
-  nc.append(how('', 'Share your invite link, or members enter your code.'), $('#codeCard .row.between'), $('#inviteOut'));
+  nc.append(how('', 'Share your invite link, or members enter your code.'), $('#codeCard .row.between'), $('#inviteOut'),
+    Object.assign(document.createElement('div'), { className: 'addor' }),
+    how('', 'Already a member? Add them by their code.'),
+    Object.assign(document.createElement('form'), { id: 'reqForm', className: 'reqform', innerHTML: '<input name="code" maxlength="24" autocapitalize="characters" placeholder="e.g. MINT-4821" style="text-transform:uppercase"><button class="primary">Send Request</button>' }),
+    Object.assign(document.createElement('div'), { id: 'reqList' }));
   $('#codeCard').remove();
   const grp = t => Object.assign(document.createElement('p'), { className: 'grp', textContent: t });
   tab.append(grp('CLIENTS'), card, grp('ADD A CLIENT'), nc, grp('CLIENT RANKING'), $('#clientRankCard'));
@@ -2263,6 +2270,10 @@ document.addEventListener('click', e => {
   const code = ($(b.dataset.copycode) || {}).textContent || ''; if (!code || code === '…') return;
   (navigator.clipboard ? navigator.clipboard.writeText(code) : Promise.reject()).then(() => toast('Copied ' + code), () => prompt('Your code', code));
 });
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'reqForm') return; e.preventDefault(); const f = e.target;
+  busy($('button', f), async () => { Object.assign(S, await api('requestClient', { code: f.code.value })); f.reset(); renderAccount(); toast('Request sent'); });
+});
 $('#peerBack').onclick = () => switchTo(S.me.id);
 $('#who').addEventListener('input', () => $('#whoErr').classList.add('hide'));
 $('#whoNew').onclick = () => {
@@ -2330,6 +2341,8 @@ function syncSavedClients() {
 }
 function renderAccount() {
   syncSavedClients();
+  if ($('#reqList')) $('#reqList').innerHTML = (S.requests || []).map(r => `<div class="crow" style="cursor:default"><b class="grow">${esc(r.name)}</b><span class="small muted">Request sent · waiting</span><button class="link" data-unreq="${r.id}">Cancel</button></div>`).join('');
+  $$('#reqList [data-unreq]').forEach(b => b.onclick = () => busy(b, async () => { Object.assign(S, await api('cancelRequest', { id: b.dataset.unreq })); renderAccount(); }));
   // clients live in the Clients tab; in Personal › More only as "invite your first client"
   $('#clientsCard').classList.toggle('hide', !(S.me && S.me.trainer && viewingClient()));
   $('#clientsCard summary').textContent = (S.clients || []).length ? 'Clients' : 'Invite your first client';
@@ -2559,6 +2572,19 @@ async function prefetchClients(d) {
     } catch (e) { return; } // offline or storage full: switching just loads as before
   }
 }
+/** A trainer asked to coach you: Accept / Decline, right over the app. */
+function showCoachRequest() {
+  const box = $('#coachReq'), r = S.coachRequest;
+  box.classList.toggle('hide', !r); if (!r) return;
+  box.innerHTML = `<div><b>${esc(r.name)} wants to be your trainer</b><div class="small muted">${esc(r.name)} will see and update your stats, plans and goals.</div></div>
+    <div class="row"><button class="primary" id="crYes">Accept</button><button class="link" id="crNo">Decline</button></div>`;
+  const answer = accept => e => busy(e.target, async () => {
+    Object.assign(S, await api('answerCoach', { accept })); box.classList.add('hide');
+    if (accept) toast("You're now training with " + r.name, false, 5000);
+    if (curTab === 'more') renderMore();
+  });
+  $('#crYes').onclick = answer(true); $('#crNo').onclick = answer(false);
+}
 function bootDone() { const b = $('#boot'); if (!b) return; b.classList.add('done'); setTimeout(() => b.remove(), 400); }
 let saved = null;
 try { saved = JSON.parse(localStorage.getItem(BOOT_KEY)); } catch (e) {}
@@ -2574,6 +2600,7 @@ document.addEventListener('visibilitychange', () => {
   lastBoot = Date.now();
   setTimeout(() => api('bootstrap', { date: TODAY }).then(d => {
     Object.assign(S, d); Object.keys(WKD).forEach(k => delete WKD[k]);
+    showCoachRequest();
     if (!/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) { renderRoleTag(); show(curTab, true); }
   }).catch(() => {}), 1200);
 });
@@ -2581,6 +2608,7 @@ api('bootstrap', { date: TODAY })
   .then(d => {
     try { localStorage.setItem(BOOT_KEY, JSON.stringify({ date: TODAY, data: d, at: Date.now() })); } catch (e) {}
     if (d.me && d.me.trainer) setTimeout(() => prefetchClients(d), 3000);
+    showCoachRequest();
     syncSavedClients(); // a client added or removed elsewhere: fix the saved copies and the buttons at the top
     Object.assign(S, d);
     // sign-in was switched on (or off) since this phone last looked
