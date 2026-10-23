@@ -504,7 +504,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023143159';
+const BUILD = '20261023143356';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -640,7 +640,7 @@ const ICONS = {
 const TABS = OWNER ? [['progress','Progress'],['today','Today'],['meals','Plan'],['more','More']] : [['progress','Progress'],['today','Today']];
 $('#nav').innerHTML = TABS.map(([id, label]) => `<button data-t="${id}"><svg viewBox="0 0 24 24">${ICONS[id]}</svg>${label}</button>`).join('');
 if (!OWNER) { document.body.classList.add('ro');
-$('#bodyForm input').forEach(i => i.readOnly = true); $('#roleTag').textContent = ROLE === 'trainer' ? 'Trainer' : 'Viewing · Sign in'; $('#roleTag').classList.remove('hide'); }
+$$('#bodyForm input').forEach(i => i.readOnly = true); $('#roleTag').textContent = ROLE === 'trainer' ? 'Trainer' : 'Viewing · Sign in'; $('#roleTag').classList.remove('hide'); }
 if (ROLE === 'guest') $('#noteForm').classList.add('hide');
 $('#roleTag').onclick = () => ROLE === 'guest' ? showWho() : WHO && confirm('Sign out of this phone?') && setWho(null);
 let curTab = 'progress';
