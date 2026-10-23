@@ -742,7 +742,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023221808';
+const BUILD = '20261023223805';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -776,6 +776,7 @@ const keepAs = (() => { try { return sessionStorage.getItem('keepAs') === '1'; }
 const OPEN_ON = store('openOn') || 'me';
 const AS = keepAs ? store('as') || '' : !I_TRAIN ? ''
   : OPEN_ON === 'me' ? '' : OPEN_ON === 'last' ? store('lastAs') || '' : OPEN_ON;
+if (!keepAs) store('asKind', null); // only a switch made this session can be a peer view
 if (I_TRAIN) { store('as', AS || null); try { sessionStorage.setItem('keepAs', '1'); } catch (e) {} }
 const ROLE = !KEY ? (PINS_ON || (WHO && WHO.role === 'guest') ? 'guest' : 'owner')
   : AS && AS !== (WHO && WHO.id) && store('asKind') === 'peer' ? 'peer' // a peer's stats: look only
@@ -2385,8 +2386,8 @@ let clientDragged = false;
     el.style.transform = ''; el.classList.remove('dragging'); el = null; clientDragged = true; setTimeout(() => clientDragged = false, 80);
     const ids = $$('.cpanel', list).map(p => p.dataset.cid);
     if (ids.join() === (S.clients || []).map(c => c.id).join()) return;
-    S.clients = ids.map(id => S.clients.find(c => c.id === id)); renderAccount(); // numbers and the buttons at the top follow at once
-    api('orderClients', { ids }).then(l => { S.clients = l; }).catch(() => {});
+    const before = S.clients; S.clients = ids.map(id => S.clients.find(c => c.id === id)); renderAccount(); // numbers and the buttons at the top follow at once
+    api('orderClients', { ids }).then(l => { S.clients = l; }).catch(() => { S.clients = before; renderAccount(); });
   };
   list.addEventListener('pointerup', drop); list.addEventListener('pointercancel', drop);
   list.addEventListener('touchmove', e => { if (el) e.preventDefault(); }, { passive: false });
@@ -2412,7 +2413,7 @@ function renderAccount() {
       <label class="small">Private Note<textarea data-note="${c.id}" rows="2" maxlength="500" placeholder="e.g. Knee injury, avoid deep squats">${esc(c.note || '')}</textarea></label>
       <div class="cbtns">
 
-        <button class="link" data-reset="${c.id}">Send new invite</button><button class="link danger" data-rm="${c.id}">Remove</button>
+        ${c.invited ? `<button class="link" data-reset="${c.id}">Send New Invite</button>` : ''}<button class="link danger" data-rm="${c.id}">Remove</button>
       </div></div>`;
   $('#clientList').innerHTML = cl.map((c, i) => {
     const act = lastActive(c.last), sub = c.expired ? 'Invite expired · send a new one' : c.invited ? 'Invited · not joined yet' : c.news && c.news.length ? 'New: ' + c.news.map(esc).join(' · ') : act.text;
@@ -2675,10 +2676,10 @@ api('bootstrap', { date: TODAY })
     if (QS.get('k') && d.me) return setWho(Object.assign({ key: QS.get('k') }, d.me)); // old link: remember who, move to the plain link
     if (d.me && d.target && AS && d.target.id !== AS) store('as', d.target.id);
     const pp = store('pendingPeer'); // opened from someone's peer link: become peers once signed in
-    if (pp && d.me) { store('pendingPeer', null); const pn = store('pendingPeerName'); store('pendingPeerName', null);
+    if (pp && d.me && d.role === 'owner') { store('pendingPeer', null); const pn = store('pendingPeerName'); store('pendingPeerName', null);
       if (!(d.peers || []).some(x => x.name === pn)) api('addPeer', { code: pp }).then(w => { Object.assign(S, w); if (curTab === 'more') renderMore(); toast('You and ' + (pn || 'your friend') + ' are now peers', false, 5000); }).catch(() => {}); }
     const pc = store('pendingCoach'); // opened from a trainer's link: pair once signed in
-    if (pc && d.me) { store('pendingCoach', null); setTimeout(() => store('pendingCoachName', null), 2000);
+    if (pc && d.me && d.role === 'owner') { store('pendingCoach', null); setTimeout(() => store('pendingCoachName', null), 2000);
       // opening the invite link is the yes: join straight away (only switching from another trainer asks first)
       const nm = store('pendingCoachName') || 'this trainer', same = d.coach && d.coach.code === String(pc).toUpperCase();
       if (!d.me.trainer && !same && (!d.coach || confirm('Move from ' + d.coach.name + ' to ' + nm + ' as your trainer?')))
