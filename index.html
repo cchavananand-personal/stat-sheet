@@ -408,6 +408,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
     <label>Recovery Code<input name="code" autocapitalize="characters" autocomplete="off" placeholder="XXXX-XXXX" style="text-transform:uppercase;letter-spacing:.08em" required></label>
     <label>New PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
     <button class="primary">Reset PIN</button>
+    <button type="button" class="lk-open" id="forgotBack">Back To Sign In</button>
   </form>
   <form id="invForm" class="hide">
     <label>Choose A PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
@@ -752,7 +753,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023230607';
+const BUILD = '20261023230849';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2582,6 +2583,10 @@ $('#whoForgot').onclick = () => {
   $('#whoPin').classList.add('hide'); $('#whoForgot').classList.add('hide'); $('#whoErr').classList.add('hide'); $('#whoNew').classList.add('hide');
   $('#forgotForm').classList.remove('hide'); $('#whoTitle').textContent = 'Reset PIN'; $('#whoSub').textContent = $('#whoPin').name.value.trim();
   $('#forgotForm').code.focus();
+};
+$('#forgotBack').onclick = () => {
+  $('#forgotForm').classList.add('hide'); $('#whoPin').classList.remove('hide'); $('#whoNew').classList.remove('hide');
+  $('#whoTitle').textContent = 'Welcome back'; $('#whoSub').textContent = 'Sign in to Stat Sheet'; $('#whoPin').pin.value = '';
 };
 $('#forgotForm').onsubmit = e => {
   e.preventDefault(); const f = e.target;
