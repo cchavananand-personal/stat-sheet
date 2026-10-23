@@ -342,7 +342,7 @@ a.lk-ext{color:var(--s);text-decoration:underline;text-underline-offset:3px;text
 body.tmode [data-go^="more"]{display:none} /* Client Profile has no More tab */
 .minilink{min-height:0;padding:6px 4px 2px;font-size:14px;color:var(--accent);font-weight:600}
 /* anything tappable looks tappable: framed secondary button (user, 2026-10-23) */
-button.link.link{background:var(--soft);border:1px solid var(--line);border-radius:10px;color:var(--text);font-weight:600;font-size:14px;min-height:36px;padding:6px 12px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:4px;line-height:1.2}
+button.link.link{background:var(--soft);border:1px solid var(--line);border-radius:10px;color:var(--text);font-weight:600;font-size:14px;min-height:40px;padding:6px 12px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:4px;line-height:1.2}
 button.link.link:active{background:var(--line)}
 button.link.link[aria-label]{min-width:36px;padding:4px 8px;font-size:15px;color:var(--muted)}
 button.link.link.danger{color:#e8664a;border-color:color-mix(in srgb,#e8664a 40%,var(--line))}
@@ -615,7 +615,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
   <!-- CLIENTS (trainer mode): the clients card and "Open the app on" move here when the page starts -->
   <section id="tab-clients" class="hide"><h2>My Clients</h2>
     <div class="card" id="codeCard"><div class="row between"><div><div class="small muted">Your code</div><b id="tCode" style="font-size:20px;letter-spacing:.06em">…</b></div>
-      <div class="row" style="gap:6px"><button id="codeShare" class="primary" style="min-height:40px">Share</button><button id="codeNew" class="link">New Code</button></div></div>
+      <div class="row" style="gap:6px"><button id="codeShare" class="primary" style="min-height:40px">Share Invite</button><button id="codeNew" class="link">New Code</button></div></div>
       <p class="small muted" style="margin:8px 0 0">People who already use Stat Sheet enter it in More › My Trainer to become your client.</p></div>
     <div class="card" id="clientRankCard"><div id="clientRankBox" class="small"></div></div>
     <div class="card" id="openOnCard"><label id="openOnRow" style="margin:0">Open the app on<select id="openOn"></select></label></div>
@@ -728,7 +728,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023205837';
+const BUILD = '20261023210829';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -898,7 +898,7 @@ if (ROLE === 'trainer') { // trainer mode: the Clients tab holds the client list
   const nc = document.createElement('div'); nc.className = 'card'; nc.id = 'newClientCard';
   const how = (t, d) => Object.assign(document.createElement('div'), { className: 'addway', innerHTML: (t ? `<b>${t}</b>` : '') + `<p class="small muted">${d}</p>` });
   $('p.small.muted', card).remove();
-  nc.append(how('', 'Members enter this code to become your client.'), $('#codeCard .row.between'), $('#inviteOut'));
+  nc.append(how('', 'Share your invite link, or members enter your code.'), $('#codeCard .row.between'), $('#inviteOut'));
   $('#codeCard').remove();
   const grp = t => Object.assign(document.createElement('p'), { className: 'grp', textContent: t });
   tab.append(grp('CLIENTS'), card, grp('ADD A CLIENT'), nc, grp('CLIENT RANKING'), $('#clientRankCard'));
@@ -2051,7 +2051,7 @@ function renderTrainerMode() {
   box.classList.toggle('lit', !!me.trainer);
   box.innerHTML = me.trainer
     ? `<b>Trainer mode is on</b><p class="small muted" style="margin:4px 0 0">Managing ${(S.clients || []).length} client${(S.clients || []).length === 1 ? '' : 's'} in Client Profile.</p>
-       <div class="row" style="gap:8px;margin-top:10px">${(S.clients || []).length ? '' : '<button class="primary" id="tmShare" style="min-height:36px">Share Trainer Code</button>'}<button class="link" id="tmOff">Turn Off Trainer Mode</button></div>`
+       <div class="row" style="gap:8px;margin-top:10px">${(S.clients || []).length ? '' : '<button class="primary" id="tmShare">Share Invite Link</button>'}<button class="link" id="tmOff">Turn Off Trainer Mode</button></div>`
     : `<b>Coach other people?</b><p class="small muted" style="margin:4px 0 10px">Invite clients and manage their progress, plans, goals and notes.</p>
        <button class="primary" id="tmOn" style="width:100%">Become A Trainer</button>`;
   const flip = on => async () => {
@@ -2278,7 +2278,15 @@ $('#signForm').onsubmit = e => {
     $('#claimNo').onclick = () => { $('#claimAsk').classList.add('hide'); $('button.primary', f).classList.remove('hide'); f.name.value = ''; f.name.focus(); };
   });
 };
-function showWho() { $('#who').classList.remove('hide'); $('#whoPin').reset(); }
+function showWho() {
+  $('#who').classList.remove('hide'); $('#whoPin').reset();
+  const pc = store('pendingCoach'); if (!pc) return;
+  api('coachInfo', { code: pc }).then(c => {
+    store('pendingCoachName', c.name);
+    if ($('#signForm').classList.contains('hide')) $('#whoNew').click(); // most people opening an invite are new
+    $('#whoTitle').textContent = 'Join ' + c.name; $('#whoSub').textContent = 'Create your account to train with ' + c.name;
+  }).catch(() => store('pendingCoach', null));
+}
 $('#whoPin').onsubmit = e => {
   e.preventDefault(); const f = e.target;
   busy($('button.primary', f), async () => {
@@ -2292,7 +2300,25 @@ function lastActive(ms) {
   const n = Math.round((day(Date.now()) - day(ms)) / 864e5);
   return { text: n <= 0 ? 'Active today' : n === 1 ? 'Active yesterday' : 'Last active ' + n + ' days ago', quiet: n >= 3 };
 }
+/** The client list changed (or first load): every saved copy gets the new list; removed clients' copies and settings go. */
+let syncedClients = null;
+function syncSavedClients() {
+  if (!S.me || !S.me.trainer) return;
+  const list = S.clients || [], j = JSON.stringify(list);
+  if (j === syncedClients) return;
+  const first = syncedClients === null; syncedClients = j;
+  if (first) return; // nothing changed yet on this screen
+  const ids = list.map(c => c.id), pre = 'boot-v2-' + S.me.id + '-';
+  try { Object.keys(localStorage).filter(k => k.startsWith(pre)).forEach(k => {
+    const id = k.slice(pre.length);
+    if (id && id !== S.me.id && ids.indexOf(id) < 0) return localStorage.removeItem(k);
+    const v = JSON.parse(localStorage.getItem(k)); v.data.clients = list; localStorage.setItem(k, JSON.stringify(v));
+  }); } catch (e) {}
+  ['lastAs', 'openOn'].forEach(k => { const v = store(k); if (v && v !== 'me' && v !== 'last' && ids.indexOf(v) < 0) store(k, null); });
+  renderRoleTag(); // the client buttons at the top
+}
 function renderAccount() {
+  syncSavedClients();
   // clients live in the Clients tab; in Personal › More only as "invite your first client"
   $('#clientsCard').classList.toggle('hide', !(S.me && S.me.trainer && viewingClient()));
   $('#clientsCard summary').textContent = (S.clients || []).length ? 'Clients' : 'Invite your first client';
@@ -2341,7 +2367,7 @@ function renderAccount() {
   });
 }
 async function renderCode(renew) { $('#tCode').textContent = await api('myTrainerCode', renew ? { renew: true } : {}); }
-$('#codeShare').onclick = () => { const c = $('#tCode').textContent, t = 'Join me as your trainer on Stat Sheet: ' + location.origin + location.pathname + '?trainer=' + encodeURIComponent(c) + ' (or enter code ' + c + ' in More › My Trainer)';
+$('#codeShare').onclick = () => { const c = $('#tCode').textContent, t = 'Train with me on Stat Sheet: ' + location.origin + location.pathname + '?trainer=' + encodeURIComponent(c);
   navigator.share ? navigator.share({ text: t }).catch(() => {}) : (navigator.clipboard && navigator.clipboard.writeText(t), toast('Copied')); };
 $('#codeNew').onclick = e => confirm('Make a new code? The old one stops working.') && busy(e.target, () => renderCode(true));
 /** Show the invite link to send (copy or share sheet). */
@@ -2527,6 +2553,7 @@ let saved = null;
 try { saved = JSON.parse(localStorage.getItem(BOOT_KEY)); } catch (e) {}
 if (saved && saved.data) {
   Object.assign(S, saved.data);
+  syncedClients = JSON.stringify(S.clients || []); // compare the fresh list against what this copy showed
   if (saved.date !== TODAY) { S.meals = []; S.dayPhotos = []; } // those two are for the day it was saved
   show('progress'); bootDone(); renderRoleTag();
 }
@@ -2543,6 +2570,7 @@ api('bootstrap', { date: TODAY })
   .then(d => {
     try { localStorage.setItem(BOOT_KEY, JSON.stringify({ date: TODAY, data: d, at: Date.now() })); } catch (e) {}
     if (d.me && d.me.trainer) setTimeout(() => prefetchClients(d), 3000);
+    syncSavedClients(); // a client added or removed elsewhere: fix the saved copies and the buttons at the top
     Object.assign(S, d);
     // sign-in was switched on (or off) since this phone last looked
     store('pinsOn', d.pinsOn ? '1' : '0');
@@ -2552,8 +2580,8 @@ api('bootstrap', { date: TODAY })
     if (QS.get('k') && d.me) return setWho(Object.assign({ key: QS.get('k') }, d.me)); // old link: remember who, move to the plain link
     if (d.me && d.target && AS && d.target.id !== AS) store('as', d.target.id);
     const pc = store('pendingCoach'); // opened from a trainer's link: pair once signed in
-    if (pc && d.me) { store('pendingCoach', null);
-      if (!d.me.trainer && !d.coach) setTimeout(() => confirm('Pair with trainer code ' + pc + '?') && api('pairTrainer', { code: pc }).then(w => { Object.assign(S, w); toast('Paired with ' + S.coach.name); }), 600); }
+    if (pc && d.me) { store('pendingCoach', null); setTimeout(() => store('pendingCoachName', null), 2000);
+      if (!d.me.trainer && !d.coach) setTimeout(() => confirm('Join ' + (store('pendingCoachName') || 'trainer ' + pc) + ' as your trainer?') && api('pairTrainer', { code: pc }).then(w => { Object.assign(S, w); toast('Paired with ' + S.coach.name); }), 600); }
     renderRoleTag();
     if (!saved) { show('progress'); bootDone(); return; }
     // redraw what's on screen with the fresh data, unless you're typing in it
