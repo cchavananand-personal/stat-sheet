@@ -655,7 +655,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <p class="grp">DEVICES</p>
     <details class="card" id="connDetails"><summary><i data-ic="watch"></i>Devices &amp; apps</summary><div id="connBox" class="small"></div></details>
 
-    <p class="grp">APP</p>
+    <p class="grp" id="grpApp">APP</p>
     <details class="card"><summary><i data-ic="help"></i>How to use</summary><div class="small" style="line-height:1.55">
       <p style="margin-top:0"><b>Progress</b>: your weight and body fat trends, photos and every entry.</p>
       <p><b>Today</b>: pick a day on the calendar, then log <b>Weight</b>, <b>Meals</b> (tick what you ate from your plan) or <b>Workout</b> (body parts, then sets). Notes with your trainer are at the bottom.</p>
@@ -726,7 +726,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023184732';
+const BUILD = '20261023185133';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -900,8 +900,10 @@ if (ROLE === 'trainer') { // trainer mode: the Clients tab holds the client list
     how('', 'Or share your trainer code.'), $('#codeCard .row.between'));
   $('#codeCard').remove();
   const grp = t => Object.assign(document.createElement('p'), { className: 'grp', textContent: t });
-  tab.append(grp('CLIENTS'), card, grp('ADD A CLIENT'), nc, grp('CLIENT RANKING'), $('#clientRankCard'), grp('SETTINGS'), $('#openOnCard'));
+  tab.append(grp('CLIENTS'), card, grp('ADD A CLIENT'), nc, grp('CLIENT RANKING'), $('#clientRankCard'));
 }
+// where the app opens is an app setting (trainers only), so it lives in More › App
+if (I_TRAIN) $('#grpApp').after($('#openOnCard')); else $('#openOnCard').classList.add('hide');
 if (!OWNER) { document.body.classList.add('ro');
 $$('#bodyForm input').forEach(i => i.readOnly = true); }
 if (ROLE === 'guest' || ROLE === 'peer') $('#noteForm').classList.add('hide');
