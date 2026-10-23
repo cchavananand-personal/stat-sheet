@@ -719,7 +719,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023180517';
+const BUILD = '20261023180616';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -887,9 +887,9 @@ if (ROLE === 'trainer') { // trainer mode: the Clients tab holds the client list
   const how = (t, d) => Object.assign(document.createElement('div'), { className: 'addway', innerHTML: `<b>${t}</b><p class="small muted">${d}</p>` });
   $('#clientForm label').firstChild.textContent = 'Their name';
   $('p.small.muted', card).remove();
-  nc.append(how('New to Stat Sheet?', 'Send an invite link. They set their own PIN; you never see it.'), $('#clientForm'), $('#inviteOut'),
+  nc.append(how('New to Stat Sheet?', 'Send a link. They pick their own PIN.'), $('#clientForm'), $('#inviteOut'),
     Object.assign(document.createElement('div'), { className: 'addor', textContent: 'or' }),
-    how('Already on Stat Sheet?', 'Share your trainer code. They enter it in More › My Trainer.'), $('#codeCard .row.between'));
+    how('Already on Stat Sheet?', 'They enter your code in More › My Trainer.'), $('#codeCard .row.between'));
   $('#codeCard').remove();
   const grp = t => Object.assign(document.createElement('p'), { className: 'grp', textContent: t });
   tab.append(grp('CLIENTS'), card, grp('ADD A CLIENT'), nc, grp('CLIENT RANKING'), $('#clientRankCard'), grp('SETTINGS'), $('#openOnCard'));
