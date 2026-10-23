@@ -292,6 +292,9 @@ nav button.on{color:var(--accent)}
   background:#121917cc;border:1px solid #ffffff14;box-shadow:0 24px 60px #0009;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .whobox img{width:76px;height:76px;border-radius:20px;margin:0 auto;box-shadow:0 10px 30px #0d6a5066}
 .whobox h2{margin:0;font-size:24px;letter-spacing:-.01em}.whobox h2+p{margin:4px 0 0;font-size:15px}
+#forgotForm{display:grid;gap:12px;text-align:center}#forgotForm.hide{display:none}#forgotForm input{font-size:17px;min-height:50px;text-align:center;margin-top:6px}
+#recSheet{position:fixed;inset:0;z-index:90;background:#000b;display:grid;place-items:center;padding:16px}#recSheet.hide{display:none}#recSheet .card{max-width:420px;width:100%;text-align:center;display:grid;gap:12px;padding:22px}
+#recSheet .rc{font-size:30px;font-weight:800;letter-spacing:.12em;padding:14px;border-radius:14px;background:var(--soft);font-variant-numeric:tabular-nums}#recSheet .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}#recSheet button{min-height:46px}
 #whoPin,#invForm,#signForm{display:grid;gap:12px;text-align:center}#signForm.hide{display:none}#signForm label{font-size:13px;font-weight:600;color:var(--muted)}#signForm input{font-size:17px;margin-top:6px;min-height:50px;text-align:center}#invForm label{font-size:13px;font-weight:600;color:var(--muted)}#invForm input{font-size:17px;margin-top:6px;min-height:50px}
 #whoPin label{font-size:13px;font-weight:600;color:var(--muted)}
 #whoPin input,#invForm input{font-size:17px;margin-top:6px;min-height:50px;text-align:center} /* same font for name and PIN, centred */
@@ -395,11 +398,16 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <div id="boot"><img src="icon-180.png" alt=""><div class="spinner"></div><div id="bootMsg">Loading your stats…</div></div>
 <div id="who" class="hide"><div class="whobox">
   <img src="icon-180.png" alt="">
-  <div><h2 id="whoTitle">Welcome back</h2><p class="muted" id="whoSub">Sign in to Stat Sheet</p><p id="whoErr" class="hide"></p></div>
+  <div><h2 id="whoTitle">Welcome back</h2><p class="muted" id="whoSub">Sign in to Stat Sheet</p><p id="whoErr" class="hide"></p><button type="button" class="lk-open hide" id="whoForgot">Forgot PIN?</button></div>
   <form id="whoPin">
     <label>Name<input name="name" autocomplete="username" autocapitalize="words" placeholder="Your name" required></label>
     <label>PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="current-password" placeholder="4–6 digits" required></label>
     <button class="primary">Sign in</button>
+  </form>
+  <form id="forgotForm" class="hide">
+    <label>Recovery Code<input name="code" autocapitalize="characters" autocomplete="off" placeholder="XXXX-XXXX" style="text-transform:uppercase;letter-spacing:.08em" required></label>
+    <label>New PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
+    <button class="primary">Reset PIN</button>
   </form>
   <form id="invForm" class="hide">
     <label>Choose A PIN<input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="4–6 digits" required></label>
@@ -710,11 +718,13 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
     <small id="menuNote" class="hide"></small>
   </div>
   <button id="mPin"><i data-ic="key"></i>Change PIN</button>
+  <button id="mRec"><i data-ic="key"></i>Recovery Code</button>
   <form id="pinForm" class="hide"><input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="New PIN · 4–6 digits"><button class="primary">Save</button></form>
   <button id="signOut" class="danger"><i data-ic="logout"></i>Sign out · switch account</button>
   <button id="mSignIn">Sign in</button>
 </div></div>
 <div id="coachReq" class="hide"></div>
+<div id="recSheet" class="hide"><div class="card"></div></div>
 <div id="profSheet" class="hide"><div class="psheet">
   <div class="row between"><button class="link" id="profClose">Cancel</button><b>My Profile</b><span style="width:64px"></span></div>
   <label class="pphoto"><span class="avatar xl" id="profAv"></span><input type="file" accept="image/*" id="profFile"><span>Change Photo</span></label>
@@ -742,7 +752,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023223805';
+const BUILD = '20261023230607';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -810,7 +820,8 @@ const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).
 function toast(msg, err, ms) {
   // on the sign-in screen, errors stay in the card until you edit a field
   if (err && msg === 'Please sign in.' && !$('#who').classList.contains('hide')) return; // background loads before signing in
-  if (err && !$('#who').classList.contains('hide')) { const w = $('#whoErr'); w.textContent = msg; w.classList.remove('hide'); return; }
+  if (err && !$('#who').classList.contains('hide')) { const w = $('#whoErr'); w.textContent = msg; w.classList.remove('hide');
+    $('#whoForgot').classList.toggle('hide', msg !== 'Wrong PIN.' && !/recovery code/.test(msg)); return; }
   const t = $('#toast'), big = !err && ms >= 5000; t.textContent = msg; t.className = 'show' + (err ? ' err' : '') + (big ? ' big' : '');
   clearTimeout(t._h); t._h = setTimeout(() => t.className = '', ms || 2600);
 }
@@ -2306,13 +2317,13 @@ $('#signForm').onsubmit = e => {
   if (f.pin.value !== f.pin2.value) { f.pin2.value = ''; f.pin2.focus(); return toast('The two PINs are different', true); }
   busy($('button.primary', f), async () => {
     const r = await api('signUp', { name: f.name.value, pin: f.pin.value, claim: f.dataset.claim === '1' });
-    if (!r.invited) return setWho(r);
+    if (!r.invited) return showRecovery(r.recovery, () => setWho(r));
     // the name belongs to a trainer's invite: confirm it's them, then join
     $('#whoErr').classList.add('hide');
     $('#claimAsk').innerHTML = `<b>${esc(r.trainer)} invited ${esc(r.name)}. Is that you?</b>
       <button type="button" class="primary" id="claimYes">Yes, Join ${esc(r.trainer)}</button><button type="button" class="link" id="claimNo">No, Use Another Name</button>`;
     $('#claimAsk').classList.remove('hide'); $('button.primary', f).classList.add('hide');
-    $('#claimYes').onclick = e => { f.dataset.claim = '1'; busy(e.target, async () => setWho(await api('signUp', { name: f.name.value, pin: f.pin.value, claim: true }))); };
+    $('#claimYes').onclick = e => { f.dataset.claim = '1'; busy(e.target, async () => { const w = await api('signUp', { name: f.name.value, pin: f.pin.value, claim: true }); showRecovery(w.recovery, () => setWho(w)); }); };
     $('#claimNo').onclick = () => { $('#claimAsk').classList.add('hide'); $('button.primary', f).classList.remove('hide'); f.name.value = ''; f.name.focus(); };
   });
 };
@@ -2555,6 +2566,31 @@ function renderMenu() {
   $('#signOut').classList.toggle('hide', !WHO || ROLE === 'guest');
   $('#mSignIn').classList.toggle('hide', ROLE !== 'guest');
 }
+/** Show a recovery code once (sign-up, reset, or a new one from the menu). */
+function showRecovery(code, done) {
+  if (!code) return done && done();
+  const box = $('#recSheet'); box.classList.remove('hide');
+  $('.card', box).innerHTML = `<h3 style="margin:0">Your Recovery Code</h3>
+    <p class="small muted" style="margin:0">Use it to reset your PIN if you forget it. Save it somewhere safe; it is shown only once.</p>
+    <div class="rc">${esc(code)}</div>
+    <div class="row"><button class="link" id="rcCopy">Copy</button><button class="primary" id="rcDone">I Have Saved It</button></div>`;
+  $('#rcCopy').onclick = () => (navigator.clipboard ? navigator.clipboard.writeText(code) : Promise.reject()).then(() => toast('Copied'), () => prompt('Recovery code', code));
+  $('#rcDone').onclick = () => { box.classList.add('hide'); done && done(); };
+}
+$('#whoForgot').onclick = () => {
+  if (!$('#whoPin').name.value.trim()) { $('#whoPin').name.focus(); return toast('Enter your name first', true); }
+  $('#whoPin').classList.add('hide'); $('#whoForgot').classList.add('hide'); $('#whoErr').classList.add('hide'); $('#whoNew').classList.add('hide');
+  $('#forgotForm').classList.remove('hide'); $('#whoTitle').textContent = 'Reset PIN'; $('#whoSub').textContent = $('#whoPin').name.value.trim();
+  $('#forgotForm').code.focus();
+};
+$('#forgotForm').onsubmit = e => {
+  e.preventDefault(); const f = e.target;
+  busy($('button.primary', f), async () => {
+    const w = await api('resetPin', { name: $('#whoPin').name.value, code: f.code.value, pin: f.pin.value });
+    showRecovery(w.recovery, () => setWho(w));
+  });
+};
+$('#mRec').onclick = () => confirm('Make a new recovery code? Your old one stops working.') && api('recoveryCode', {}).then(c => { $('#menu').classList.add('hide'); showRecovery(c); S.hasRecovery = true; });
 $('#mPin').onclick = () => { $('#pinForm').classList.toggle('hide'); $('#pinForm').pin.focus(); };
 const isDark = () => (document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark';
 /* Full history: copy to paste into an AI tool. The copy is started inside the tap (iPhone requires that). */
@@ -2608,7 +2644,7 @@ async function showInviteScreen(token) {
   $('#invForm').onsubmit = e => {
     e.preventDefault(); const f = e.target;
     if (f.pin.value !== f.pin2.value) { f.pin2.value = ''; f.pin2.focus(); return toast('The two PINs are different', true); }
-    busy($('button', f), async () => { setWho(await api('claimInvite', { invite: token, pin: f.pin.value })); });
+    busy($('button', f), async () => { const w = await api('claimInvite', { invite: token, pin: f.pin.value }); showRecovery(w.recovery, () => setWho(w)); });
   };
 }
 
