@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
+<script>try { var th = localStorage.getItem('theme'); if (th) document.documentElement.dataset.theme = th; } catch (e) {}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Keng X Yoon · Stat Sheet</title>
 <meta name="description" content="Weight, body fat, meals and progress photos in one simple stat sheet.">
@@ -24,9 +25,15 @@
 :root{--bg:#f4f6f5;--card:#fff;--text:#17211d;--muted:#6b7772;--line:#e1e7e4;--soft:#eef3f0;--tint:#d9efe5;
   --accent:#1f6f54;--accent-ink:#fff;--w:#1f6f54;--bf:#d08a2e;--m:#5b6bd6;--s:#1f8fd6;--bad:#c2410c;--r:16px;
   font-family:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;font-size:16px;color:var(--text);-webkit-text-size-adjust:100%}
-@media (prefers-color-scheme:dark){:root{--bg:#0f1312;--card:#171c1a;--text:#e6ece9;--muted:#93a09a;--line:#2a322f;
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f1312;--card:#171c1a;--text:#e6ece9;--muted:#93a09a;--line:#2a322f;
   --soft:#1f2724;--tint:#173a2d;--accent:#3fb58a;--accent-ink:#06120d;--w:#3fb58a;--bf:#e5a24a;--m:#8f9bf0;--s:#4fb0f2}}
+:root[data-theme=dark]{--bg:#0f1312;--card:#171c1a;--text:#e6ece9;--muted:#93a09a;--line:#2a322f;
+  --soft:#1f2724;--tint:#173a2d;--accent:#3fb58a;--accent-ink:#06120d;--w:#3fb58a;--bf:#e5a24a;--m:#8f9bf0;--s:#4fb0f2}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* trainer looking at a client: blue accent everywhere, so it never looks like your own profile */
+body.tmode{--accent:#4f8df2;--accent-ink:#fff;--tint:#4f8df226}
+body.tmode #trainerBar{background:linear-gradient(#4f8df21a,#4f8df20d),var(--bg);border-bottom-color:#4f8df255}
+body.tmode header{background:linear-gradient(#4f8df214,transparent)}
 body{margin:0;background:var(--bg);padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 /* trainer mode: C | T toggle in the header, and a row of clients under it (scrolls sideways when there are many) */
 #tab-clients summary{display:none}#tab-clients #openOnRow{margin:0}
@@ -207,11 +214,17 @@ nav button.on{color:var(--accent)}
 #menu .sheet b{display:block;font-size:12px;color:var(--muted);padding:8px 10px 4px;letter-spacing:.04em}
 #menu .sheet button{display:block;width:100%;text-align:left;background:none;min-height:46px;padding:10px;font-weight:600}
 #menu .sheet button:active{background:var(--soft)}
-.avatar{width:40px;height:40px;border-radius:50%;padding:0;display:grid;place-items:center;background:var(--soft);color:var(--text);font-weight:800;font-size:16px;flex:none}
-.avatar.c{background:#3fb58a;color:#fff}.avatar.t{background:#4f8df2;color:#fff}.avatar.big{width:44px;height:44px;font-size:18px}
+.avatar{width:40px;height:40px;min-height:0;aspect-ratio:1;border-radius:50%;padding:0;display:grid;place-items:center;background:var(--soft);color:var(--text);font-weight:800;font-size:16px;flex:none}
+.avatar.c{background:#3fb58a;color:#fff}.avatar.t{background:#4f8df2;color:#fff}.avatar.big{width:44px;height:44px;min-height:0;font-size:18px}
 #menu .me{display:flex;align-items:center;gap:12px;padding:10px 10px 12px;border-bottom:1px solid var(--line);margin-bottom:4px}
 #menu .me #meName{font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#menu .me small{padding:0;font-size:13px}
 #menu .sheet .danger{color:#e8664a}
+#mTheme,#mShare{display:flex!important;align-items:center;justify-content:space-between}
+#mShare .chev{transition:transform .15s;font-size:20px;color:var(--muted)}#mShare.open .chev{transform:rotate(90deg)}
+#menu .sub{margin:0 0 6px 14px;border-left:2px solid var(--line);padding-left:4px}#menu .sub.hide{display:none}
+.sw{width:42px;height:26px;border-radius:99px;background:var(--line);position:relative;flex:none;transition:background .15s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .15s}
+.sw.on{background:var(--accent)}.sw.on::after{left:19px}
 #menu #pinForm{display:flex;gap:8px;padding:4px 10px 10px}#menu #pinForm.hide{display:none}#menu #pinForm input{flex:1;min-width:0;margin:0}
 #menu #pinForm button{width:auto;min-height:44px;padding:0 16px;text-align:center}
 #menu .sheet small{display:block;color:var(--muted);font-size:12px;padding:6px 10px 8px;line-height:1.4}
@@ -298,7 +311,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
   <div class="row" style="gap:8px"><div class="role hide" id="roleTag"></div><button class="avatar" id="menuBtn" aria-label="Account">?</button></div>
 </header>
 <div id="trainerBar" class="hide">
-  <div id="modeSeg"><button data-m="c"><span class="mb c">C</span>Personal profile</button><button data-m="t"><span class="mb t">T</span>Clients profile</button></div>
+  <div id="modeSeg"><button data-m="c"><span class="mb c">C</span>Personal Profile</button><button data-m="t"><span class="mb t">T</span>Client Profile</button></div>
   <div id="clientBar" class="hide" role="tablist" aria-label="Clients"></div>
 </div>
 <main>
@@ -397,7 +410,21 @@ button.primary.trn{background:#4f8df2;color:#fff}
   <!-- PLAN: meal plan + intake, and the weekly workout split -->
   <section id="tab-meals" class="hide">
     <h2 style="margin:6px 0 12px">Plan</h2>
-    <div class="seg go" id="planKind"><button data-m="meals" class="on">🍽️ Meals</button><button data-m="workout">🏋️ Workout</button></div>
+    <div class="seg go" id="planKind"><button data-m="meals" class="on">🍽️ Meals</button><button data-m="workout">🏋️ Workout</button><button data-m="goals">🎯 Goals</button></div>
+    <div id="planGoals" class="hide">
+      <div class="card"><h3 id="goalsTitle">Goals</h3>
+        <form id="goalsForm">
+          <div class="grid2">
+            <label>Goal weight (<span class="unit">kg</span>)<input type="number" name="goalWeight" step="0.1" inputmode="decimal"></label>
+            <label>Goal body fat %<input type="number" name="goalBodyfat" step="0.1" inputmode="decimal"></label>
+            <label>Daily calories<input type="number" name="calories" inputmode="numeric" placeholder="kcal"></label>
+            <label>Daily protein<input type="number" name="protein" inputmode="numeric" placeholder="g"></label>
+          </div>
+          <label>Goal date<input type="date" name="goalDate"></label>
+          <button class="primary" style="width:100%;margin-top:10px">Save goals</button>
+        </form>
+      </div>
+    </div>
     <div id="planWorkout" class="hide">
       <p class="small muted" style="margin:0 2px 10px">Your rotation repeats in order, whatever the weekday. Today shows which day is next.</p>
       <div class="seg" id="wpDay"></div>
@@ -430,13 +457,6 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <div id="mealsIntake" class="hide">
       <div class="seg" id="kMode" style="margin:0 0 14px"><button data-m="day" class="on">30d</button><button data-m="week">Weeks</button><button data-m="month">Months</button></div>
     <div class="card"><div class="row between"><h3 style="margin:0">Calorie intake</h3><div class="thead" id="tKHead"></div></div><div class="chart sm"><canvas id="tK"></canvas></div></div>
-    <div class="card"><h3>Daily targets</h3>
-      <form id="targetForm" class="grid2" style="display:grid">
-        <label>Calories<input type="number" name="calories" inputmode="numeric" placeholder="kcal"></label>
-        <label>Protein<input type="number" name="protein" inputmode="numeric" placeholder="g"></label>
-        <button class="primary" style="grid-column:1/-1">Save targets</button>
-      </form>
-    </div>
     </div>
     <div id="mealsPlan">
     <div class="card"><h3 style="margin-bottom:2px">Current meal plan</h3>
@@ -473,15 +493,12 @@ button.primary.trn{background:#4f8df2;color:#fff}
 
   <section id="tab-more" class="hide">
     <h2>More</h2>
-    <details class="card" open><summary>Profile &amp; goals</summary><div>
+    <details class="card" open><summary>Profile</summary><div>
       <form id="profileForm">
         <label>Name<input name="name" maxlength="60"></label>
         <div class="grid2">
           <label>Birth date<input type="date" name="birthdate"></label>
           <label>Height (cm)<input type="number" name="height" step="0.1" inputmode="decimal"></label>
-          <label>Goal weight<input type="number" name="goalWeight" step="0.1" inputmode="decimal"></label>
-          <label>Goal body fat %<input type="number" name="goalBodyfat" step="0.1" inputmode="decimal"></label>
-          <label>Goal date<input type="date" name="goalDate"></label>
           <label>Unit<select name="units"><option value="kg">kg</option><option value="lb">lb</option></select></label>
         </div>
         <button class="primary">Save</button>
@@ -522,17 +539,20 @@ button.primary.trn{background:#4f8df2;color:#fff}
 
 <div id="menu" class="hide"><div class="sheet">
   <div class="me"><span class="avatar big" id="meAv"></span><div class="grow"><div id="meName"></div><small id="meRole"></small></div></div>
-  <b id="exportTitle">EXPORT</b>
-  <button data-x="report">📄 Progress report</button>
-  <button data-x="body">📊 Body data · CSV</button>
-  <button data-x="meals">🍽️ Meal log · CSV</button>
-  <button data-x="plan">🗒️ Meal plan</button>
-  <small id="menuNote" class="hide"></small>
-  <b>ACCOUNT</b>
+  <button id="mTheme"><span id="themeLabel">🌙 Dark mode</span><span class="sw" id="themeSw"></span></button>
+  <button id="mShare"><span>📤 Share</span><span class="chev">›</span></button>
+  <div id="shareSub" class="sub hide">
+    <button id="mLink">🔗 App link</button>
+    <b id="exportTitle">EXPORT</b>
+    <button data-x="report">📄 Progress report · PDF</button>
+    <button data-x="body">📊 Body data · CSV</button>
+    <button data-x="meals">🍽️ Meal log · CSV</button>
+    <button data-x="plan">🗒️ Meal plan · PDF</button>
+    <small id="menuNote" class="hide"></small>
+  </div>
   <button id="mPin">🔑 Change PIN</button>
   <form id="pinForm" class="hide"><input name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="new-password" placeholder="New PIN · 4–6 digits"><button class="primary">Save</button></form>
-  <button id="mLink">🔗 Copy app link</button>
-  <button id="signOut" class="danger">Sign out</button>
+  <button id="signOut" class="danger">Sign out · switch account</button>
   <button id="mSignIn">Sign in</button>
 </div></div>
 <div id="gallery" class="hide">
@@ -549,7 +569,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023155820';
+const BUILD = '20261023160502';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -701,6 +721,7 @@ const TABS = !OWNER ? [['progress','Progress'],['today','Today']]
   : ROLE === 'trainer' ? [['progress','Progress'],['today','Today'],['meals','Plan'],['clients','Clients']] // trainer mode
   : [['progress','Progress'],['today','Today'],['meals','Plan'],['more','More']];
 $('#nav').innerHTML = TABS.map(([id, label]) => `<button data-t="${id}"><svg viewBox="0 0 24 24">${ICONS[id]}</svg>${label}</button>`).join('');
+if (ROLE === 'trainer') document.body.classList.add('tmode'); // colour from the first paint
 if (ROLE === 'trainer') { // trainer mode: the Clients tab holds the client list and where the app opens
   const tab = $('#tab-clients'), card = $('#clientsCard');
   card.open = true; tab.insertBefore(card, $('#openOnCard'));
@@ -717,6 +738,7 @@ function renderRoleTag() {
   $('#brandName').innerHTML = viewingClient() ? esc(S.me.name.toUpperCase()) + ' <span>X</span> ' + esc(S.target.name.toUpperCase()) : 'STAT SHEET';
   // trainers: C | T toggle; in T, one tap per client
   $('#trainerBar').classList.toggle('hide', !trainer);
+  document.body.classList.toggle('tmode', viewingClient());
   $$('#modeSeg button').forEach(b => b.classList.toggle('on', (b.dataset.m === 't') === viewingClient()));
   const bar = $('#clientBar');
   bar.classList.toggle('hide', !viewingClient());
@@ -1457,7 +1479,9 @@ function renderMealsTab() {
   segment('planKind', planKind, m => { planKind = m; renderMealsTab(); });
   $('#planMeals').classList.toggle('hide', planKind !== 'meals');
   $('#planWorkout').classList.toggle('hide', planKind !== 'workout');
+  $('#planGoals').classList.toggle('hide', planKind !== 'goals');
   if (planKind === 'workout') return renderWorkoutPlan();
+  if (planKind === 'goals') return renderGoals();
   segment('mealsMode', mealsMode, m => { mealsMode = m; renderMealsTab(); });
   segment('kMode', kMode, m => { kMode = m; drawIntake(); });
   $('#mealsPlan').classList.toggle('hide', mealsMode !== 'plan');
@@ -1468,12 +1492,16 @@ function renderMealsTab() {
   // Your Meal Plan folder (Drive, synced to E:\ETC\Fitness App\Meal Plan on the PC)
   $('#planFolderLink').href = 'https://drive.google.com/drive/folders/1m6SBYvWmjOdZquG5nAPyHh88a8O5cBwm';
   $('#planFolderLink').target = '_blank';
-  const t = $('#targetForm'); t.calories.value = S.profile.calories || ''; t.protein.value = S.profile.protein || '';
   renderPlanList();
 }
-$('#targetForm').onsubmit = e => {
+function renderGoals() {
+  const f = $('#goalsForm');
+  ['goalWeight', 'goalBodyfat', 'calories', 'protein', 'goalDate'].forEach(k => f[k].value = S.profile[k] == null ? '' : S.profile[k]);
+  $('#goalsTitle').textContent = viewingClient() ? S.target.name + "'s goals" : 'Your goals';
+}
+$('#goalsForm').onsubmit = e => {
   e.preventDefault(); const f = e.target;
-  busy($('button', f), async () => { S.profile = await api('saveProfile', formObj(f)); toast('Targets saved'); });
+  busy($('button', f), async () => { S.profile = await api('saveProfile', formObj(f)); toast(viewingClient() ? 'Saved · ' + S.target.name + ' sees it too' : 'Goals saved'); });
 };
 function renderPlanList() {
   const items = planItems(), t = sumMeals(items);
@@ -1837,18 +1865,26 @@ function renderMenu() {
   $('#meRole').textContent = !me ? 'Viewing only' : me.trainer ? (viewingClient() ? 'Trainer · viewing ' + S.target.name : 'Trainer · personal profile') : 'Client';
   $('#exportTitle').textContent = viewingClient() ? 'EXPORT ' + S.target.name.toUpperCase() + "'S DATA" : 'EXPORT';
   $$('#menu [data-x], #exportTitle').forEach(b => b.classList.toggle('hide', !OWNER));
+  $('#themeSw').classList.toggle('on', isDark()); $('#themeLabel').textContent = isDark() ? '🌙 Dark mode' : '☀️ Light mode';
   $('#mPin').classList.toggle('hide', !me || viewingClient()); // your own PIN, from your own profile
   $('#signOut').classList.toggle('hide', !WHO || ROLE === 'guest');
   $('#mSignIn').classList.toggle('hide', ROLE !== 'guest');
 }
 $('#mPin').onclick = () => { $('#pinForm').classList.toggle('hide'); $('#pinForm').pin.focus(); };
-$('#mLink').onclick = () => { const u = location.origin + location.pathname; navigator.clipboard ? navigator.clipboard.writeText(u) : prompt('App link', u); toast('App link copied'); };
+const isDark = () => (document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark';
+$('#mTheme').onclick = () => {
+  const t = isDark() ? 'light' : 'dark'; document.documentElement.dataset.theme = t; store('theme', t);
+  renderMenu(); show(curTab, true); // charts pick up the new colours
+};
+$('#mShare').onclick = () => { $('#shareSub').classList.toggle('hide'); $('#mShare').classList.toggle('open'); };
+$('#mLink').onclick = () => { const u = location.origin + location.pathname;
+  if (navigator.share) navigator.share({ title: 'Stat Sheet', url: u }).catch(() => {}); else { navigator.clipboard ? navigator.clipboard.writeText(u) : prompt('App link', u); toast('App link copied'); } };
 $('#mSignIn').onclick = () => { $('#menu').classList.add('hide'); showWho(); };
 $('#clientForm').onsubmit = e => {
   e.preventDefault(); const f = e.target, x = formObj(f);
   busy($('button', f), async () => { const r = await api('addClient', x); S.clients = r.clients; f.reset(); renderAccount(); showInvite(r); });
 };
-$('#signOut').onclick = () => confirm('Sign out of this phone?') && setWho(null);
+$('#signOut').onclick = () => confirm('Sign out of this phone? You can then sign in as someone else.') && setWho(null);
 $('#openOn').onchange = e => { store('openOn', e.target.value); toast('Next time the app opens on ' + e.target.selectedOptions[0].textContent); };
 if (QS.get('invite')) showInviteScreen(QS.get('invite'));
 else if (PINS_ON && !WHO && !QS.get('k')) showWho();
@@ -1884,6 +1920,15 @@ if (saved && saved.data) {
   if (saved.date !== TODAY) { S.meals = []; S.dayPhotos = []; } // those two are for the day it was saved
   show('progress'); bootDone(); renderRoleTag();
 }
+let lastBoot = Date.now();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || Date.now() - lastBoot < 15000 || !S.target) return;
+  lastBoot = Date.now();
+  api('bootstrap', { date: TODAY }).then(d => {
+    Object.assign(S, d); Object.keys(WKD).forEach(k => delete WKD[k]);
+    if (!/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) { renderRoleTag(); show(curTab, true); }
+  }).catch(() => {});
+});
 api('bootstrap', { date: TODAY })
   .then(d => {
     try { localStorage.setItem(BOOT_KEY, JSON.stringify({ date: TODAY, data: d })); } catch (e) {}
