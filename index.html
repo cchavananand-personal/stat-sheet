@@ -504,7 +504,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023143931';
+const BUILD = '20261023144011';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1658,10 +1658,12 @@ function setWho(w) {
   try { Object.keys(localStorage).filter(k => k.startsWith('boot-')).forEach(k => localStorage.removeItem(k)); } catch (e) {}
   location.replace(location.pathname); // drop any old ?view=trainer&k=… so everyone ends up on the same link
 }
-function showWho() {
+function nameWho() {
   $('#whoPick [data-who=owner]').textContent = 'I\x27m ' + clientName() + ' (client)';
   $('#whoPick [data-who=trainer]').textContent = 'I\x27m ' + trainerName() + ' (trainer)';
-  $('#who').classList.remove('hide'); $('#whoPick').classList.remove('hide'); $('#whoPin').classList.add('hide');
+}
+function showWho() {
+  nameWho(); $('#who').classList.remove('hide'); $('#whoPick').classList.remove('hide'); $('#whoPin').classList.add('hide');
 }
 $$('#whoPick [data-who]').forEach(b => b.onclick = () => {
   const who = b.dataset.who;
@@ -1702,7 +1704,7 @@ api('bootstrap', { date: TODAY })
     try { localStorage.setItem(BOOT_KEY, JSON.stringify({ date: TODAY, data: d })); } catch (e) {}
     Object.assign(S, d);
     // sign-in was switched on (or off) since this phone last looked
-    store('pinsOn', d.pinsOn ? '1' : '0');
+    store('pinsOn', d.pinsOn ? '1' : '0'); nameWho();
     if (d.pinsOn && !WHO && !QS.get('k') && !PINS_ON) return setWho(null);
     if (!d.pinsOn && ROLE === 'guest') return setWho(null);
     if (!saved) { show('progress'); bootDone(); return; }
