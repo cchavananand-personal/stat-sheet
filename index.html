@@ -312,6 +312,8 @@ button.loading img,button.loading svg{opacity:0}
 .cacts{flex-direction:column;align-items:stretch;gap:6px;padding:4px 0 14px;border-top:1px solid var(--line)}.cacts:not(.hide){display:flex}
 .cacts textarea{margin-top:6px;font-size:15px}.cbtns{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:4px}.cbtns .link{padding:6px 0;min-height:0}.cbtns .danger{color:#e8664a}
 #tab-clients #clientList .crow:nth-last-child(2){border-bottom:0}#newClientCard #clientForm{margin-top:0!important}
+.addway b{font-size:15px}.addway p{margin:2px 0 10px}
+.addor{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:13px}.addor::before,.addor::after{content:"";flex:1;height:1px;background:var(--line)}
 .crow b{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.crow .small{white-space:nowrap}
 .crow .link{font-size:20px;padding:4px 10px;min-height:0}
 .ndot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#e8664a;margin-left:7px;vertical-align:2px}
@@ -717,7 +719,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023180111';
+const BUILD = '20261023180517';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -880,12 +882,17 @@ if (ROLE === 'trainer') { document.body.classList.add('tmode'); const c0 = store
 if (ROLE === 'trainer') { // trainer mode: the Clients tab holds the client list and where the app opens
   const tab = $('#tab-clients'), card = $('#clientsCard');
   card.open = true; tab.insertBefore(card, $('#openOnCard'));
-  // inviting a new client is its own panel, under the list of clients (user, 2026-10-23)
+  // one panel, two ways in: new people get an invite link, people already on Stat Sheet enter your trainer code
   const nc = document.createElement('div'); nc.className = 'card'; nc.id = 'newClientCard';
-  nc.append($('#clientForm'), $('#inviteOut'), $('p.small.muted', card));
-  tab.insertBefore(nc, $('#openOnCard'));
+  const how = (t, d) => Object.assign(document.createElement('div'), { className: 'addway', innerHTML: `<b>${t}</b><p class="small muted">${d}</p>` });
+  $('#clientForm label').firstChild.textContent = 'Their name';
+  $('p.small.muted', card).remove();
+  nc.append(how('New to Stat Sheet?', 'Send an invite link. They set their own PIN; you never see it.'), $('#clientForm'), $('#inviteOut'),
+    Object.assign(document.createElement('div'), { className: 'addor', textContent: 'or' }),
+    how('Already on Stat Sheet?', 'Share your trainer code. They enter it in More › My Trainer.'), $('#codeCard .row.between'));
+  $('#codeCard').remove();
   const grp = t => Object.assign(document.createElement('p'), { className: 'grp', textContent: t });
-  tab.append(grp('CLIENTS'), card, nc, grp('CLIENT RANKING'), $('#clientRankCard'), grp('TRAINER SETTINGS'), $('#codeCard'), $('#openOnCard'));
+  tab.append(grp('CLIENTS'), card, grp('ADD A CLIENT'), nc, grp('CLIENT RANKING'), $('#clientRankCard'), grp('SETTINGS'), $('#openOnCard'));
 }
 if (!OWNER) { document.body.classList.add('ro');
 $$('#bodyForm input').forEach(i => i.readOnly = true); }
@@ -2281,7 +2288,7 @@ function renderAccount() {
   });
 }
 async function renderCode(renew) { $('#tCode').textContent = await api('myTrainerCode', renew ? { renew: true } : {}); }
-$('#codeShare').onclick = () => { const c = $('#tCode').textContent, t = 'My Stat Sheet trainer code: ' + c + ' (More › Trainer). App: ' + location.origin + location.pathname;
+$('#codeShare').onclick = () => { const c = $('#tCode').textContent, t = 'My Stat Sheet trainer code: ' + c + ' (More › My Trainer). App: ' + location.origin + location.pathname;
   navigator.share ? navigator.share({ text: t }).catch(() => {}) : (navigator.clipboard && navigator.clipboard.writeText(t), toast('Copied')); };
 $('#codeNew').onclick = e => confirm('Make a new code? The old one stops working.') && busy(e.target, () => renderCode(true));
 /** Show the invite link to send (copy or share sheet). */
