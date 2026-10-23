@@ -219,6 +219,14 @@ nav button.on{color:var(--accent)}
 #menu .me{display:flex;align-items:center;gap:12px;padding:10px 10px 12px;border-bottom:1px solid var(--line);margin-bottom:4px}
 #menu .me #meName{font-weight:800;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#menu .me small{padding:0;font-size:13px}
 #menu .sheet .danger{color:#e8664a}
+#menu .me #mEdit{width:auto;min-height:0;padding:6px 8px;font-size:14px;color:var(--accent)}
+.avatar.photo{background-size:cover;background-position:center;color:transparent!important}
+.avatar.xl{width:96px;height:96px;min-height:0;font-size:38px}
+#profSheet{position:fixed;inset:0;z-index:40;background:#0007;display:flex;align-items:flex-end;justify-content:center}
+.psheet{width:100%;max-width:520px;max-height:92vh;overflow:auto;background:var(--card);border-radius:22px 22px 0 0;padding:14px 18px calc(18px + env(safe-area-inset-bottom))}
+.psheet>.row b{font-size:17px}.psheet .link{min-height:0;padding:8px 0}
+.pphoto{display:grid;justify-items:center;gap:8px;margin:14px 0;cursor:pointer;color:var(--accent);font-weight:700;font-size:15px}
+.pphoto input{display:none}
 #mTheme,#mShare{display:flex!important;align-items:center;justify-content:space-between}
 #mShare .chev{transition:transform .15s;font-size:20px;color:var(--muted)}#mShare.open .chev{transform:rotate(90deg)}
 #menu .sub{margin:0 0 6px 14px;border-left:2px solid var(--line);padding-left:4px}#menu .sub.hide{display:none}
@@ -276,6 +284,9 @@ button.loading img,button.loading svg{opacity:0}
 .crow{display:flex;align-items:center;gap:10px;min-height:52px;border-bottom:1px solid var(--line);cursor:pointer}
 .crow b{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.crow .small{white-space:nowrap}
 .crow .link{font-size:20px;padding:4px 10px;min-height:0}
+.ndot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#e8664a;margin-left:7px;vertical-align:2px}
+.nbadge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:#e8664a;color:#fff;font-size:11px;font-weight:800;font-style:normal;margin-left:8px}
+.nbadge.hide{display:none}.newtag{color:#e8664a;font-weight:700;white-space:nowrap}
 .cnum{font-size:13px;font-weight:800;opacity:.55;margin-right:6px;font-variant-numeric:tabular-nums}
 .cacts{display:flex;gap:16px;padding:6px 0 12px}.cacts .link{padding:0;min-height:0}
 #inviteOut{margin-top:12px;padding:12px;border-radius:12px;background:#4f8df21f;border:1px solid #4f8df255}
@@ -319,7 +330,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
   <div class="row" style="gap:8px"><div class="role hide" id="roleTag"></div><button class="avatar" id="menuBtn" aria-label="Account">?</button></div>
 </header>
 <div id="trainerBar" class="hide">
-  <div id="modeSeg"><button data-m="c"><span class="mb c">C</span>Personal Profile</button><button data-m="t"><span class="mb t">T</span>Client Profile</button></div>
+  <div id="modeSeg"><button data-m="c"><span class="mb c">C</span>Personal Profile</button><button data-m="t"><span class="mb t">T</span>Client Profile<i class="nbadge hide" id="tBadge"></i></button></div>
   <div id="clientBar" class="hide" role="tablist" aria-label="Clients"></div>
 </div>
 <main>
@@ -501,17 +512,6 @@ button.primary.trn{background:#4f8df2;color:#fff}
 
   <section id="tab-more" class="hide">
     <h2>More</h2>
-    <details class="card" open><summary>Profile</summary><div>
-      <form id="profileForm">
-        <label>Name<input name="name" maxlength="60"></label>
-        <div class="grid2">
-          <label>Birth date<input type="date" name="birthdate"></label>
-          <label>Height (cm)<input type="number" name="height" step="0.1" inputmode="decimal"></label>
-          <label>Unit<select name="units"><option value="kg">kg</option><option value="lb">lb</option></select></label>
-        </div>
-        <button class="primary">Save</button>
-      </form>
-    </div></details>
 
     <details class="card"><summary>Import past weights</summary><div>
       <p class="small muted" style="margin-top:0">Paste one line per day: <b>date, weight, body fat</b>. You can copy straight from Excel, Google Sheets or a scale app. <code>2025-03-14</code> or <code>14/03/2025</code> both work. Body fat is optional.</p>
@@ -546,7 +546,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 </main>
 
 <div id="menu" class="hide"><div class="sheet">
-  <div class="me"><span class="avatar big" id="meAv"></span><div class="grow"><div id="meName"></div><small id="meRole"></small></div></div>
+  <div class="me"><span class="avatar big" id="meAv"></span><div class="grow"><div id="meName"></div><small id="meRole"></small></div><button class="link" id="mEdit">✎ Edit</button></div>
   <button id="mTheme"><span id="themeLabel">🌙 Dark mode</span><span class="sw" id="themeSw"></span></button>
   <button id="mShare"><span>📤 Share</span><span class="chev">›</span></button>
   <div id="shareSub" class="sub hide">
@@ -563,6 +563,20 @@ button.primary.trn{background:#4f8df2;color:#fff}
   <button id="signOut" class="danger">Sign out · switch account</button>
   <button id="mSignIn">Sign in</button>
 </div></div>
+<div id="profSheet" class="hide"><div class="psheet">
+  <div class="row between"><button class="link" id="profClose">Cancel</button><b>Edit profile</b><span style="width:64px"></span></div>
+  <label class="pphoto"><span class="avatar xl" id="profAv"></span><input type="file" accept="image/*" id="profFile"><span>Change photo</span></label>
+  <button class="link hide" id="profRemove" style="margin:-6px auto 6px;display:block">Remove photo</button>
+  <form id="profileForm">
+        <label>Name<input name="name" maxlength="60"></label>
+        <div class="grid2">
+          <label>Birth date<input type="date" name="birthdate"></label>
+          <label>Height (cm)<input type="number" name="height" step="0.1" inputmode="decimal"></label>
+          <label>Unit<select name="units"><option value="kg">kg</option><option value="lb">lb</option></select></label>
+        </div>
+        <button class="primary" style="width:100%;margin-top:10px">Save</button>
+      </form>
+</div></div>
 <div id="gallery" class="hide">
   <div class="g-top"><button id="gClose" aria-label="Back">←</button><b>Progress Gallery</b><span style="width:46px"></span></div>
   <div class="g-stage" id="gStage"></div>
@@ -577,7 +591,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023160904';
+const BUILD = '20261023161201';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -749,10 +763,12 @@ function renderRoleTag() {
   $('#trainerBar').classList.toggle('hide', !trainer);
   document.body.classList.toggle('tmode', viewingClient());
   $$('#modeSeg button').forEach(b => b.classList.toggle('on', (b.dataset.m === 't') === viewingClient()));
+  const fresh = (S.clients || []).filter(c => c.news && c.news.length && c.id !== S.target.id);
+  $('#tBadge').textContent = fresh.length; $('#tBadge').classList.toggle('hide', !fresh.length);
   const bar = $('#clientBar');
   bar.classList.toggle('hide', !viewingClient());
   if (viewingClient()) {
-    bar.innerHTML = (S.clients || []).map((c, i) => `<button data-as="${c.id}" class="${c.id === S.target.id ? 'on' : ''}"><span class="cnum">#${i + 1}</span>${esc(c.name)}</button>`).join('');
+    bar.innerHTML = (S.clients || []).map((c, i) => `<button data-as="${c.id}" class="${c.id === S.target.id ? 'on' : ''}"><span class="cnum">#${i + 1}</span>${esc(c.name)}${c.news && c.news.length && c.id !== S.target.id ? '<i class="ndot"></i>' : ''}</button>`).join('');
     $$('button', bar).forEach(b => b.onclick = () => b.dataset.as !== S.target.id && switchTo(b.dataset.as));
     const on = $('.on', bar); if (on) on.scrollIntoView({ inline: 'center', block: 'nearest' });
   }
@@ -1682,7 +1698,13 @@ function renderMore() {
 }
 $('#profileForm').onsubmit = e => {
   e.preventDefault(); const f = e.target;
-  busy($('button', f), async () => { S.profile = await api('saveProfile', formObj(f)); toast('Saved'); });
+  busy($('button', f), async () => {
+    S.profile = await api('saveProfile', formObj(f));
+    if (S.me && f.name.value.trim()) { S.me.name = f.name.value.trim(); if (WHO) store('who', JSON.stringify(Object.assign(WHO, { name: S.me.name }))); }
+    if (!viewingClient() && S.target) S.target.name = S.me ? S.me.name : S.target.name;
+    renderMenu(); renderRoleTag(); $('#profSheet').classList.add('hide'); toast('Profile saved');
+    if ($('#tab-progress') && !$('#tab-progress').classList.contains('hide')) show('progress', true);
+  });
 };
 
 /* import */
@@ -1836,7 +1858,7 @@ function renderAccount() {
     $('#openOn').value = store('openOn') || 'me';
   }
   $('#clientList').innerHTML = (S.clients || []).map((c, i) => `<div class="crow" data-open="${c.id}"><span class="cnum">#${i + 1}</span><b>${esc(c.name)}</b>
-      ${c.invited ? '<span class="small muted">Invited</span>' : ''}<button class="link" data-more="${c.id}" aria-label="More">⋯</button></div>
+      ${c.news && c.news.length && c.id !== S.target.id ? '<span class="small newtag">New: ' + c.news.map(esc).join(' · ') + '</span>' : c.invited ? '<span class="small muted">Invited</span>' : ''}<button class="link" data-more="${c.id}" aria-label="More">⋯</button></div>
       <div class="cacts hide" data-acts="${c.id}"><button class="link" data-reset="${c.id}">Send new invite</button><button class="link" data-rm="${c.id}">Remove</button></div>`).join('')
     || '<div class="small muted">No clients yet.</div>';
   $$('#clientList [data-open]').forEach(r => r.onclick = e => { if (!e.target.closest('[data-more]')) switchTo(r.dataset.open); });
@@ -1865,11 +1887,48 @@ $('#pinForm').onsubmit = e => {
   e.preventDefault(); const f = e.target;
   busy($('button', f), async () => { await api('changePin', { pin: f.pin.value }); f.reset(); f.classList.add('hide'); toast('PIN changed'); });
 };
+/** A round avatar: the person's photo if they have one, otherwise their initial. */
+function paintAvatar(el, person, extra) {
+  const ph = person && person.photo;
+  el.className = 'avatar ' + (extra || '') + (ph ? ' photo' : '');
+  el.style.backgroundImage = ph ? 'url(' + ph + ')' : '';
+  el.textContent = person ? person.name.charAt(0).toUpperCase() : '?';
+}
+/** Edit profile: photo, name (also your sign-in name), birth date, height, unit. Your own profile only. */
+function openProfile() {
+  $('#menu').classList.add('hide');
+  const f = $('#profileForm');
+  [...f.elements].forEach(el => { if (el.name) el.value = S.profile[el.name] == null ? '' : S.profile[el.name]; });
+  if (!f.name.value && S.me) f.name.value = S.me.name;
+  paintAvatar($('#profAv'), S.me, 'xl'); $('#profRemove').classList.toggle('hide', !(S.me && S.me.photo));
+  $('#profSheet').classList.remove('hide');
+}
+$('#mEdit').onclick = openProfile;
+$('#profClose').onclick = () => $('#profSheet').classList.add('hide');
+$('#profSheet').onclick = e => { if (e.target.id === 'profSheet') $('#profSheet').classList.add('hide'); };
+/** Square, small (96 px) so it's quick everywhere. */
+function squarePhoto(file) {
+  return new Promise((ok, fail) => {
+    const img = new Image();
+    img.onload = () => { const n = Math.min(img.width, img.height), c = document.createElement('canvas'); c.width = c.height = 96;
+      c.getContext('2d').drawImage(img, (img.width - n) / 2, (img.height - n) / 2, n, n, 0, 0, 96, 96); URL.revokeObjectURL(img.src);
+      ok(c.toDataURL('image/jpeg', 0.75)); };
+    img.onerror = () => fail(new Error('Could not read that image')); img.src = URL.createObjectURL(file);
+  });
+}
+async function saveAvatar(photo) {
+  const label = $('.pphoto span:last-child'); label.textContent = 'Saving…';
+  try { const w = await api('setAvatar', { photo }); S.me = w.me; if (!viewingClient()) S.target = w.target; paintAvatar($('#profAv'), S.me, 'xl'); renderMenu();
+    $('#profRemove').classList.toggle('hide', !S.me.photo); toast(photo ? 'Photo updated' : 'Photo removed');
+  } finally { label.textContent = 'Change photo'; }
+}
+$('#profFile').onchange = async e => { const file = e.target.files[0]; e.target.value = ''; if (file) saveAvatar(await squarePhoto(file)); };
+$('#profRemove').onclick = () => confirm('Remove your photo?') && saveAvatar('');
 /** The profile menu: who's signed in, export (of the stats on screen), account. */
 function renderMenu() {
-  const me = S.me, av = (me ? me.name : '?').charAt(0).toUpperCase(), cls = viewingClient() ? 't' : me ? 'c' : '';
-  $('#menuBtn').textContent = av; $('#menuBtn').className = 'avatar ' + cls;
-  $('#meAv').textContent = av; $('#meAv').className = 'avatar big ' + cls;
+  const me = S.me, cls = viewingClient() ? 't' : me ? 'c' : '';
+  paintAvatar($('#menuBtn'), me, cls); paintAvatar($('#meAv'), me, 'big ' + cls);
+  $('#mEdit').classList.toggle('hide', !me || viewingClient());
   $('#meName').textContent = me ? me.name : 'Not signed in';
   $('#meRole').textContent = !me ? 'Viewing only' : me.trainer ? (viewingClient() ? 'Trainer · viewing ' + S.target.name : 'Trainer · personal profile') : 'Client';
   $('#exportTitle').textContent = viewingClient() ? 'EXPORT ' + S.target.name.toUpperCase() + "'S DATA" : 'EXPORT';
