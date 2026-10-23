@@ -396,7 +396,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
     <button class="primary">Create account</button>
   </form>
   <button class="lk-open" id="whoNew">New here? Create an account</button>
-  <button class="link" id="whoGuest">Continue without signing in</button>
+  <button class="link hide" id="whoGuest">Go to sign in</button>
 </div></div>
 <div id="switcher" class="hide"><div class="sheet"><b>SHOW STATS FOR</b><div id="swList"></div><small>Add or manage clients in More › Clients.</small></div></div>
 <header>
@@ -726,7 +726,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023185133';
+const BUILD = '20261023191617';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -935,7 +935,7 @@ $$('#modeSeg button').forEach(b => b.onclick = () => {
   if ((b.dataset.m === 't') === viewingClient()) return;
   if (b.dataset.m === 'c') return switchTo(S.me.id);
   const ids = (S.clients || []).map(c => c.id), last = store('lastAs');
-  if (!ids.length) return toast('No clients yet. Add one in More › Clients.', true);
+  if (!ids.length) return toast('No clients yet. Invite one in More.', true);
   switchTo(ids.indexOf(last) >= 0 ? last : ids[0]);
 });
 $('#roleTag').onclick = () => ROLE === 'guest' ? showWho() : WHO && confirm('Sign out of this phone?') && setWho(null);
@@ -2246,7 +2246,6 @@ $('#signForm').onsubmit = e => {
   busy($('button.primary', f), async () => { setWho(await api('signUp', { name: f.name.value, pin: f.pin.value })); });
 };
 function showWho() { $('#who').classList.remove('hide'); $('#whoPin').reset(); }
-$('#whoGuest').onclick = () => ROLE === 'guest' ? (store('who', JSON.stringify({ role: 'guest', key: '' })), $('#who').classList.add('hide')) : setWho({ role: 'guest', key: '' });
 $('#whoPin').onsubmit = e => {
   e.preventDefault(); const f = e.target;
   busy($('button.primary', f), async () => {
@@ -2257,6 +2256,7 @@ function renderAccount() {
   // clients live in the Clients tab; in Personal › More only as "invite your first client"
   $('#clientsCard').classList.toggle('hide', !(S.me && S.me.trainer && (viewingClient() || !(S.clients || []).length)));
   $('#clientsCard summary').textContent = (S.clients || []).length ? 'Clients' : 'Invite your first client';
+  if (!viewingClient()) $('#trainerMode').after($('#clientsCard')); // no clients yet: invite right under the trainer panel
   if (S.me && S.me.trainer) {
     $('#openOn').innerHTML = [['me', 'My stats'], ['last', 'Last client I viewed']].concat((S.clients || []).map(c => [c.id, c.name]))
       .map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('');
@@ -2446,7 +2446,7 @@ $('#clientForm').onsubmit = e => {
 $('#signOut').onclick = () => confirm('Sign out of this phone? You can then sign in as someone else.') && setWho(null);
 $('#openOn').onchange = e => { store('openOn', e.target.value); toast('Next time the app opens on ' + e.target.selectedOptions[0].textContent); };
 if (QS.get('invite')) showInviteScreen(QS.get('invite'));
-else if (PINS_ON && !WHO && !QS.get('k')) showWho();
+else if (PINS_ON && (!WHO || WHO.role === 'guest') && !QS.get('k')) showWho();
 /** Opened from an invite link: set your own PIN, then you're signed in on this phone. */
 async function showInviteScreen(token) {
   $('#who').classList.remove('hide'); $('#whoPin').classList.add('hide'); $('#whoGuest').classList.add('hide');
@@ -2494,7 +2494,7 @@ api('bootstrap', { date: TODAY })
     Object.assign(S, d);
     // sign-in was switched on (or off) since this phone last looked
     store('pinsOn', d.pinsOn ? '1' : '0');
-    if (d.pinsOn && !WHO && !QS.get('k') && !PINS_ON) return setWho(null);
+    if (d.pinsOn && (!WHO || WHO.role === 'guest') && !QS.get('k') && !PINS_ON) return setWho(null);
     if (!d.pinsOn && ROLE === 'guest') return setWho(null);
     if (KEY && !d.me) return setWho(null); // this phone's key no longer works (e.g. removed): sign in again
     if (QS.get('k') && d.me) return setWho(Object.assign({ key: QS.get('k') }, d.me)); // old link: remember who, move to the plain link
