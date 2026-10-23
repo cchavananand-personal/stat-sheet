@@ -281,7 +281,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 </header>
 <div id="trainerBar" class="hide">
   <div id="modeSeg"><button data-m="c"><span class="mb c">C</span>Personal</button><button data-m="t"><span class="mb t">T</span>Clients</button></div>
-  <nav id="clientBar" class="hide" aria-label="Clients"></nav>
+  <div id="clientBar" class="hide" role="tablist" aria-label="Clients"></div>
 </div>
 <main>
   <!-- PROGRESS (first tab): trend graphs on top, analytics below -->
@@ -544,7 +544,7 @@ button.primary.trn{background:#4f8df2;color:#fff}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261023154228';
+const BUILD = '20261023154353';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
