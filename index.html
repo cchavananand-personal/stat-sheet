@@ -367,7 +367,7 @@ button.loading img,button.loading svg{opacity:0}
 .fsug button{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:8px 12px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;text-align:left;text-transform:none;font-weight:600}
 .fsug button:last-child{border-bottom:0}.fsug button:active{background:var(--soft)}.fsug .fn{flex:1;min-width:0}.fsug .fn b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fsug .fn small,.fsug .fk small{display:block;color:var(--muted);font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fsug .fn i{font-style:normal;font-size:11px;font-weight:800;color:var(--accent)}
-.fsug .fk{text-align:right;font-weight:800;white-space:nowrap}
+input[type=search]{-webkit-appearance:none;appearance:none}input[type=search]::-webkit-search-cancel-button{display:none}.fnone{padding:12px;font-size:13px;color:var(--muted)}.fsug .fk{text-align:right;font-weight:800;white-space:nowrap}
 .fpor{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;margin:-4px 0 12px}.fpor select{margin:0;min-height:44px}.fsum{grid-column:1/-1;font-size:13px;font-weight:700;color:var(--accent)}
 .fq{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--soft)}.fq input{width:64px;margin:0;border:0;border-radius:0;text-align:center;min-height:44px;background:transparent;font-weight:700}
 .fq button{min-height:44px;width:40px;padding:0;border-radius:0;background:none;font-size:20px;font-weight:700;color:var(--accent)}
@@ -805,7 +805,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024154235';
+const BUILD = '20261024165307';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1644,7 +1644,63 @@ const FOODS = [
 ['มันหวานต้ม', 'Boiled sweet potato', 115, 2, 27, 0.2, '1 medium (130 g)'],
 ['ข้าวโพดต้ม', 'Boiled corn', 100, 3.5, 22, 1.5, '1 cob'],
 ['เต้าหู้', 'Tofu', 145, 15, 3, 9, '150 g'],
-['อะโวคาโด', 'Avocado', 160, 2, 9, 15, '½ fruit']
+['อะโวคาโด', 'Avocado', 160, 2, 9, 15, '½ fruit'],
+// more dishes (per serving)
+['แซนด์วิชไข่', 'Egg sandwich', 300, 13, 30, 14, '1 sandwich'],
+['คลับแซนด์วิช', 'Club sandwich', 590, 30, 45, 31, '1 sandwich'],
+['ขนมปังอะโวคาโด', 'Avocado toast (sourdough)', 380, 10, 40, 20, '1 slice'],
+['ไข่คน', 'Scrambled eggs (2 eggs)', 200, 13, 2, 15, '1 plate'],
+['ไข่เบเนดิกต์', 'Eggs benedict', 650, 30, 35, 42, '1 plate'],
+['อาหารเช้าอเมริกัน', 'Full American breakfast', 850, 40, 55, 52, '1 plate'],
+['เฟรนช์โทสต์', 'French toast', 450, 14, 50, 21, '2 slices'],
+['ข้าวหน้าแซลมอน', 'Salmon rice bowl (don)', 600, 30, 75, 18, '1 bowl'],
+['โปเกบาวล์', 'Poke bowl', 550, 30, 65, 17, '1 bowl'],
+['ข้าวหน้าหมูทงคัตสึ', 'Tonkatsu rice', 850, 32, 95, 36, '1 plate'],
+['ข้าวหน้าไข่ข้น (โอยาโกะด้ง)', 'Oyakodon', 650, 32, 85, 18, '1 bowl'],
+['อุด้ง', 'Udon soup', 400, 14, 70, 6, '1 bowl'],
+['ข้าวยำเกาหลี (บิบิมบับ)', 'Bibimbap', 600, 24, 85, 18, '1 bowl'],
+['ไก่ทอดเกาหลี', 'Korean fried chicken', 550, 30, 30, 34, '6 pieces'],
+['ต๊อกบกกี', 'Tteokbokki', 400, 8, 80, 5, '1 plate'],
+['ติ่มซำรวม', 'Dim sum (mixed)', 400, 18, 40, 18, '1 basket set'],
+['ฮะเก๋า', 'Har gow (shrimp dumpling)', 45, 2.5, 6, 1, '1 piece'],
+['เกี๊ยวซ่า', 'Gyoza', 60, 3, 6, 2.5, '1 piece'],
+['ข้าวแกงเขียวหวาน', 'Green curry with rice', 600, 22, 62, 29, '1 plate'],
+['แกงส้ม', 'Sour curry (gaeng som)', 150, 15, 10, 5, '1 bowl'],
+['พะโล้', 'Five-spice egg & pork stew', 350, 22, 12, 23, '1 bowl'],
+['หมูผัดพริกเกลือ', 'Salt & chilli pork', 450, 25, 12, 33, '1 plate'],
+['ไก่ผัดเม็ดมะม่วง', 'Cashew chicken', 450, 28, 22, 27, '1 plate'],
+['ผัดเปรี้ยวหวาน', 'Sweet & sour stir-fry', 400, 20, 35, 19, '1 plate'],
+['ปลาราดพริก', 'Fried fish with chilli sauce', 500, 32, 30, 28, '1 plate'],
+['กุ้งอบวุ้นเส้น', 'Baked shrimp with glass noodles', 400, 22, 45, 14, '1 pot'],
+['ทอดมันกุ้ง', 'Shrimp cakes', 300, 12, 25, 17, '4 pieces'],
+['ไข่พะโล้', 'Braised egg', 100, 7, 3, 7, '1 egg'],
+['ก๋วยจั๊บ', 'Kuay jab (rolled noodle soup)', 450, 22, 50, 17, '1 bowl'],
+['ข้าวมันส้มตำ', 'Coconut rice with papaya salad', 600, 10, 85, 24, '1 plate'],
+['ข้าวหมูทอดกระเทียม', 'Fried garlic pork rice', 620, 26, 60, 30, '1 plate'],
+['ข้าวผัดต้มยำ', 'Tom yum fried rice', 560, 20, 70, 21, '1 plate'],
+['ข้าวผัดสับปะรด', 'Pineapple fried rice', 600, 18, 80, 22, '1 plate'],
+['พิซซ่าถาดกลาง (ครึ่งถาด)', 'Pizza (half medium)', 900, 38, 100, 36, '½ pizza'],
+['ลาซานญ่า', 'Lasagna', 600, 30, 45, 33, '1 portion'],
+['ฟิชแอนด์ชิปส์', 'Fish and chips', 850, 35, 85, 40, '1 plate'],
+['สลัดทูน่า', 'Tuna salad', 300, 25, 12, 17, '1 bowl'],
+['แรปไก่', 'Chicken wrap', 450, 28, 40, 18, '1 wrap'],
+['ทาโก้', 'Taco', 200, 9, 20, 9, '1 taco'],
+['บุริโต้', 'Burrito', 700, 30, 85, 25, '1 burrito'],
+['ฮอทดอก', 'Hot dog', 300, 11, 24, 18, '1 hot dog'],
+['นักเก็ตไก่', 'Chicken nuggets', 300, 15, 18, 19, '6 pieces'],
+['บิ๊กแม็ค', 'Big Mac', 560, 25, 45, 31, '1 burger'],
+['สตาร์บัคส์ คาราเมลมัคคิอาโต้', 'Caramel macchiato (grande)', 250, 10, 34, 7, '1 grande'],
+['สตาร์บัคส์ แฟรปปูชิโน่', 'Frappuccino (grande)', 380, 5, 60, 14, '1 grande'],
+['มัทฉะลาเต้', 'Matcha latte', 200, 8, 28, 6, '1 cup (16 oz)'],
+['สมูทตี้ผลไม้', 'Fruit smoothie', 250, 4, 55, 2, '1 cup (16 oz)'],
+['สมูทตี้โปรตีน', 'Protein smoothie', 350, 30, 40, 7, '1 cup (16 oz)'],
+['ขนมครก', 'Kanom krok', 180, 2.5, 22, 9, '6 pieces'],
+['ทองหยิบ / ฝอยทอง', 'Thai golden egg sweets', 150, 2, 28, 4, '3 pieces'],
+['ลอดช่อง', 'Lod chong (coconut milk dessert)', 300, 2, 50, 11, '1 bowl'],
+['กล้วยบวชชี', 'Banana in coconut milk', 300, 2, 45, 14, '1 bowl'],
+['บิงซู', 'Bingsu', 450, 7, 85, 10, '1 bowl'],
+['ชีสเค้ก', 'Cheesecake', 400, 7, 32, 28, '1 slice'],
+['บราวนี่', 'Brownie', 260, 3, 35, 13, '1 piece']
 ];
 
 /* Food search: on "What did you eat?" / "Food", type a few letters (Thai or English). Your own foods come first. */
@@ -1788,13 +1844,103 @@ const ING = [
 ['น้ำตาล', 'Sugar', 387, 0, 100, 0, [['tsp (4 g)', 4], ['tbsp (12 g)', 12], ['g', 1]]],
 ['เมล็ดเจีย', 'Chia seeds', 486, 17, 42, 31, [['tbsp (12 g)', 12], ['g', 1]]],
 ['เวย์โปรตีน', 'Whey protein powder', 400, 80, 10, 5, [['scoop (30 g)', 30], ['g', 1]]],
-['ครีเอทีน', 'Creatine', 0, 0, 0, 0, [['scoop (5 g)', 5]]]
+['ครีเอทีน', 'Creatine', 0, 0, 0, 0, [['scoop (5 g)', 5]]],
+// bread & bakery
+['ขนมปังซาวโดว์', 'Sourdough bread', 289, 12, 56, 1.8, [['slice (50 g)', 50], ['g', 1]]],
+['ขนมปังไรย์', 'Rye bread', 259, 8.5, 48, 3.3, [['slice (32 g)', 32], ['g', 1]]],
+['ขนมปังมัลติเกรน', 'Multigrain bread', 265, 13, 43, 4.2, [['slice (30 g)', 30], ['g', 1]]],
+['บาแกต', 'Baguette', 270, 9, 55, 1.5, [['10 cm piece (60 g)', 60], ['g', 1]]],
+['เบเกิล', 'Bagel', 257, 10, 50, 1.6, [['bagel (100 g)', 100], ['g', 1]]],
+['บริยอช', 'Brioche', 350, 9, 48, 13, [['bun (50 g)', 50], ['g', 1]]],
+['ขนมปังแฮมเบอร์เกอร์', 'Burger bun', 280, 9, 50, 4.5, [['bun (60 g)', 60], ['g', 1]]],
+['ขนมปังพิต้า', 'Pita bread', 275, 9, 56, 1.2, [['pita (60 g)', 60], ['g', 1]]],
+['ขนมปังนาน', 'Naan', 290, 9, 50, 6, [['naan (90 g)', 90], ['g', 1]]],
+['อิงลิชมัฟฟิน', 'English muffin', 227, 9, 44, 1.7, [['muffin (57 g)', 57], ['g', 1]]],
+['ครัวซองต์', 'Croissant', 406, 8, 46, 21, [['croissant (60 g)', 60], ['g', 1]]],
+['มัฟฟิน', 'Muffin', 377, 6, 54, 16, [['muffin (110 g)', 110], ['g', 1]]],
+['โดนัท', 'Doughnut (glazed)', 421, 5, 51, 23, [['doughnut (60 g)', 60], ['g', 1]]],
+['วาฟเฟิล', 'Waffle', 291, 8, 33, 14, [['waffle (75 g)', 75], ['g', 1]]],
+['ขนมปังกระเทียม', 'Garlic bread', 350, 8, 42, 17, [['slice (30 g)', 30], ['g', 1]]],
+['แครกเกอร์', 'Crackers', 430, 9, 70, 13, [['5 crackers (30 g)', 30], ['g', 1]]],
+['ข้าวโพดคั่ว / ป๊อปคอร์น', 'Popcorn', 387, 13, 78, 4.5, [['cup (8 g)', 8], ['bag (100 g)', 100], ['g', 1]]],
+['ขนมปังปิ้งเนยน้ำตาล', 'Butter sugar toast', 380, 7, 50, 17, [['slice (40 g)', 40], ['g', 1]]],
+// spreads & sauces
+['แยม', 'Jam', 250, 0.4, 62, 0.1, [['tbsp (20 g)', 20], ['g', 1]]],
+['นูเทลล่า', 'Nutella', 539, 6, 58, 31, [['tbsp (19 g)', 19], ['g', 1]]],
+['ครีมชีส', 'Cream cheese', 342, 6, 4, 34, [['tbsp (15 g)', 15], ['g', 1]]],
+['ซอสมะเขือเทศ', 'Ketchup', 112, 1.7, 26, 0.1, [['tbsp (17 g)', 17], ['g', 1]]],
+['น้ำจิ้มไก่', 'Sweet chilli sauce', 220, 0.5, 54, 0.3, [['tbsp (18 g)', 18], ['g', 1]]],
+['ซีอิ๊ว / ซอสถั่วเหลือง', 'Soy sauce', 53, 8, 5, 0.6, [['tbsp (16 g)', 16], ['g', 1]]],
+['น้ำปลา', 'Fish sauce', 35, 5, 3.6, 0, [['tbsp (18 g)', 18], ['g', 1]]],
+['น้ำสลัดซีซาร์', 'Caesar dressing', 470, 2, 4, 50, [['tbsp (15 g)', 15], ['g', 1]]],
+['น้ำสลัดงา', 'Sesame dressing', 420, 2, 18, 38, [['tbsp (15 g)', 15], ['g', 1]]],
+['กะทิ', 'Coconut milk', 230, 2.3, 6, 24, [['tbsp (15 g)', 15], ['cup (240 g)', 240], ['g', 1]]],
+['ฮัมมัส', 'Hummus', 166, 8, 14, 10, [['tbsp (15 g)', 15], ['g', 1]]],
+['ซัลซ่า', 'Salsa', 36, 1.5, 7, 0.2, [['tbsp (16 g)', 16], ['g', 1]]],
+// breakfast & cereal
+['คอร์นเฟลกส์', 'Cornflakes', 357, 7.5, 84, 0.4, [['cup (30 g)', 30], ['g', 1]]],
+['มูสลี่', 'Muesli', 340, 10, 66, 6, [['½ cup (45 g)', 45], ['g', 1]]],
+['ซีเรียลช็อกโกแลต', 'Chocolate cereal', 380, 8, 84, 3, [['cup (30 g)', 30], ['g', 1]]],
+['โอ๊ตบาร์', 'Oat bar', 430, 8, 65, 15, [['bar (40 g)', 40], ['g', 1]]],
+['ข้าวต้มมัด', 'Banana sticky rice parcel', 230, 3, 40, 7, [['piece (100 g)', 100], ['g', 1]]],
+// meats & deli extras
+['ไส้กรอกไก่', 'Chicken sausage', 170, 14, 4, 11, [['piece (40 g)', 40], ['g', 1]]],
+['ซาลามี่', 'Salami', 407, 22, 1.6, 34, [['slice (10 g)', 10], ['g', 1]]],
+['อกไก่อบ (เดลี่)', 'Roast chicken deli slices', 110, 21, 2, 2, [['slice (20 g)', 20], ['g', 1]]],
+['เนื้อแกะ', 'Lamb chop', 294, 25, 0, 21, [['chop (90 g)', 90], ['g', 1]]],
+['ตับไก่', 'Chicken liver', 167, 24, 0.9, 6.5, [['g', 1]]],
+['กุนเชียง', 'Chinese sausage', 470, 18, 20, 36, [['piece (35 g)', 35], ['g', 1]]],
+['หมูหยอง', 'Pork floss', 400, 30, 40, 13, [['tbsp (10 g)', 10], ['g', 1]]],
+['ไข่เค็ม', 'Salted egg', 185, 13, 1, 14, [['egg (60 g)', 60], ['g', 1]]],
+['ไข่เยี่ยวม้า', 'Century egg', 145, 14, 1, 10, [['egg (50 g)', 50], ['g', 1]]],
+// vegetables & legumes extras
+['ถั่วชิกพี', 'Chickpeas (cooked)', 164, 9, 27, 2.6, [['cup (160 g)', 160], ['g', 1]]],
+['ถั่วแดง', 'Kidney beans (cooked)', 127, 9, 23, 0.5, [['cup (177 g)', 177], ['g', 1]]],
+['ถั่วเลนทิล', 'Lentils (cooked)', 116, 9, 20, 0.4, [['cup (198 g)', 198], ['g', 1]]],
+['ถั่วฝักยาว', 'Long beans', 47, 2.8, 8, 0.4, [['cup (100 g)', 100], ['g', 1]]],
+['กะหล่ำปลี', 'Cabbage', 25, 1.3, 6, 0.1, [['cup (90 g)', 90], ['g', 1]]],
+['ฟักทอง', 'Pumpkin', 26, 1, 6.5, 0.1, [['cup (115 g)', 115], ['g', 1]]],
+['พริกหยวก / พริกหวาน', 'Bell pepper', 26, 1, 6, 0.3, [['pepper (120 g)', 120], ['g', 1]]],
+['หอมใหญ่', 'Onion', 40, 1.1, 9, 0.1, [['onion (110 g)', 110], ['g', 1]]],
+['ข้าวโพดอ่อน', 'Baby corn', 26, 2, 5, 0.2, [['g', 1]]],
+['สาหร่าย', 'Seaweed snack', 400, 30, 40, 15, [['pack (4 g)', 4], ['g', 1]]],
+['กิมจิ', 'Kimchi', 23, 1.1, 4, 0.5, [['side dish (50 g)', 50], ['g', 1]]],
+// fruit extras
+['มังคุด', 'Mangosteen', 73, 0.4, 18, 0.6, [['fruit (25 g flesh)', 25], ['g', 1]]],
+['เงาะ', 'Rambutan', 82, 0.7, 21, 0.2, [['fruit (15 g)', 15], ['g', 1]]],
+['ลิ้นจี่', 'Lychee', 66, 0.8, 17, 0.4, [['fruit (10 g)', 10], ['g', 1]]],
+['ชมพู่', 'Rose apple', 25, 0.6, 5.7, 0.3, [['fruit (60 g)', 60], ['g', 1]]],
+['ขนุน', 'Jackfruit', 95, 1.7, 23, 0.6, [['pod (15 g)', 15], ['g', 1]]],
+['ส้มโอ', 'Pomelo', 38, 0.8, 10, 0, [['segment (40 g)', 40], ['g', 1]]],
+['ลูกแพร์', 'Pear', 57, 0.4, 15, 0.1, [['pear (180 g)', 180], ['g', 1]]],
+['พีช', 'Peach', 39, 0.9, 10, 0.3, [['peach (150 g)', 150], ['g', 1]]],
+['เชอร์รี่', 'Cherries', 63, 1.1, 16, 0.2, [['cup (140 g)', 140], ['g', 1]]],
+['อินทผลัม', 'Dates', 282, 2.5, 75, 0.4, [['date (8 g)', 8], ['g', 1]]],
+['ลูกเกด', 'Raisins', 299, 3, 79, 0.5, [['tbsp (9 g)', 9], ['g', 1]]],
+['มะพร้าวน้ำหอม (เนื้อ)', 'Young coconut flesh', 70, 1.5, 10, 3, [['coconut (100 g flesh)', 100], ['g', 1]]],
+// snacks & sweets extras
+['เยลลี่', 'Jelly / gummies', 330, 6, 77, 0, [['pack (30 g)', 30], ['g', 1]]],
+['ไอศกรีมวานิลลา', 'Vanilla ice cream', 207, 3.5, 24, 11, [['scoop (66 g)', 66], ['g', 1]]],
+['โยเกิร์ตผลไม้', 'Fruit yogurt', 95, 3.5, 16, 2, [['cup (135 g)', 135], ['g', 1]]],
+['ดาร์กช็อกโกแลต', 'Dark chocolate (70%)', 598, 8, 46, 43, [['square (10 g)', 10], ['bar (100 g)', 100], ['g', 1]]],
+['ถั่วพิสตาชิโอ', 'Pistachios', 560, 20, 28, 45, [['handful (28 g)', 28], ['g', 1]]],
+['วอลนัท', 'Walnuts', 654, 15, 14, 65, [['handful (28 g)', 28], ['g', 1]]],
+['เมล็ดทานตะวัน', 'Sunflower seeds', 584, 21, 20, 51, [['tbsp (9 g)', 9], ['g', 1]]],
+// drinks extras (per 100 ml)
+['น้ำผลไม้', 'Fruit juice', 46, 0.5, 11, 0.1, [['glass (250 ml)', 250], ['box (200 ml)', 200], ['ml', 1]]],
+['น้ำอัดลม', 'Soft drink', 42, 0, 10.6, 0, [['can (325 ml)', 325], ['ml', 1]]],
+['เครื่องดื่มเกลือแร่', 'Sports drink', 26, 0, 6.4, 0, [['bottle (500 ml)', 500], ['ml', 1]]],
+['ชาเขียวขวด', 'Bottled green tea (sweetened)', 30, 0, 7.5, 0, [['bottle (500 ml)', 500], ['ml', 1]]],
+['นมเปรี้ยว', 'Drinking yogurt', 65, 1.5, 13, 0.6, [['bottle (180 ml)', 180], ['ml', 1]]],
+['โคล่าซีโร่ / ไดเอท', 'Diet / zero soda', 0.3, 0, 0, 0, [['can (325 ml)', 325], ['ml', 1]]],
+['กาแฟดำ', 'Black coffee', 2, 0.3, 0, 0, [['cup (240 ml)', 240], ['ml', 1]]],
+['วิสกี้', 'Whisky', 250, 0, 0, 0, [['shot (30 ml)', 30], ['ml', 1]]]
 ];
 
 /* One food model: per = 100 g (ingredients) or per serving (dishes); units = [[label, amount]]. */
 const DISH_DUPES = new Set(['ข้าวสวย', 'ข้าวกล้อง', 'ข้าวเหนียว', 'ไข่ดาว', 'ไข่ต้ม', 'ไข่ขาวต้ม', 'อกไก่ย่าง', 'กล้วยหอม', 'แอปเปิ้ล', 'ส้ม', 'มะม่วงสุก', 'แตงโม', 'สับปะรด', 'มะละกอ', 'ฝรั่ง', 'ทุเรียน', 'องุ่น',
   'ถั่วอัลมอนด์', 'ถั่วลิสง', 'เนยถั่ว', 'ข้าวโอ๊ต', 'กราโนล่า', 'ขนมปังโฮลวีต', 'ขนมปังขาว', 'เต้าหู้', 'อะโวคาโด', 'มันหวานต้ม', 'ข้าวโพดต้ม', 'แซลมอนย่าง', 'สเต๊กเนื้อ', 'ซาชิมิแซลมอน',
-  'กรีกโยเกิร์ต', 'นมจืด', 'นมไขมันต่ำ', 'เวย์โปรตีน', 'ไก่ทอด', 'ไก่ย่าง', 'คอหมูย่าง', 'ไข่ต้มสุก 7-11']);
+  'กรีกโยเกิร์ต', 'นมจืด', 'นมไขมันต่ำ', 'เวย์โปรตีน', 'ไก่ทอด', 'ไก่ย่าง', 'คอหมูย่าง', 'ครัวซองต์', 'ไข่ไก่', 'ไข่ต้มสุก 7-11']);
 const FOOD_DB = ING.map(f => ({ name: f[0], en: f[1], per: 100, n: { kcal: f[2], p: f[3], c: f[4], f: f[5] }, units: f[6] }))
   .concat(FOODS.filter(f => !DISH_DUPES.has(f[0])).map(f => ({ name: f[0], en: f[1], per: 1, n: { kcal: f[2], p: f[3], c: f[4], f: f[5] }, units: [[f[6], 1]] })));
 /** "ribeye 200g", "2 eggs", "แซลมอน 150 กรัม" → { q: words to search, grams, count } */
@@ -1814,7 +1960,7 @@ function foodMatches(q) {
   return FOOD_DB.map(x => [score(x), x]).filter(z => z[0] < 9).sort((u, v) => u[0] - v[0]).map(z => z[1]);
 }
 function attachFoodSearch(form) {
-  const inp = form.description; if (!inp || inp._food) return; inp._food = true; inp.setAttribute('autocomplete', 'off');
+  const inp = form.description; if (!inp || inp._food) return; inp._food = true; inp.type = 'search'; [['autocomplete', 'off'], ['autocorrect', 'off'], ['autocapitalize', 'off'], ['spellcheck', 'false'], ['enterkeyhint', 'done']].forEach(([k, v]) => inp.setAttribute(k, v));
   const box = document.createElement('div'); box.className = 'fsug hide'; inp.parentNode.after(box);
   const por = document.createElement('div'); por.className = 'fpor hide'; box.after(por);
   let cur = null; // { item, qty, unit }
@@ -1857,7 +2003,7 @@ function attachFoodSearch(form) {
     const k = foodNorm(parsed.q), mine = mineAll.filter(x => x.name.length <= 40 && foodNorm(x.name).includes(k)).slice(0, 3);
     const built = foodMatches(parsed.q), strong = built.filter(x => { const a = foodNorm(x.name), e = foodNorm(x.en); return a === k || e === k || a.startsWith(k) || e.startsWith(k); });
     const rows = strong.slice(0, 4).map(x => ({ db: x })).concat(mine.map(x => ({ mine: x })), built.filter(x => !strong.slice(0, 4).includes(x)).map(x => ({ db: x }))).slice(0, 10);
-    if (!rows.length) return box.classList.add('hide');
+    if (!rows.length) { box.innerHTML = '<div class="fnone">Not in the food list yet. Type the calories below, and next time it appears under Yours.</div>'; return box.classList.remove('hide'); }
     box.innerHTML = rows.map((r, i) => { const x = r.mine || r.db;
       const sub = r.mine ? '<i>Yours</i>' : '<small>' + esc(x.en) + ' · ' + esc(x.per === 100 ? 'per 100 g' : x.units[0][0]) + '</small>';
       const kc = r.mine ? Math.round(x.kcal) + ' kcal' : Math.round(x.n.kcal) + ' kcal';
