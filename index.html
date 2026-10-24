@@ -187,6 +187,7 @@ body.tmode .thumb.add,body.tmode .addtile,body.tmode #mealPick,body.tmode [data-
 .gbody{padding:0 12px 12px}.gbody ol,.gbody ul{padding-left:20px;margin:6px 0;line-height:1.55}.gbody li{margin:4px 0}
 .gapp{border-top:1px solid var(--line)}.gapp>summary{padding:10px 0;font-weight:650;display:flex;align-items:baseline;gap:8px;cursor:pointer;list-style:none}.gapp>summary::-webkit-details-marker{display:none}
 .gapp>summary small{color:var(--muted);font-weight:500;font-size:12.5px;text-transform:none}.gapp>summary::after{content:"+";margin-left:auto;color:var(--accent);font-weight:800}.gapp[open]>summary::after{content:"−"}
+.gsub{margin:14px 0 4px;font-weight:800;font-size:13px;letter-spacing:.04em;color:var(--accent)}.gfield{color:var(--accent);font-weight:600}.gnote{list-style:none;margin-left:-20px!important;color:var(--muted);font-size:12.5px}
 .gkeys{width:100%;border-collapse:collapse;margin:6px 0;font-size:13px}.gkeys td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}.gkeys td{text-align:left}.gkeys td:first-child{white-space:nowrap;width:1%}
 .ecta{display:flex;align-items:center;gap:12px;margin:10px 0 2px;padding:12px;border:1px dashed var(--line);border-radius:14px;background:color-mix(in srgb,var(--soft) 55%,transparent);text-align:left}
 .ecta .eic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}.ecta .eic svg{width:20px;height:20px}
@@ -770,7 +771,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024071856';
+const BUILD = '20261024080912';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2290,23 +2291,51 @@ async function renderConnections() {
     ['Omron', 'Omron Connect', ['Omron Connect → <b>Settings</b> → <b>Apple Health</b> → allow <b>Weight</b> and <b>Body Fat %</b>.']]];
   const appGuides = APPS.map(([n, sub, st]) => `<details class="gapp"><summary>${n}<small>${sub}</small></summary><ol>${st.map(x => `<li>${x}</li>`).join('')}
     <li>Check: iPhone <b>Health</b> app → <b>Browse</b> → e.g. <b>Steps</b> or <b>Weight</b> → ${n.split(' ')[0]} appears under <b>Data Sources</b>.</li></ol></details>`).join('');
+  // The Shortcut, built tap by tap: A the automation, B the readings you pick (each its own recipe), C the block that sends them.
+  const find = (type, extra) => `Tap <b>Search Actions</b> → type <code>Find Health Samples</code> → tap it.</li>
+    <li>Tap the blue word after <b>Type is</b> → choose <b>${type}</b>.</li>
+    <li>Tap <b>Add Filter</b> → tap the new row's first blue word → <b>Start Date</b> → next blue word → <b>${extra || 'is today'}</b>.`;
+  const calc = (how) => `<li>Tap <b>Search Actions</b> → type <code>Calculate Statistics</code> → tap it.</li>
+    <li>Tap the blue <b>Average</b> → choose <b>${how}</b>.${how === 'Average' ? ' (It already says Average: leave it.)' : ''}</li>`;
+  const field = (key, from) => `<li class="gfield">In block C, add a field: <b>Number</b> · key <code>${key}</code> · value: <b>Select Variable</b> → tap <b>${from}</b>.</li>`;
+  const READINGS = [
+    ['Steps', 'Steps walked today', `<li>${find('Steps')}</li>${calc('Sum')}${field('steps', 'the Calculate the Sum under Steps')}`],
+    ['Active Calories', 'Calories burned moving', `<li>${find('Active Energy')} (May be called <b>Active Calories</b>.)</li>${calc('Sum')}${field('activeKcal', 'the Calculate the Sum under Active Energy')}`],
+    ['Resting Heart Rate', 'Your resting pulse', `<li>${find('Resting Heart Rate')} (Not plain “Heart Rate”.)</li>${calc('Average')}${field('restingHR', 'the Calculate the Average under Resting Heart Rate')}`],
+    ['Sleep', 'Hours asleep last night', `<li>${find('Sleep', 'is in the last')} → set it to <b>1</b> <b>days</b>.</li>
+      <li>Tap <b>Add Filter</b> → <b>Value</b> → <b>is not</b> → <b>In Bed</b>.</li>
+      <li>Tap <b>Add Filter</b> again → <b>Value</b> → <b>is not</b> → <b>Awake</b>. (Keeps only time actually asleep.)</li>
+      <li>Tap <b>Search Actions</b> → type <code>Get Details of Health Sample</code> → tap it → tap the blue <b>Detail</b> → choose <b>Duration</b>.</li>
+      ${calc('Sum')}${field('sleepHours', 'the Calculate the Sum under Sleep')}
+      <li class="gnote">Sleep looks double? Your phone and watch both record it: add one more filter <b>Source</b> → <b>is</b> → <b>Garmin Connect</b> (or your device).</li>`],
+    ['HRV', 'Heart rate variability', `<li>${find('Heart Rate Variability')}</li>${calc('Average')}${field('hrv', 'the Calculate the Average under Heart Rate Variability')}
+      <li class="gnote">Only if your device records HRV (Apple Watch, Oura). Garmin may not share it with Apple Health.</li>`],
+    ['Weight', 'From a smart scale', `<li>${find('Weight')}</li>
+      <li>Tap <b>Sort by</b> → <b>Start Date</b>, <b>Latest First</b>. Turn <b>Limit</b> on → <b>1</b>.</li>${calc('Average')}${field('weight', 'the Calculate the Average under Weight')}`],
+    ['Body Fat', 'From a smart scale', `<li>${find('Body Fat Percentage')}</li>
+      <li>Tap <b>Sort by</b> → <b>Start Date</b>, <b>Latest First</b>. Turn <b>Limit</b> on → <b>1</b>.</li>${calc('Average')}${field('bodyfat', 'the Calculate the Average under Body Fat Percentage')}`]];
+  const readingGuides = READINGS.map(([n, sub, steps]) => `<details class="gapp"><summary>${n}<small>${sub}</small></summary><ol>${steps}</ol></details>`).join('');
   const shortcut = a.shortcutUrl
     ? `<ol>
         <li><a class="lk-ext" href="${esc(a.shortcutUrl)}" target="_blank">Get the Stat Sheet Shortcut</a> and tap <b>Add Shortcut</b>.</li>
         <li>When it asks for your key, paste <b>Your Key</b> from below.</li>
         <li><b>Shortcuts</b> → <b>Automation</b> → <b>+</b> → <b>Time of Day</b> → <b>22:00</b>, Daily → <b>Run Immediately</b> → pick the Stat Sheet shortcut.</li></ol>`
-    : `<ol>
-        <li><b>Shortcuts</b> app → <b>Automation</b> → <b>+</b> → <b>Time of Day</b> → <b>22:00</b>, Daily → <b>Run Immediately</b> → <b>New Blank Automation</b>.</li>
-        <li><b>Find Health Samples</b>: Steps, start date is today → <b>Calculate Statistics</b>: <b>Sum</b> → <b>Set Variable</b> named <code>Steps</code>.</li>
-        <li>The same for <b>Active Energy</b> (<b>Sum</b> → <code>Calories</code>) and <b>Resting Heart Rate</b> (<b>Average</b> → <code>RestingHR</code>).</li>
-        <li>Have a smart scale? Also <b>Find Health Samples</b>: <b>Weight</b> and <b>Body Fat Percentage</b>, latest one, today.</li>
-        <li><b>Get Contents of URL</b>: paste the <b>URL</b> (below) → <b>Show More</b> → Method <b>POST</b> → Request Body <b>JSON</b>.</li>
-        <li>Under JSON, tap <b>Add New Field</b> for each row: pick the type, type the key exactly as written, then fill the value. (No Dictionary action needed.)
-          <table class="gkeys"><tr><td><b>Text</b></td><td><code>k</code></td><td>paste Your Key (below)</td></tr><tr><td><b>Text</b></td><td><code>action</code></td><td><code>healthDay</code></td></tr>
-            <tr><td><b>Number</b></td><td><code>steps</code></td><td>pick the <code>Steps</code> variable</td></tr><tr><td><b>Number</b></td><td><code>activeKcal</code></td><td>pick <code>Calories</code></td></tr><tr><td><b>Number</b></td><td><code>restingHR</code></td><td>pick <code>RestingHR</code></td></tr>
-            <tr><td><b>Number</b></td><td><code>weight</code> · <code>bodyfat</code></td><td>scale readings (optional)</td></tr></table>
-          <span class="small muted">Tip: to pick a variable, tap the value box and choose it from the bar above the keyboard.</span></li>
-        <li>Once it works, share it with others: <b>Share</b> → <b>Copy iCloud Link</b>, and give that link to the app admin.</li></ol>`;
+    : `<p class="gsub">A · The Automation</p><ol>
+        <li>Open the <b>Shortcuts</b> app → tap <b>Automation</b> (bottom) → <b>+</b> (top right).</li>
+        <li>Tap <b>Time of Day</b> → set <b>22:00</b> → <b>Daily</b> → tick <b>Run Immediately</b> → <b>Next</b> → <b>New Blank Automation</b>.</li></ol>
+      <p class="gsub">B · Pick Your Readings</p>
+      <p class="small muted" style="margin:0 0 4px">Add only the ones you want, in any order. Each one adds blocks; the last line says which field it needs in C.</p>
+      ${readingGuides}
+      <p class="gsub">C · Send Them (always last)</p><ol>
+        <li>Tap <b>Search Actions</b> → type <code>Get Contents of URL</code> → tap it.</li>
+        <li>Tap the blue <b>URL</b> → tap again → <b>Paste</b> the URL from below → tap <b>✓</b> on the keyboard.</li>
+        <li>Tap the arrow in a circle after the URL. If no rows appear, swipe the screen up.</li>
+        <li><b>Method</b> → <b>POST</b>. <b>Request Body</b> → <b>JSON</b>.</li>
+        <li><b>Add new field</b> → <b>Text</b> → key <code>k</code> → value: paste Your Key (below).</li>
+        <li><b>Add new field</b> → <b>Text</b> → key <code>action</code> → value <code>healthDay</code>.</li>
+        <li>For each reading you added in B: <b>Add new field</b> → <b>Number</b> → its key → tap the value → in the bar above the keyboard swipe to the start → <b>Select Variable</b> → tap the block named in that reading.</li>
+        <li>Each value must be only the blue bubble, with nothing typed in front of it.</li>
+        <li>Tap the blue <b>✓</b> (top right) to save. Once it works, <b>Share</b> → <b>Copy iCloud Link</b> lets others skip all this.</li></ol>`;
   const apple = `<div class="conn"><div class="row between"><b>Apple Health</b><span class="muted">Garmin · Watch · Oura · Scales</span></div>
       <p style="margin:4px 0 0">Last data received: <b>${when(a.lastImport)}</b></p>
       <p class="small muted" style="margin:6px 0 0">Garmin and most scales connect through Apple Health. It's free and takes about 10 minutes, once.</p>
