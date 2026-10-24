@@ -351,6 +351,14 @@ button.loading img,button.loading svg{opacity:0}
 .prow .pm b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}.prow .pm small{display:block;color:var(--muted);font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .prow .rk-bar{margin-top:5px}.prow .ps{font-weight:800;font-size:17px;text-align:right;font-variant-numeric:tabular-nums}.prow.me{cursor:default}.prow.me .pm b{color:#3fb58a}
 .prow button.link.link.pmore{min-width:34px;padding:4px}.pacts{display:flex;gap:8px;justify-content:flex-end;padding:0 0 10px}.pacts.hide{display:none}
+.lbchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:6px;padding-bottom:2px}.lbchips::-webkit-scrollbar{display:none}
+.lbchips button{flex:none;min-height:34px;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:var(--soft);font-size:13px;font-weight:700;color:var(--muted)}
+.lbchips button.on{background:#3fb58a;border-color:#3fb58a;color:#06120d}
+.lbrow{display:grid;grid-template-columns:26px 32px 1fr auto;align-items:center;gap:10px;padding:9px 0}.lbrow .avatar{width:32px;height:32px;font-size:13px}
+.lbn{display:grid;place-items:center;font-weight:800;color:var(--muted)}.crown{width:24px;height:24px;filter:drop-shadow(0 1px 2px #0007)}
+.lbm{min-width:0}.lbm b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lbrow.me .lbm b{color:#3fb58a}
+.lbbar{height:10px;border-radius:99px;background:var(--soft);overflow:hidden;margin-top:4px}.lbbar i{display:block;height:100%;border-radius:99px;background:#3fb58a;transition:width .5s}
+.lbv{font-weight:800;font-size:14px;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 .codeline{display:flex;align-items:center;gap:10px}.codeblk{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.codeblk>.small{margin:0}#newClientCard .codeline button{min-height:32px!important}.codeline button.link.link{min-height:32px;padding:4px 10px;font-size:13px}
 .reqform{display:flex;gap:8px;align-items:stretch}.reqform input{flex:1;min-width:0;margin:0}.reqform button{min-height:46px;white-space:nowrap}#reqList .crow{gap:10px;padding:8px 0}
 #coachReq{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:45;background:linear-gradient(160deg,color-mix(in srgb,#3fb58a 22%,var(--card)),var(--card) 70%);border:2px solid #3fb58a;border-radius:18px;padding:16px;box-shadow:0 12px 40px #000a,0 0 30px #3fb58a55;display:grid;gap:12px;animation:reqIn .4s cubic-bezier(.2,1.3,.4,1)}
@@ -781,7 +789,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024091621';
+const BUILD = '20261024092156';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2225,6 +2233,7 @@ async function renderPeers() {
         ${r.me ? '<span class="pmore"></span>' : `<button type="button" class="link pmore" data-pmenu="${r.id}" aria-label="Options">⋯</button>`}
       </div>
       ${r.me ? '' : `<div class="pacts hide" data-pacts="${r.id}"><button type="button" class="link" data-pc="${esc(r.code || '')}">Copy Code</button><button type="button" class="link danger" data-unpeer="${r.id}">Remove</button></div>`}`).join('') : ''}
+    ${list.length ? '<button type="button" class="lk-open" id="lbToggle" style="margin-top:8px">' + (LB_OPEN ? 'Hide Leaderboard ‹' : 'Leaderboard ›') + '</button><div id="lbBox"></div>' : ''}
     <form id="peerForm" style="display:flex;gap:8px;align-items:flex-end;margin-top:12px"><label class="grow" style="margin:0">Add A Peer<input name="code" maxlength="24" autocapitalize="characters" placeholder="e.g. MINT-4821" style="text-transform:uppercase"></label><button class="primary">Add</button></form>`;
   rows.forEach(r => { const el = $(`[data-pav="${r.id}"]`, box); if (el) paintAvatar(el, r, r.me ? 'c' : ''); });
   $$('[data-peer]', box).forEach(row => row.onclick = e => { if (!e.target.closest('[data-pmenu]')) switchTo(row.dataset.peer, 'peer'); });
@@ -2236,9 +2245,37 @@ async function renderPeers() {
   $('#pShare').onclick = () => { const t = 'Compare stats with me on Stat Sheet: ' + location.origin + location.pathname + '?peer=' + encodeURIComponent($('#pCode').textContent);
     navigator.share ? navigator.share({ text: t }).catch(() => {}) : (navigator.clipboard && navigator.clipboard.writeText(t), toast('Copied')); };
   if (PEER_CODE) $('#pCode').textContent = PEER_CODE; else api('myPeerCode', {}).then(c => { PEER_CODE = c; if ($('#pCode')) $('#pCode').textContent = c; }).catch(() => {});
+  if ($('#lbToggle')) $('#lbToggle').onclick = () => { LB_OPEN = !LB_OPEN; $('#lbToggle').textContent = LB_OPEN ? 'Hide Leaderboard ‹' : 'Leaderboard ›'; renderLeaderboard(); };
+  renderLeaderboard();
   if (!PEER_RANK && list.length) api('ranking', { group: 'peers' }).then(r => { PEER_RANK = r; if (curTab === 'more') renderPeers(); }).catch(() => {});
 }
-let PEER_RANK = null, PEER_CODE = null;
+let PEER_RANK = null, PEER_CODE = null, LB_OPEN = false, LB_METRIC = 'overall';
+/* Leaderboard: one metric at a time, highest first; crowns for #1 (gold) and #2 (silver). */
+const LB = [
+  ['overall', 'Overall', r => r.workouts == null ? null : consistency(r), v => v, 'Consistency out of 100'],
+  ['streak', 'Streak', r => r.streak, v => v + ' d', 'Days in a row with a weigh-in'],
+  ['weight', 'Weight', r => r.weightToGoal, v => (v > 0 ? '−' : v < 0 ? '+' : '') + Math.abs(v).toFixed(1) + ' kg', 'Kg moved toward goal · 30 days'],
+  ['strength', 'Strength', r => r.strength, v => v, 'Overall strength · 100 = first sessions'],
+  ['steps', 'Steps', r => r.steps, v => Math.round(v).toLocaleString(), 'Average steps a day · 30 days'],
+  ['sleep', 'Sleep', r => r.sleep, v => v.toFixed(1) + ' h', 'Average sleep a night · 30 days']];
+const CROWN = c => `<svg class="crown" viewBox="0 0 24 24" aria-hidden="true"><path fill="${c}" d="M3 8l4.5 3.5L12 5l4.5 6.5L21 8l-2 10H5z"/><rect fill="${c}" x="5" y="19" width="14" height="2" rx="1"/></svg>`;
+function renderLeaderboard() {
+  const box = $('#lbBox'); if (!box) return;
+  if (!LB_OPEN) { box.innerHTML = ''; return; }
+  if (!PEER_RANK) { box.innerHTML = '<div class="ld" style="padding:8px 0">Loading…</div>'; return; }
+  const m = LB.find(x => x[0] === LB_METRIC) || LB[0];
+  const rows = PEER_RANK.map(r => Object.assign({}, r, { v: m[2](r) })).sort((a, b) => (a.v == null) - (b.v == null) || (b.v || 0) - (a.v || 0));
+  const vals = rows.filter(r => r.v != null).map(r => r.v), hi = Math.max(...vals.map(Math.abs), 1e-9);
+  box.innerHTML = `<div class="lbchips">${LB.map(x => `<button type="button" data-lb="${x[0]}" class="${x[0] === m[0] ? 'on' : ''}">${x[1]}</button>`).join('')}</div>
+    <p class="small muted" style="margin:6px 0 2px">${m[4]}</p>
+    ${rows.map((r, i) => { const has = r.v != null, place = has ? vals.filter(v => v > r.v).length : null;
+      return `<div class="lbrow${r.me ? ' me' : ''}"><span class="lbn">${!has ? '–' : place === 0 ? CROWN('#f5c542') : place === 1 ? CROWN('#c9d1d9') : place + 1}</span>
+        <span class="avatar" data-lbav="${r.id}"></span><div class="lbm"><b>${esc(r.me ? r.name + ' (you)' : r.name)}</b>
+        <div class="lbbar"><i style="width:${has ? Math.max(3, Math.abs(r.v) / hi * 100) : 0}%;${place === 0 ? 'background:#f5c542' : place === 1 ? 'background:#c9d1d9' : ''}"></i></div></div>
+        <span class="lbv">${has ? m[3](r.v) : 'No data'}</span></div>`; }).join('')}`;
+  rows.forEach(r => { const el = $(`[data-lbav="${r.id}"]`, box); if (el) paintAvatar(el, r, r.me ? 'c' : ''); });
+  $$('[data-lb]', box).forEach(b => b.onclick = () => { LB_METRIC = b.dataset.lb; renderLeaderboard(); });
+}
 /* Rankings: one Consistency score (0–100) over the last 30 days. Half is workout days (16 = 4 a week = full marks),
    half is weigh-ins (one a day = full marks). More › Rankings: you + your peers. My Clients: a trainer's clients. */
 const consistency = r => Math.round(Math.min((r.workouts || 0) / 16, 1) * 50 + Math.min((r.weighIns || 0) / 30, 1) * 50);
