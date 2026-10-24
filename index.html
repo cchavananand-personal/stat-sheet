@@ -773,7 +773,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024084155';
+const BUILD = '20261024085101';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1221,6 +1221,7 @@ async function renderToday() {
     r.body.forEach(b => MD.by[b.date] = b);
     r.photoDays.forEach(d => MD.photos[d] = 1);
     (r.workoutDays || []).forEach(d => MD.wk[d] = 1);
+    fillCheckins(r);
   };
   if (MD.month !== wMonth) { try { const c = JSON.parse(localStorage.getItem(monthKey)); if (c) apply(c); } catch (e) {} } // saved copy first
   drawCal(); renderEntry();
@@ -1232,7 +1233,8 @@ async function renderToday() {
     return;
   }
   if (want !== wMonth) return;
-  try { localStorage.setItem(monthKey, JSON.stringify({ body: r.body, photoDays: r.photoDays, workoutDays: r.workoutDays })); } catch (e) {}
+  try { localStorage.setItem(monthKey, JSON.stringify({ body: r.body, photoDays: r.photoDays, workoutDays: r.workoutDays, checkins: r.checkins })); } catch (e) {}
+  fillCheckins(r);
   MD = { by: {}, photos: {}, wk: {}, month: wMonth };
   r.body.forEach(b => MD.by[b.date] = b);
   r.photoDays.forEach(d => MD.photos[d] = 1);
@@ -1331,6 +1333,14 @@ const ciAll = () => { try { const d = JSON.parse(S.profile.checkins || ''); if (
 const ciDefs = () => ciAll().filter(f => f.on !== false); // the ones in use; removed ones keep on:false and can be added back
 const CI = {}; // date → {key: value}
 let ciOpen = false;
+/** A month's daily details at once (days with none get {}), unless a save for that day is on its way. */
+function fillCheckins(r) {
+  if (!r.checkins) return;
+  const [y, m] = wMonth.split('-').map(Number), n = new Date(y, m, 0).getDate();
+  for (let i = 1; i <= n; i++) { const d = wMonth + '-' + String(i).padStart(2, '0'); if (!ciBusy[d]) CI[d] = r.checkins[d] || {}; }
+  if (ciOpen) renderCheckins();
+}
+const ciBusy = {};
 async function renderCheckins() {
   const date = wSel, box = $('#ciBox'), v = CI[date], n = v ? Object.keys(v).length : 0;
   $('#ciToggle').textContent = ciOpen ? 'Hide parameters ‹' : 'More parameters' + (n ? ' · ' + n + ' logged' : '') + ' ›';
@@ -1348,7 +1358,8 @@ async function renderCheckins() {
     : `<div class="ci"><span>${esc(f.name)}</span><label class="ciNum"><input type="number" inputmode="decimal" step="0.1" data-ck="${esc(f.key)}" value="${esc(v[f.key] == null ? '' : v[f.key])}" ${OWNER ? '' : 'readonly'}>${esc(f.unit || '')}</label></div>`).join('');
   const save = (key, value) => { // shows straight away, saves in the background
     v[key] = value; if (value === '') delete v[key]; renderCheckins();
-    ciQ = ciQ.then(() => api('setCheckin', { date, key, value })).then(o => { CI[date] = o; }, () => { delete CI[date]; if (date === wSel) renderCheckins(); });
+    ciBusy[date] = (ciBusy[date] || 0) + 1;
+    ciQ = ciQ.then(() => api('setCheckin', { date, key, value })).then(o => { CI[date] = o; }, () => { delete CI[date]; if (date === wSel) renderCheckins(); }).then(() => { ciBusy[date]--; });
   };
   box.insertAdjacentHTML('beforeend', OWNER ? '<div class="lkrow"><button class="lk-nav" data-go="more:ciDefsCard">+ Add parameters in More › Custom Parameters</button></div>' : '');
   $$('[data-cv]', box).forEach(b => b.onclick = () => save(b.dataset.ck, String(v[b.dataset.ck]) === b.dataset.cv ? '' : b.dataset.cv)); // tap again to clear
@@ -2170,7 +2181,9 @@ function renderTrainerMode() {
   };
   if ($('#tmOn')) $('#tmOn').onclick = e => confirm('Become a trainer? You can then invite clients and manage their progress.') && busy(e.target, flip(true));
   if ($('#tmShare')) $('#tmShare').onclick = e => busy(e.target, async () => { $('#tCode').textContent = await api('myTrainerCode', {}); $('#codeShare').click(); });
-  if ($('#tmOff')) $('#tmOff').onclick = e => confirm('Turn off trainer mode?') && busy(e.target, flip(false));
+  if ($('#tmOff')) $('#tmOff').onclick = e => (S.clients || []).length
+    ? alert('You still have ' + S.clients.length + ' client' + (S.clients.length === 1 ? '' : 's') + '. Remove them one by one in Client Profile › Clients (⋯ › Remove), then turn trainer mode off.')
+    : confirm('Turn off trainer mode?') && busy(e.target, flip(false));
 }
 /** More › My Peers: share your peer code, add someone's, see who you're peers with. Peers can only look. */
 async function renderPeers() {
@@ -2814,8 +2827,24 @@ if (saved && saved.data) {
   Object.assign(S, saved.data);
   syncedClients = JSON.stringify(S.clients || []); // compare the fresh list against what this copy showed
   if (saved.date !== TODAY) { S.meals = []; S.dayPhotos = []; } // those two are for the day it was saved
-  show('progress'); bootDone(); renderRoleTag();
+  firstShow(); bootDone(); renderRoleTag();
 }
+/* Where you were, so a background reload by iPhone doesn't throw you back to the first tab. */
+function savePlace() {
+  try { localStorage.setItem('place', JSON.stringify({ at: Date.now(), as: AS, tab: curTab, wSel, logMode, planKind, mealsMode, tMode, ciOpen, y: window.scrollY,
+    note: ($('#noteForm') && $('#noteForm').text.value) || '' })); } catch (e) {}
+}
+function firstShow() {
+  let p = null; try { p = JSON.parse(localStorage.getItem('place') || 'null'); } catch (e) {}
+  if (!p || p.as !== AS || Date.now() - p.at > 36e5 || !TABS.some(t => t[0] === p.tab)) return show('progress');
+  if (p.wSel && p.wSel <= TODAY) { wSel = p.wSel; wMonth = p.wSel.slice(0, 7); }
+  if (p.logMode) logMode = p.logMode; if (p.planKind) planKind = p.planKind; if (p.mealsMode) mealsMode = p.mealsMode; if (p.tMode) tMode = p.tMode; ciOpen = !!p.ciOpen;
+  show(p.tab, true);
+  if (p.note && $('#noteForm')) $('#noteForm').text.value = p.note;
+  setTimeout(() => window.scrollTo(0, p.y || 0), 60); setTimeout(() => window.scrollTo(0, p.y || 0), 600);
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') savePlace(); });
+addEventListener('pagehide', savePlace);
 let lastBoot = Date.now();
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && ymd(new Date()) !== TODAY) { try { sessionStorage.setItem('keepAs', '1'); } catch (e) {} return location.reload(); } // it's a new day
@@ -2853,7 +2882,7 @@ api('bootstrap', { date: TODAY })
       if (!d.me.trainer && !same && (!d.coach || confirm('Move from ' + d.coach.name + ' to ' + nm + ' as your trainer?')))
         api('pairTrainer', { code: pc }).then(w => { Object.assign(S, w); if (curTab === 'more') renderMore(); toast("You're now training with " + S.coach.name, false, 5000); }).catch(() => {}); }
     renderRoleTag();
-    if (!saved) { show('progress'); bootDone(); return; }
+    if (!saved) { firstShow(); bootDone(); return; }
     // redraw what's on screen with the fresh data, unless you're typing in it
     if (!/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) show(curTab, true);
   })
