@@ -771,7 +771,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024080912';
+const BUILD = '20261024081024';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2302,7 +2302,7 @@ async function renderConnections() {
     ['Steps', 'Steps walked today', `<li>${find('Steps')}</li>${calc('Sum')}${field('steps', 'the Calculate the Sum under Steps')}`],
     ['Active Calories', 'Calories burned moving', `<li>${find('Active Energy')} (May be called <b>Active Calories</b>.)</li>${calc('Sum')}${field('activeKcal', 'the Calculate the Sum under Active Energy')}`],
     ['Resting Heart Rate', 'Your resting pulse', `<li>${find('Resting Heart Rate')} (Not plain “Heart Rate”.)</li>${calc('Average')}${field('restingHR', 'the Calculate the Average under Resting Heart Rate')}`],
-    ['Sleep', 'Hours asleep last night', `<li>${find('Sleep', 'is in the last')} → set it to <b>1</b> <b>days</b>.</li>
+    ['Sleep', 'Hours asleep last night', `<li>${find('Sleep', 'is in the last 1 days')}</li>
       <li>Tap <b>Add Filter</b> → <b>Value</b> → <b>is not</b> → <b>In Bed</b>.</li>
       <li>Tap <b>Add Filter</b> again → <b>Value</b> → <b>is not</b> → <b>Awake</b>. (Keeps only time actually asleep.)</li>
       <li>Tap <b>Search Actions</b> → type <code>Get Details of Health Sample</code> → tap it → tap the blue <b>Detail</b> → choose <b>Duration</b>.</li>
