@@ -791,7 +791,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024095739';
+const BUILD = '20261024100017';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2752,7 +2752,7 @@ function themeSwatches(f) {
   const box = $('#themeSw2'), cur = f.theme.value || '';
   box.innerHTML = THEMES.map(([k, c, n]) => `<button type="button" data-th="${k}" class="${k === cur ? 'on' : ''}" style="background:${c}" aria-label="${n}"></button>`).join('');
   $('#thName').textContent = '· ' + (THEMES.find(x => x[0] === cur) || THEMES[0])[2];
-  $('[data-th]', box).forEach(b => b.onclick = () => { f.theme.value = b.dataset.th; themeSwatches(f); applyTheme(b.dataset.th); });
+  $$('[data-th]', box).forEach(b => b.onclick = () => { f.theme.value = b.dataset.th; themeSwatches(f); applyTheme(b.dataset.th); });
 }
 /** Edit profile: photo, name (also your sign-in name), birth date, height, unit. Your own profile only. */
 function openProfile() {
