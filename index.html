@@ -796,7 +796,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024103152';
+const BUILD = '20261024103442';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -885,6 +885,7 @@ async function api(action, data, tries) {
       await new Promise(r => setTimeout(r, 900 * (n + 1)));
       return api(action, data, n + 1);
     }
+    if (/doesn't share this.$/.test(e.message || '') && READ_ONLY.has(action)) throw e; // the banner on Progress already says so
     toast(e instanceof TypeError ? 'No connection. Check your internet and try again.' : (e.message || String(e)), true);
     throw e;
   }
