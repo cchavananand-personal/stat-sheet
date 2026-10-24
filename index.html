@@ -187,7 +187,7 @@ body.tmode .thumb.add,body.tmode .addtile,body.tmode #mealPick,body.tmode [data-
 .gbody{padding:0 12px 12px}.gbody ol,.gbody ul{padding-left:20px;margin:6px 0;line-height:1.55}.gbody li{margin:4px 0}
 .gapp{border-top:1px solid var(--line)}.gapp>summary{padding:10px 0;font-weight:650;display:flex;align-items:baseline;gap:8px;cursor:pointer;list-style:none}.gapp>summary::-webkit-details-marker{display:none}
 .gapp>summary small{color:var(--muted);font-weight:500;font-size:12.5px;text-transform:none}.gapp>summary::after{content:"+";margin-left:auto;color:var(--accent);font-weight:800}.gapp[open]>summary::after{content:"−"}
-.gkeys{width:100%;border-collapse:collapse;margin:6px 0;font-size:13px}.gkeys td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}.gkeys td:first-child{white-space:nowrap}
+.gkeys{width:100%;border-collapse:collapse;margin:6px 0;font-size:13px}.gkeys td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}.gkeys td{text-align:left}.gkeys td:first-child{white-space:nowrap;width:1%}
 .ecta{display:flex;align-items:center;gap:12px;margin:10px 0 2px;padding:12px;border:1px dashed var(--line);border-radius:14px;background:color-mix(in srgb,var(--soft) 55%,transparent);text-align:left}
 .ecta .eic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}.ecta .eic svg{width:20px;height:20px}
 .ecta .et{flex:1;min-width:0}.ecta .et b{display:block;font-size:15px}.ecta .et small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35;margin-top:2px}
@@ -770,7 +770,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024071050';
+const BUILD = '20261024071228';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2270,7 +2270,7 @@ async function renderConnections() {
   const svc = (pv, what) => {
     const x = c.providers[pv];
     const status = x.connected ? (x.error ? ic('alert') + esc(x.error) : ic('check') + 'Connected · synced ' + when(x.last))
-      : x.available ? 'Not connected' : 'Not switched on yet — the app admin turns it on below.';
+      : x.available ? 'Not connected' : c.admin ? 'Not switched on yet. Switch it on in App Admin below.' : 'Coming soon';
     const btns = x.connected ? `<button class="primary" data-sync="${pv}">Sync now</button>${c.self ? `<button data-off="${pv}">Disconnect</button>` : ''}`
       : x.available && c.self ? `<button class="primary" data-on="${pv}" style="grid-column:1/-1">Connect ${x.name}</button>` : '';
     return `<div class="conn"><div class="row between"><b>${x.name}</b><span class="muted">${what}</span></div>
