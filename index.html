@@ -39,6 +39,7 @@ body.tmode header{background:linear-gradient(color-mix(in srgb,var(--accent) 8%,
 body{margin:0;background:var(--bg);padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 /* trainer mode: C | T toggle in the header, and a row of clients under it (scrolls sideways when there are many) */
 #tab-clients summary{display:none}body.on-clients #clientBar{display:none!important}#tab-clients #openOnRow{margin:0}
+#peerBar>span{min-width:0;overflow:hidden;text-overflow:ellipsis}#peerBar .lk-open{flex:none}
 #peerBar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 16px;background:linear-gradient(#e8a33d22,#e8a33d14),var(--bg);border-bottom:1px solid #e8a33d55;font-size:14px;white-space:nowrap}
 #peerBar.hide{display:none}#peerBar b{color:#e8a33d}#peerBar .lk-open{color:#e8a33d}
 .rk-row{display:grid;grid-template-columns:22px 26px 1fr 44px;align-items:center;gap:8px;padding:7px 0}
@@ -772,7 +773,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024083145';
+const BUILD = '20261024084155';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1009,7 +1010,8 @@ function showSwitch() {
 $('#switcher').onclick = e => { if (e.target.id === 'switcher') $('#switcher').classList.add('hide'); };
 function switchTo(id, kind) {
   store('as', id); store('asKind', kind || null); if (S.me && id !== S.me.id && !kind) store('lastAs', id);
-  try { sessionStorage.setItem('keepAs', '1'); } catch (e) {} location.replace(location.pathname); // saved copies are per person: opens instantly
+  try { sessionStorage.setItem('keepAs', '1'); } catch (e) {}
+  Promise.all([wkQ, rQ, ciQ].map(q => Promise.race([q.catch(() => {}), new Promise(r => setTimeout(r, 4000))]))).then(() => location.replace(location.pathname)); // finish saves first; saved copies open instantly
 }
 let curTab = 'progress';
 function show(id, keepScroll) {
@@ -1058,7 +1060,7 @@ function renderProgress() {
 async function renderPhotoStrip() {
   const el = $('#tStrip');
   if (!el.children.length) { el.innerHTML = '<div class="empty ld">Loading photos…</div>'; el._html = null; }
-  const list = await api('gallery');
+  let list; try { list = await api('gallery'); } catch (e) { el._html = null; el.innerHTML = '<button class="link" id="psRetry">Couldn\'t load photos · tap to retry</button>'; $('#psRetry').onclick = renderPhotoStrip; return; }
   hasPhoto = list.length > 0; renderStart();
   if (!list.length) { setHTML(el, `<div style="width:100%">${OWNER && ROLE !== 'trainer' ? emptyCta('camera', 'No photos yet', 'One a week shows real change.', 'Add Photo', 'log:photo') : '<div class="empty">No progress photos yet.</div>'}</div>`); return; }
   const from = Math.max(0, list.length - 12);
@@ -1346,7 +1348,7 @@ async function renderCheckins() {
     : `<div class="ci"><span>${esc(f.name)}</span><label class="ciNum"><input type="number" inputmode="decimal" step="0.1" data-ck="${esc(f.key)}" value="${esc(v[f.key] == null ? '' : v[f.key])}" ${OWNER ? '' : 'readonly'}>${esc(f.unit || '')}</label></div>`).join('');
   const save = (key, value) => { // shows straight away, saves in the background
     v[key] = value; if (value === '') delete v[key]; renderCheckins();
-    api('setCheckin', { date, key, value }).then(o => { CI[date] = o; }, () => { delete CI[date]; if (date === wSel) renderCheckins(); });
+    ciQ = ciQ.then(() => api('setCheckin', { date, key, value })).then(o => { CI[date] = o; }, () => { delete CI[date]; if (date === wSel) renderCheckins(); });
   };
   box.insertAdjacentHTML('beforeend', OWNER ? '<div class="lkrow"><button class="lk-nav" data-go="more:ciDefsCard">+ Add parameters in More › Custom Parameters</button></div>' : '');
   $$('[data-cv]', box).forEach(b => b.onclick = () => save(b.dataset.ck, String(v[b.dataset.ck]) === b.dataset.cv ? '' : b.dataset.cv)); // tap again to clear
@@ -1379,7 +1381,7 @@ $('#ciDefsCard').addEventListener('toggle', e => { if (e.target.open) renderCiDe
 /** More › Customize › Progress graphs: Weight and Body fat always; add any of these underneath. */
 async function renderChartsBox() {
   const box = $('#chartsBox'), list = chartList();
-  if (!CD) { box.innerHTML = '<p class="ld" style="margin:0">Loading…</p>'; try { CD = await api('chartData'); } catch (e) { return; } }
+  if (!CD) { box.innerHTML = '<p class="ld" style="margin:0">Loading…</p>'; try { CD = await api('chartData'); } catch (e) { box.innerHTML = '<button class="link">Couldn\'t load · tap to retry</button>'; $('button', box).onclick = renderChartsBox; return; } }
   const opts = [['strength', 'Overall strength'], ['volume', 'Training volume'], ['steps', 'Steps'], ['kcal', 'Calories eaten']]
     .concat(CD.exercises.map(e => ['e1rm:' + e[0], 'Strength · ' + e[1]]))
     .concat(ciDefs().map(f => ['check:' + f.key, f.name]));
@@ -1409,19 +1411,20 @@ async function renderWeightEntry() {
   }
 }
 /** Weight and body fat save on their own when you finish typing (Done / leaving the box). */
+let ciQ = Promise.resolve();
 function autoSave() {
   const f = $('#bodyForm'), date = wSel, row = { date, weight: f.weight.value, bodyfat: f.bodyfat.value };
   const cur = MD.by[date] || {};
   if (String(cur.weight == null ? '' : cur.weight) === row.weight && String(cur.bodyfat == null ? '' : cur.bodyfat) === row.bodyfat) return;
   $('#saveState').textContent = 'Saving…';
-  const i = S.body.findIndex(b => b.date === date); // show it everywhere straight away
+  const before = S.body; const i = S.body.findIndex(b => b.date === date); // show it everywhere straight away
   if (i >= 0) S.body[i] = Object.assign({}, S.body[i], row); else S.body = S.body.concat([row]).sort((a, b) => a.date.localeCompare(b.date));
   api('saveBodyMany', { rows: [row], exact: true }).then(r => {
     S.body = r.body; MD.by[date] = Object.assign(MD.by[date] || {}, row, { source: '' });
     if (curTab === 'progress') { drawTrends(); renderStart(); loadLog(); }
     if (date === wSel) $('#saveState').textContent = '✓ Saved';
     drawCal();
-  }, () => { if (date === wSel) $('#saveState').textContent = 'Not saved. Try again.'; });
+  }, () => { S.body = before; if (date === wSel) $('#saveState').textContent = 'Not saved. Try again.'; if (curTab === 'progress') drawTrends(); });
 }
 $('#bodyForm').weight.onchange = autoSave;
 $('#bodyForm').bodyfat.onchange = autoSave;
@@ -1504,6 +1507,7 @@ async function loadWorkout() {
   if (WKD[wSel]) renderWorkout(WKD[wSel]); // instant from the month already loaded
   else { renderWorkout([], true); $('#wkSum').innerHTML = '<span class="ld" style="justify-content:flex-start">Loading…</span>'; }
   const list = await api('workouts', { date: want }).catch(() => null);
+  if (!list && !wkPending && want === wSel) { $('#wkSum').innerHTML = '<button class="link" id="wkRetry">Couldn\'t load · tap to retry</button>'; $('#wkRetry').onclick = loadWorkout; return; }
   if (!list || wkPending) return;
   WKD[want] = list;
   if (want === wSel && logMode === 'workout') renderWorkout(list);
@@ -1773,7 +1777,8 @@ async function loadDayMeals() {
     $('#mTotals').innerHTML = ''; $('#mPlan').innerHTML = '';
     $('#mList').innerHTML = '<div class="empty ld">Loading…</div>'; $('#mListCard').classList.remove('hide');
   }
-  const list = wSel === TODAY ? S.meals : await api('meals', { date: wSel });
+  const list = wSel === TODAY ? S.meals : await api('meals', { date: wSel }).catch(() => null);
+  if (!list) { if (want === wSel) { $('#mList').innerHTML = '<button class="link" id="mRetry">Couldn\'t load · tap to retry</button>'; $('#mRetry').onclick = loadDayMeals; } return; }
   if (want === wSel && logMode === 'meal') renderMeals(list);
 }
 function mealsChanged(date, list) { // keep today's list and the calorie chart data in sync
@@ -1800,7 +1805,7 @@ function renderMeals(list) {
   $$('input[data-mid]').forEach(i => i.onchange = async () => {
     const file = i.files[0]; if (!file) return;
     i.parentNode.firstChild.textContent = '…';
-    const date = wSel, l = await api('setMealPhoto', Object.assign({ id: i.dataset.mid }, await imagePair(file)));
+    const date = wSel; let l; try { l = await api('setMealPhoto', Object.assign({ id: i.dataset.mid }, await imagePair(file))); } catch (e) { return renderMeals(S.meals); }
     mealsChanged(date, l); renderMeals(l); toast('Photo added');
   });
   hydrate($('#mList'));
@@ -1817,7 +1822,7 @@ const planLabel = date => { const f = planStartFor(date || TODAY); return f ? 'P
 const sameMeal = (x, m) => m.type === x.type && m.description === x.description; // a logged meal that is this plan item
 function renderMealPlan(list) {
   const items = planItems(wSel), el = $('#mPlan');
-  if (!items.length) { el.innerHTML = '<div class="empty">No meal plan yet. Set one up in the <button class="lk-nav" data-go="meals:meals" style="padding:0">Planner</button>.</div>'; return; }
+  if (!items.length) { el.innerHTML = OWNER ? '<div class="empty">No meal plan yet. Set one up in the <button class="lk-nav" data-go="meals:meals" style="padding:0">Planner</button>.</div>' : '<div class="empty">No meal plan yet.</div>'; return; }
   const eaten = x => list.find(m => sameMeal(x, m)), left = items.filter(x => !eaten(x));
   const mark = x => { const m = eaten(x);
     if (m) return OWNER ? `<button class="link tick" data-unlog="${m.id}" aria-label="Eaten · tap to undo">✓</button>` : '<span class="tick">✓</span>';
@@ -1837,7 +1842,7 @@ function renderMealPlan(list) {
   const after = l => { mealsChanged(date, l); if (date === wSel) renderMeals(l); };
   $$('[data-logp]', el).forEach(b => b.onclick = () => busy(b, async () => { after(await log(items.find(x => x.id === b.dataset.logp))); toast('Logged'); }));
   const all = $('#logAllPlan');
-  if (all) all.onclick = () => busy(all, async () => { let l = list; for (const x of left) l = await log(x); after(l); toast(left.length + ' logged'); });
+  if (all) all.onclick = () => busy(all, async () => { let l = list, n = 0; try { for (const x of left) { l = await log(x); n++; } } finally { after(l); } toast(n + ' logged'); });
 }
 const mealFile = () => $('#mealForm').file;
 mealFile().onchange = () => {
@@ -2088,7 +2093,8 @@ function renderStart() {
 }
 async function loadLog() {
   if (!E.list.length) { $('#eList').innerHTML = '<div class="empty ld" style="padding:16px">Loading…</div>'; $('#eList')._html = null; }
-  E.list = await api('entries'); renderEntries();
+  try { E.list = await api('entries'); } catch (e) { if (!E.list.length) { $('#eList')._html = null; $('#eList').innerHTML = '<div style="padding:16px"><button class="link" id="eRetry">Couldn\'t load · tap to retry</button></div>'; $('#eRetry').onclick = loadLog; } return; }
+  renderEntries();
 }
 segment('eMetric', E.metric, m => { E.metric = m; renderEntries(); });
 function renderEntries() {
@@ -2117,9 +2123,9 @@ function renderEntries() {
   $$('input[data-up]').forEach(inp => inp.onchange = async () => {
     const file = inp.files[0], date = inp.dataset.up; if (!file) return;
     inp.parentNode.style.opacity = .4;
-    const photos = await api('addDailyPhoto', Object.assign({ date, pose: 'Front' }, await imagePair(file)));
+    let photos; try { photos = await api('addDailyPhoto', Object.assign({ date, pose: 'Front' }, await imagePair(file))); } catch (e) { inp.parentNode.style.opacity = ''; inp.value = ''; return; }
     const x = E.list.find(e => e.date === date); x.thumbId = photos[0].thumbId; x.photoId = photos[0].photoId;
-    MD.photos[date] = 1; toast('Photo saved · ' + nice(date)); renderEntries();
+    MD.photos[date] = 1; toast('Photo saved · ' + nice(date)); renderEntries(); hasPhoto = true; $('#tStrip')._html = null; renderPhotoStrip(); renderStart();
   });
   hydrate($('#eList'));
 }
@@ -2190,7 +2196,7 @@ async function renderPeers() {
 const consistency = r => Math.round(Math.min((r.workouts || 0) / 16, 1) * 50 + Math.min((r.weighIns || 0) / 30, 1) * 50);
 async function renderRanking(box, group) {
   if (!box.dataset.loaded) box.innerHTML = '<div class="ld" style="padding:8px 0">Loading…</div>';
-  let rows; try { rows = await api('ranking', { group }); } catch (e) { return; }
+  let rows; try { rows = await api('ranking', { group }); } catch (e) { box.innerHTML = '<button class="link">Couldn\'t load · tap to retry</button>'; $('button', box).onclick = () => renderRanking(box, group); return; }
   box.dataset.loaded = '1';
   const how = '<p class="small muted" style="margin:0 0 6px">Consistency out of 100 · last 30 days</p>';
   const sub = r => (r.workouts || 0) + ' workout' + (r.workouts === 1 ? '' : 's') + ' · ' + (r.weighIns || 0) + ' weigh-in' + (r.weighIns === 1 ? '' : 's');
@@ -2572,7 +2578,7 @@ function renderAccount() {
   });
   $$('#clientList [data-rm]').forEach(b => b.onclick = () => {
     const c = S.clients.find(x => x.id === b.dataset.rm);
-    if (confirm(c.invited ? 'Delete ' + c.name + "'s invite?" : 'Take ' + c.name + ' off your clients?')) busy(b, async () => { S.clients = await api('removeClient', { id: c.id }); renderAccount(); });
+    if (confirm(c.invited ? 'Delete ' + c.name + "'s invite?" : 'Take ' + c.name + ' off your clients?')) busy(b, async () => { S.clients = await api('removeClient', { id: c.id }); if (S.target && S.target.id === c.id) return switchTo(S.me.id); renderAccount(); });
   });
 }
 async function renderCode(renew) { $('#tCode').textContent = await api('myTrainerCode', renew ? { renew: true } : {}); }
@@ -2812,10 +2818,12 @@ if (saved && saved.data) {
 }
 let lastBoot = Date.now();
 document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && ymd(new Date()) !== TODAY) { try { sessionStorage.setItem('keepAs', '1'); } catch (e) {} return location.reload(); } // it's a new day
   if (document.visibilityState !== 'visible' || Date.now() - lastBoot < 15000 || !S.target) return;
   lastBoot = Date.now();
   setTimeout(() => api('bootstrap', { date: TODAY }).then(d => {
     Object.assign(S, d); Object.keys(WKD).forEach(k => delete WKD[k]);
+    try { localStorage.setItem(BOOT_KEY, JSON.stringify({ date: TODAY, data: d, at: Date.now() })); } catch (e) {}
     showCoachRequest();
     if (!/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) { renderRoleTag(); show(curTab, true); }
   }).catch(() => {}), 1200);
@@ -2825,6 +2833,7 @@ api('bootstrap', { date: TODAY })
     try { localStorage.setItem(BOOT_KEY, JSON.stringify({ date: TODAY, data: d, at: Date.now() })); } catch (e) {}
     if (d.me && d.me.trainer) setTimeout(() => prefetchClients(d), 3000);
     Object.assign(S, d);
+    if (WHO && d.me && !!WHO.trainer !== !!d.me.trainer) { store('who', JSON.stringify(Object.assign({}, WHO, { trainer: !!d.me.trainer }))); store('as', null); return location.replace(location.pathname); }
     showCoachRequest();
     syncSavedClients(); // a client added or removed elsewhere: fix the saved copies and the buttons at the top
     // sign-in was switched on (or off) since this phone last looked
@@ -2833,7 +2842,7 @@ api('bootstrap', { date: TODAY })
     if (!d.pinsOn && ROLE === 'guest') return setWho(null);
     if (KEY && !d.me) return setWho(null); // this phone's key no longer works (e.g. removed): sign in again
     if (QS.get('k') && d.me) return setWho(Object.assign({ key: QS.get('k') }, d.me)); // old link: remember who, move to the plain link
-    if (d.me && d.target && AS && d.target.id !== AS) store('as', d.target.id);
+    if (d.me && d.target && AS && d.target.id !== AS) { store('as', null); store('asKind', null); if (ROLE !== 'owner') { toast("That person is no longer on your list", true); return setTimeout(() => location.replace(location.pathname), 1200); } }
     const pp = store('pendingPeer'); // opened from someone's peer link: become peers once signed in
     if (pp && d.me && d.role === 'owner') { store('pendingPeer', null); const pn = store('pendingPeerName'); store('pendingPeerName', null);
       if (!(d.peers || []).some(x => x.name === pn)) api('addPeer', { code: pp }).then(w => { Object.assign(S, w); if (curTab === 'more') renderMore(); toast('You and ' + (pn || 'your friend') + ' are now peers', false, 5000); }).catch(() => {}); }
