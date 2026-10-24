@@ -56,7 +56,7 @@ body{margin:0;background:var(--bg);padding-bottom:calc(76px + env(safe-area-inse
 #clientBar button.on{background:var(--accent);color:#fff}
 .cdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:1px}
 .swatches{display:flex;gap:10px;flex-wrap:wrap;padding:4px 0 10px}.swatches button{width:30px;height:30px;min-height:0;padding:0;border-radius:50%;border:2px solid transparent}
-.swatches button.on{border-color:var(--text);box-shadow:0 0 0 2px var(--card) inset}#clientBar .empty{padding:6px 0;font-size:14px;white-space:nowrap}
+#themeSw2{padding:6px 0 2px}.swatches button.on{border-color:var(--text);box-shadow:0 0 0 2px var(--card) inset}#clientBar .empty{padding:6px 0;font-size:14px;white-space:nowrap}
 header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px;max-width:680px;margin:auto}
 .brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:.05em;font-size:14px;min-width:0}.brand b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.brand span{color:var(--accent)}
 .role{font-size:12px;color:var(--muted);background:var(--soft);padding:5px 10px;border-radius:99px}
@@ -756,7 +756,10 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
         <div class="grid2">
           <label>Birth Date<input type="date" name="birthdate"></label>
           <label>Height (cm)<input type="number" name="height" step="0.1" inputmode="decimal"></label>
+          <label>Gender<select name="gender"><option value="">Prefer not to say</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></label>
+          <label>Motto<input name="motto" maxlength="60" placeholder="e.g. One rep at a time"></label>
         </div>
+        <label style="margin-top:4px">Theme Colour<input type="hidden" name="theme"><div class="swatches" id="themeSw2"></div></label>
         <button class="primary" style="width:100%;margin-top:10px">Save</button>
       </form>
 </div></div>
@@ -774,7 +777,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024090319';
+const BUILD = '20261024090625';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -966,6 +969,7 @@ if (ROLE === 'trainer') { // trainer mode: the Clients tab holds the client list
 if (I_TRAIN) $('#grpApp').after($('#openOnCard')); else $('#openOnCard').classList.add('hide');
 if (!OWNER) { document.body.classList.add('ro');
 $$('#bodyForm input').forEach(i => i.readOnly = true); }
+if (ROLE === 'owner' && store('myTheme')) applyTheme(store('myTheme'));
 if (ROLE === 'guest' || ROLE === 'peer') $('#noteForm').classList.add('hide');
 if (ROLE === 'trainer') { $$('#bodyForm input').forEach(i => i.readOnly = true); document.body.classList.add('coachview'); } // weight and check-ins are the client's to log
 function renderRoleTag() {
@@ -1424,6 +1428,18 @@ async function renderWeightEntry() {
 }
 /** Weight and body fat save on their own when you finish typing (Done / leaving the box). */
 let ciQ = Promise.resolve();
+/* The first time you add a photo, say who can see it. One tap to agree; remembered on your profile. */
+document.addEventListener('click', e => {
+  const hit = e.target.closest && e.target.closest('input[type=file], label'), inp = hit && (hit.matches('input') ? hit : hit.querySelector('input[type=file]')); if (!inp || ROLE !== 'owner' || S.profile.photoOk) return;
+  e.preventDefault(); e.stopPropagation();
+  const who = [S.coach && S.coach.name ? 'your trainer (' + S.coach.name + ')' : '', (S.peers || []).length ? 'your peers' : ''].filter(Boolean).join(' and ') || 'your trainer and peers, if you add any';
+  const box = $('#recSheet'); box.classList.remove('hide');
+  $('.card', box).innerHTML = `<h3 style="margin:0">Before You Add Photos</h3>
+    <p class="small muted" style="margin:0">Your photos are visible to ${esc(who)}. Only you can add or delete them.</p>
+    <div class="row"><button class="link" id="phNo">Not Now</button><button class="primary" id="phOk">OK, Continue</button></div>`;
+  $('#phNo').onclick = () => box.classList.add('hide');
+  $('#phOk').onclick = () => { box.classList.add('hide'); S.profile.photoOk = '1'; api('saveProfile', { photoOk: '1' }).catch(() => {}); inp.click(); };
+}, true);
 function autoSave() {
   const f = $('#bodyForm'), date = wSel, row = { date, weight: f.weight.value, bodyfat: f.bodyfat.value };
   const cur = MD.by[date] || {};
@@ -2239,7 +2255,7 @@ $('#profileForm').onsubmit = e => {
     S.profile = await api('saveProfile', formObj(f));
     if (S.me && f.name.value.trim()) { S.me.name = f.name.value.trim(); if (WHO) store('who', JSON.stringify(Object.assign(WHO, { name: S.me.name }))); }
     if (!viewingClient() && S.target) S.target.name = S.me ? S.me.name : S.target.name;
-    renderMenu(); renderRoleTag(); $('#profSheet').classList.add('hide'); toast('Profile saved');
+    applyTheme(S.profile.theme); renderMenu(); renderRoleTag(); $('#profSheet').classList.add('hide'); toast('Profile saved');
     if ($('#tab-progress') && !$('#tab-progress').classList.contains('hide')) show('progress', true);
   });
 };
@@ -2661,17 +2677,30 @@ function paintAvatar(el, person, extra) {
   el.style.backgroundImage = ph ? 'url(' + ph + ')' : '';
   el.textContent = person ? person.name.charAt(0).toUpperCase() : '?';
 }
+/* Your own colour for the app (your own stats only; Client Profile keeps the client's colour). */
+const THEMES = [['', '#3fb58a', 'Green'], ['teal', '#2bb3b1', 'Teal'], ['purple', '#9b7cf2', 'Purple'], ['pink', '#e0679b', 'Pink'], ['orange', '#e8834a', 'Orange'], ['gold', '#d4ad2a', 'Gold'], ['red', '#e5484d', 'Red']];
+function applyTheme(t) {
+  const hit = THEMES.find(x => x[0] === (t || '')) || THEMES[0];
+  if (hit[0]) document.documentElement.style.setProperty('--accent', hit[1]); else document.documentElement.style.removeProperty('--accent');
+  store('myTheme', hit[0] || null);
+}
+function themeSwatches(f) {
+  const box = $('#themeSw2'), cur = f.theme.value || '';
+  box.innerHTML = THEMES.map(([k, c, n]) => `<button type="button" data-th="${k}" class="${k === cur ? 'on' : ''}" style="background:${c}" aria-label="${n}"></button>`).join('');
+  $$('[data-th]', box).forEach(b => b.onclick = () => { f.theme.value = b.dataset.th; themeSwatches(f); applyTheme(b.dataset.th); });
+}
 /** Edit profile: photo, name (also your sign-in name), birth date, height, unit. Your own profile only. */
 function openProfile() {
   $('#menu').classList.add('hide');
   const f = $('#profileForm');
   [...f.elements].forEach(el => { if (el.name) el.value = S.profile[el.name] == null ? '' : S.profile[el.name]; });
   if (!f.name.value && S.me) f.name.value = S.me.name;
+  themeSwatches(f);
   paintAvatar($('#profAv'), S.me, 'xl'); $('#profRemove').classList.toggle('hide', !(S.me && S.me.photo));
   $('#profSheet').classList.remove('hide');
 }
 $('#mEdit').onclick = openProfile;
-$('#profClose').onclick = () => $('#profSheet').classList.add('hide');
+$('#profClose').onclick = () => { $('#profSheet').classList.add('hide'); applyTheme(S.profile.theme); };
 $('#profSheet').onclick = e => { if (e.target.id === 'profSheet') $('#profSheet').classList.add('hide'); };
 /** Square, small (96 px) so it's quick everywhere. */
 function squarePhoto(file) {
@@ -2865,6 +2894,7 @@ api('bootstrap', { date: TODAY })
     if (d.me && d.me.trainer) setTimeout(() => prefetchClients(d), 3000);
     Object.assign(S, d);
     if (WHO && d.me && !!WHO.trainer !== !!d.me.trainer) { store('who', JSON.stringify(Object.assign({}, WHO, { trainer: !!d.me.trainer }))); store('as', null); return location.replace(location.pathname); }
+    if (ROLE === 'owner' && d.profile) applyTheme(d.profile.theme);
     showCoachRequest();
     syncSavedClients(); // a client added or removed elsewhere: fix the saved copies and the buttons at the top
     // sign-in was switched on (or off) since this phone last looked
