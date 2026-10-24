@@ -791,7 +791,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024100210';
+const BUILD = '20261024100318';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1960,6 +1960,7 @@ function renderGoals() {
   const f = $('#goalsForm');
   ['goalWeight', 'goalBodyfat', 'calories', 'protein', 'goalDate', 'goalWaist', 'goalSteps', 'goalWater', 'goalSleep', 'goalWorkouts', 'goalLift', 'goalWhy']
     .forEach(k => f[k].value = S.profile[k] == null ? '' : S.profile[k]);
+  f._loaded = formObj(f); // only what you change is sent, so an out-of-date screen can never wipe saved goals
   let custom = []; try { custom = JSON.parse(S.profile.goalsCustom || '[]') || []; } catch (e) {}
   drawCustomGoals(custom);
   const extras = ['goalWaist', 'goalSteps', 'goalWater', 'goalSleep', 'goalWorkouts', 'goalLift', 'goalWhy'].filter(k => S.profile[k]).length + custom.length;
@@ -1976,7 +1977,11 @@ $('#goalAdd').onclick = () => { drawCustomGoals(readCustomGoals().concat([{ name
 $('#goalsMore').onclick = () => { $('#goalsExtra').classList.toggle('hide'); renderGoals(); };
 $('#goalsForm').onsubmit = e => {
   e.preventDefault(); const f = e.target;
-  const data = Object.assign(formObj(f), { goalsCustom: JSON.stringify(readCustomGoals()) });
+  const now = formObj(f), was = f._loaded || {}, data = {};
+  Object.keys(now).forEach(k => { if (String(now[k]) !== String(was[k] == null ? '' : was[k])) data[k] = now[k]; });
+  const gc = JSON.stringify(readCustomGoals()); if (gc !== (S.profile.goalsCustom || '[]')) data.goalsCustom = gc;
+  if (!Object.keys(data).length) return toast('No changes to save');
+  data.goalsSavedAt = new Date().toISOString(); data.goalsSavedBy = S.me ? S.me.name : '';
   busy($('button.primary', f), async () => { S.profile = await api('saveProfile', data); renderGoals(); toast(viewingClient() ? 'Saved · ' + S.target.name + ' sees it too' : 'Goals saved'); });
 };
 function renderPlanList() {
