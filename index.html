@@ -64,7 +64,7 @@ main{max-width:680px;margin:auto;padding:0 16px}
 h2{font-size:26px;margin:8px 0 14px;letter-spacing:-.02em}h3{font-size:17px;margin:0 0 12px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
 .muted{color:var(--muted)}.small{font-size:13px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.grid2>*{min-width:0}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}.grid2>*{min-width:0}.grid2 input,.grid2 select{min-width:0;width:100%;box-sizing:border-box}input[type=time],input[type=date]{min-width:0;max-width:100%;display:block;width:100%;overflow:hidden}input::-webkit-datetime-edit{overflow:hidden;min-width:0}input::-webkit-date-and-time-value{text-align:left}.grid2>*{min-width:0}
 .stat{background:var(--soft);border-radius:12px;padding:12px}.stat small{color:var(--muted);font-size:12px;display:block}
 .stat b{font-size:22px;display:block;margin-top:4px}.stat i{font-style:normal;font-size:12px}
 .up{color:var(--bad)}.down{color:var(--accent)}
@@ -367,7 +367,7 @@ button.loading img,button.loading svg{opacity:0}
 .fsug button{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:8px 12px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;text-align:left;text-transform:none;font-weight:600}
 .fsug button:last-child{border-bottom:0}.fsug button:active{background:var(--soft)}.fsug .fn{flex:1;min-width:0}.fsug .fn b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fsug .fn small,.fsug .fk small{display:block;color:var(--muted);font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fsug .fn i{font-style:normal;font-size:11px;font-weight:800;color:var(--accent)}
-input[type=search]{-webkit-appearance:none;appearance:none}input[type=search]::-webkit-search-cancel-button{display:none}#mBasket{margin:0 0 10px;border:1px solid var(--line);border-radius:12px;padding:4px 12px;background:var(--soft)}#mBasket.hide{display:none}
+input[type=search]{-webkit-appearance:none;appearance:none}input[type=search]::-webkit-search-cancel-button{display:none}#mealForm>*,#planForm>*{min-width:0}#mBasket{min-width:0;max-width:100%;overflow:hidden;margin:0 0 10px;border:1px solid var(--line);border-radius:12px;padding:4px 12px;background:var(--soft)}#mBasket.hide{display:none}
 .bitem{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.bitem span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bitem b{white-space:nowrap}.bitem button.link.link{min-width:32px;min-height:32px;padding:2px}
 .btot{padding:8px 0 6px;font-size:13px;font-weight:700;color:var(--accent)}
 .mgrp{font-size:13px;font-weight:800;letter-spacing:.03em;color:var(--muted);margin:12px 2px 6px}.mgrp:first-child{margin-top:0}.mdesc{color:var(--text)!important;font-weight:600}
@@ -815,7 +815,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024180619';
+const BUILD = '20261024181357';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
