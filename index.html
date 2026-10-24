@@ -541,7 +541,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
           <div class="setrow head small muted"><span>Set</span><span>Reps</span><span>kg</span><span></span></div>
           <div id="wkSets"></div>
           <button type="button" class="link" id="wkAddSet" style="margin:2px 0 10px">+ Add set</button>
-          <label>Notes <span class="muted" style="font-weight:500">(optional)</span><input name="notes" maxlength="200" placeholder="e.g. Plate under feet · neutral grip"></label>
+          <label>Exercise Notes <span class="muted" style="font-weight:500">(Optional)</span><input name="notes" maxlength="200" placeholder="e.g. Plate under feet · neutral grip"></label>
           <button class="primary" id="wkSave">Save exercise</button>
           <button type="button" class="link hide" id="wkCancel" style="width:100%;margin-top:6px">Cancel editing</button>
         </form>
@@ -791,7 +791,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024095522';
+const BUILD = '20261024095739';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
