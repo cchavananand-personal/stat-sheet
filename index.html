@@ -352,6 +352,7 @@ button.loading img,button.loading svg{opacity:0}
 .prow .pm b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}.prow .pm small{display:block;color:var(--muted);font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .prow .rk-bar{margin-top:5px}.prow .ps{font-weight:800;font-size:15px;white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}.prow.me{cursor:default}.prow.me .pm b{color:#3fb58a}
 .prow button.link.link.pmore{min-width:34px;padding:4px}.pacts{display:flex;gap:8px;justify-content:flex-end;padding:0 0 10px}.pacts.hide{display:none}
+.lbdesc{margin:6px 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lbchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:6px;padding-bottom:2px}.lbchips::-webkit-scrollbar{display:none}
 .lbchips button{flex:none;min-height:34px;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:var(--soft);font-size:13px;font-weight:700;color:var(--muted)}
 .lbchips button.on{background:#3fb58a;border-color:#3fb58a;color:#06120d}
@@ -707,7 +708,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
     <p class="grp" id="grpTrainer">MY TRAINER</p>
     <div class="card" id="myTrainer"></div>
     <div class="card" id="trainerMode"></div>
-    <p class="grp">MY PEERS</p>
+    <p class="grp">MY PEERS LEADERBOARD</p>
     <div class="card" id="peersCard"></div>
     <p class="grp">CUSTOMIZE</p>
     <details class="card" id="chartsCard"><summary><i data-ic="chart"></i>Custom Graphs</summary><div id="chartsBox" class="small"></div></details>
@@ -815,7 +816,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024183032';
+const BUILD = '20261024220925';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2907,11 +2908,11 @@ async function renderPeers() {
   const vals = rows.filter(r => r.score != null).map(r => r.score), hi = Math.max(1e-9, ...vals.map(Math.abs));
   const place = r => r.score == null ? null : vals.filter(v => v > r.score).length;
   const rankCell = (r, i) => !PEER_RANK ? i + 1 : place(r) == null ? '–' : place(r) === 0 ? CROWN('#f5c542') : place(r) === 1 ? CROWN('#c9d1d9') : place(r) + 1;
-  const sub = r => m[0] === 'overall' ? `${r.workouts || 0} workout${r.workouts === 1 ? '' : 's'} · ${r.weighIns || 0} weigh-in${r.weighIns === 1 ? '' : 's'}` : r.score == null ? 'No data yet' : '';
+  const sub = r => r.score == null && m[0] !== 'overall' ? 'No data yet' : `${r.workouts || 0} workout${r.workouts === 1 ? '' : 's'} · ${r.weighIns || 0} weigh-in${r.weighIns === 1 ? '' : 's'}`;
   box.innerHTML = `<div class="row between"><div class="codeblk"><div class="small muted">Your Code</div><span class="codeline"><b id="pCode" style="font-size:18px;letter-spacing:.05em">…</b><button type="button" class="link" data-copycode="#pCode">Copy</button></span></div>
       <button class="primary" id="pShare" style="min-height:40px">Share</button></div>
     ${list.length ? `<div class="lbchips">${LB.map(x => `<button type="button" data-lb="${x[0]}" class="${x[0] === m[0] ? 'on' : ''}">${x[1]}</button>`).join('')}</div>
-      <p class="small muted" style="margin:6px 0 4px">${m[4]}${m[0] === 'overall' ? ' · last 30 days' : ''}. Tap a peer to see their stats.</p>` : '<p class="small muted" style="margin:8px 0 4px">Share your code to compare stats and rankings.</p>'}
+      <p class="small muted lbdesc">${m[4]}</p>` : '<p class="small muted" style="margin:8px 0 4px">Share your code to compare stats and rankings.</p>'}
     ${list.length ? rows.map((r, i) => { const pl = place(r);
       return `<div class="prow${r.me ? ' me' : ''}" ${r.me ? '' : `data-peer="${r.id}"`}>
         <span class="n">${rankCell(r, i)}</span><span class="avatar" data-pav="${r.id}"></span>
@@ -2926,24 +2927,24 @@ async function renderPeers() {
   $$('[data-peer]', box).forEach(row => row.onclick = e => { if (!e.target.closest('[data-pmenu]')) switchTo(row.dataset.peer, 'peer'); });
   $$('[data-pmenu]', box).forEach(b => b.onclick = () => $(`[data-pacts="${b.dataset.pmenu}"]`, box).classList.toggle('hide'));
   $$('[data-pc]', box).forEach(b => b.onclick = () => { const c = b.dataset.pc; if (!c) return; (navigator.clipboard ? navigator.clipboard.writeText(c) : Promise.reject()).then(() => toast('Copied ' + c), () => prompt('Code', c)); });
-  $$('[data-unpeer]', box).forEach(b => b.onclick = () => confirm('Remove ' + (((S.peers || []).find(x => x.id === b.dataset.unpeer) || {}).name || 'this person') + ' as a peer? Neither of you will see the other\'s stats any more.') && busy(b, async () => { Object.assign(S, await api('removePeer', { id: b.dataset.unpeer })); PEER_RANK = null; renderPeers(); }));
+  $$('[data-unpeer]', box).forEach(b => b.onclick = () => confirm('Remove ' + (((S.peers || []).find(x => x.id === b.dataset.unpeer) || {}).name || 'this person') + ' as a peer? Neither of you will see the other\'s stats any more.') && busy(b, async () => { Object.assign(S, await api('removePeer', { id: b.dataset.unpeer })); PEER_FRESH = false; renderPeers(); }));
   $('#peerForm').onsubmit = e => { e.preventDefault(); const f = e.target;
-    busy($('button', f), async () => { Object.assign(S, await api('addPeer', { code: f.code.value })); PEER_RANK = null; renderPeers(); toast('Peer added'); }); };
+    busy($('button', f), async () => { Object.assign(S, await api('addPeer', { code: f.code.value })); PEER_FRESH = false; renderPeers(); toast('Peer added'); }); };
   $('#pShare').onclick = () => { const t = 'Compare stats with me on Stat Sheet: ' + location.origin + location.pathname + '?peer=' + encodeURIComponent($('#pCode').textContent);
     navigator.share ? navigator.share({ text: t }).catch(() => {}) : (navigator.clipboard && navigator.clipboard.writeText(t), toast('Copied')); };
   if (PEER_CODE) $('#pCode').textContent = PEER_CODE; else api('myPeerCode', {}).then(c => { PEER_CODE = c; if ($('#pCode')) $('#pCode').textContent = c; }).catch(() => {});
   $$('[data-lb]', box).forEach(b => b.onclick = () => { LB_METRIC = b.dataset.lb; renderPeers(); });
-  if (!PEER_RANK && list.length) api('ranking', { group: 'peers' }).then(r => { PEER_RANK = r; if (curTab === 'more') renderPeers(); }).catch(() => {});
+  if (!PEER_FRESH && list.length) { PEER_FRESH = true; api('ranking', { group: 'peers' }).then(r => { PEER_RANK = r; try { localStorage.setItem('peerRank-' + S.me.id, JSON.stringify({ rows: r, at: Date.now() })); } catch (e) {} if (curTab === 'more') renderPeers(); }).catch(() => { PEER_FRESH = false; }); }
 }
-let PEER_RANK = null, PEER_CODE = null, LB_OPEN = false, LB_METRIC = 'overall';
+let PEER_RANK = (() => { try { const w = JSON.parse(localStorage.getItem('who') || 'null'), v = JSON.parse(localStorage.getItem('peerRank-' + (w && w.id)) || 'null'); return v && v.rows; } catch (e) { return null; } })(), PEER_FRESH = false, PEER_CODE = null, LB_OPEN = false, LB_METRIC = 'overall';
 /* Leaderboard: one metric at a time, highest first; crowns for #1 (gold) and #2 (silver). */
 const LB = [
-  ['overall', 'Overall', r => r.workouts == null ? null : consistency(r), v => v, 'Consistency out of 100'],
-  ['streak', 'Streak', r => r.streak, v => v + ' d', 'Days in a row with a weigh-in'],
-  ['weight', 'Weight', r => r.weightToGoal, v => (v > 0 ? '−' : v < 0 ? '+' : '') + Math.abs(v).toFixed(1) + ' kg', 'Kg moved toward goal · 30 days'],
-  ['strength', 'Strength', r => r.strength, v => v, 'Overall strength · 100 = first sessions'],
+  ['overall', 'Overall', r => r.workouts == null ? null : consistency(r), v => v, 'Consistency score · last 30 days'],
+  ['streak', 'Streak', r => r.streak, v => v + ' d', 'Weigh-in streak · days in a row'],
+  ['weight', 'Weight', r => r.weightToGoal, v => (v > 0 ? '−' : v < 0 ? '+' : '') + Math.abs(v).toFixed(1) + ' kg', 'Kg toward goal · last 30 days'],
+  ['strength', 'Strength', r => r.strength, v => v, 'Strength index · 100 = start'],
   ['steps', 'Steps', r => r.steps, v => Math.round(v).toLocaleString(), 'Average steps a day · 30 days'],
-  ['sleep', 'Sleep', r => r.sleep, v => v.toFixed(1) + ' h', 'Average sleep a night · 30 days']];
+  ['sleep', 'Sleep', r => r.sleep, v => v.toFixed(1) + ' h', 'Average sleep · last 30 days']];
 const CROWN = c => `<svg class="crown" viewBox="0 0 24 24" aria-hidden="true"><path fill="${c}" d="M3 8l4.5 3.5L12 5l4.5 6.5L21 8l-2 10H5z"/><rect fill="${c}" x="5" y="19" width="14" height="2" rx="1"/></svg>`;
 function renderLeaderboard() {
   const box = $('#lbBox'); if (!box) return;
