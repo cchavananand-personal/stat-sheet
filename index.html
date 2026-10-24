@@ -771,7 +771,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024081024';
+const BUILD = '20261024082319';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1392,11 +1392,13 @@ async function renderChartsBox() {
 }
 $('#chartsCard').addEventListener('toggle', e => { if (e.target.open) renderChartsBox(); });
 
+/** "Synced from Apple Health" (or "from FitDays via Apple Health") for automatic weigh-ins; "✓ Saved" for typed ones. */
+const syncedLabel = b => !b.source ? '✓ Saved' : '⟳ Synced from ' + (b.source === 'Apple Health' ? 'Apple Health' : b.source + ' via Apple Health');
 async function renderWeightEntry() {
   renderCheckins();
   const b = MD.by[wSel] || S.body.find(r => r.date === wSel) || {};
   const f = $('#bodyForm'); f.weight.value = b.weight == null ? '' : b.weight; f.bodyfat.value = b.bodyfat == null ? '' : b.bodyfat;
-  $('#saveState').textContent = num(b.weight) != null ? '✓ Saved' : 'Type your weight. It saves automatically.';
+  $('#saveState').textContent = num(b.weight) != null || num(b.bodyfat) != null ? syncedLabel(b) : 'Type your weight. It saves automatically.';
   wPhotos = []; renderDayPhotos();
   if (MD.photos[wSel]) {
     const want = wSel, d = await api('day', { date: wSel });
@@ -1412,7 +1414,7 @@ function autoSave() {
   const i = S.body.findIndex(b => b.date === date); // show it everywhere straight away
   if (i >= 0) S.body[i] = Object.assign({}, S.body[i], row); else S.body = S.body.concat([row]).sort((a, b) => a.date.localeCompare(b.date));
   api('saveBodyMany', { rows: [row], exact: true }).then(r => {
-    S.body = r.body; MD.by[date] = Object.assign(MD.by[date] || {}, row);
+    S.body = r.body; MD.by[date] = Object.assign(MD.by[date] || {}, row, { source: '' });
     if (curTab === 'progress') { drawTrends(); renderStart(); loadLog(); }
     if (date === wSel) $('#saveState').textContent = '✓ Saved';
     drawCal();
@@ -2313,7 +2315,8 @@ async function renderConnections() {
     ['Weight', 'From a smart scale', `<li>${find('Weight')}</li>
       <li>Tap <b>Sort by</b> → <b>Start Date</b>, <b>Latest First</b>. Turn <b>Limit</b> on → <b>1</b>.</li>${calc('Average')}${field('weight', 'the Calculate the Average under Weight')}`],
     ['Body Fat', 'From a smart scale', `<li>${find('Body Fat Percentage')}</li>
-      <li>Tap <b>Sort by</b> → <b>Start Date</b>, <b>Latest First</b>. Turn <b>Limit</b> on → <b>1</b>.</li>${calc('Average')}${field('bodyfat', 'the Calculate the Average under Body Fat Percentage')}`]];
+      <li>Tap <b>Sort by</b> → <b>Start Date</b>, <b>Latest First</b>. Turn <b>Limit</b> on → <b>1</b>.</li>${calc('Average')}${field('bodyfat', 'the Calculate the Average under Body Fat Percentage')}
+      <li class="gnote">Optional, for Weight or Body Fat: in block C add <b>Text</b> · key <code>source</code> · your scale app, e.g. <code>FitDays</code>. Today then shows “Synced from FitDays via Apple Health”.</li>`]];
   const readingGuides = READINGS.map(([n, sub, steps]) => `<details class="gapp"><summary>${n}<small>${sub}</small></summary><ol>${steps}</ol></details>`).join('');
   const shortcut = a.shortcutUrl
     ? `<ol>
