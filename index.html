@@ -56,7 +56,7 @@ body{margin:0;background:var(--bg);padding-bottom:calc(76px + env(safe-area-inse
 #clientBar button.on{background:var(--accent);color:#fff}
 .cdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:1px}
 .swatches{display:flex;gap:10px;flex-wrap:wrap;padding:4px 0 10px}.swatches button{width:30px;height:30px;min-height:0;padding:0;border-radius:50%;border:2px solid transparent}
-#themeSw2{padding:6px 0 2px}.swatches button.on{border-color:var(--text);box-shadow:0 0 0 2px var(--card) inset}#clientBar .empty{padding:6px 0;font-size:14px;white-space:nowrap}
+#themeSw2{padding:6px 0 2px}.thpick{margin-top:4px}.thpick>span{font-size:13px;font-weight:600;color:var(--muted)}.thpick b{color:var(--accent)}.swatches button.on{border-color:var(--text);box-shadow:0 0 0 2px var(--card) inset}#clientBar .empty{padding:6px 0;font-size:14px;white-space:nowrap}
 header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px;max-width:680px;margin:auto}
 .brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:.05em;font-size:14px;min-width:0}.brand b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.brand span{color:var(--accent)}
 .role{font-size:12px;color:var(--muted);background:var(--soft);padding:5px 10px;border-radius:99px}
@@ -771,7 +771,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
           <label>Gender<select name="gender"><option value="">Prefer not to say</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></label>
           <label>Motto<input name="motto" maxlength="60" placeholder="e.g. One rep at a time"></label>
         </div>
-        <label style="margin-top:4px">Theme Colour<input type="hidden" name="theme"><div class="swatches" id="themeSw2"></div></label>
+        <div class="thpick"><span>Theme Colour <b id="thName"></b></span><input type="hidden" name="theme"><div class="swatches" id="themeSw2"></div></div>
         <button class="primary" style="width:100%;margin-top:10px">Save</button>
       </form>
 </div></div>
@@ -789,7 +789,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024094603';
+const BUILD = '20261024094653';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2739,7 +2739,8 @@ function applyTheme(t) {
 function themeSwatches(f) {
   const box = $('#themeSw2'), cur = f.theme.value || '';
   box.innerHTML = THEMES.map(([k, c, n]) => `<button type="button" data-th="${k}" class="${k === cur ? 'on' : ''}" style="background:${c}" aria-label="${n}"></button>`).join('');
-  $$('[data-th]', box).forEach(b => b.onclick = () => { f.theme.value = b.dataset.th; themeSwatches(f); applyTheme(b.dataset.th); });
+  $('#thName').textContent = '· ' + (THEMES.find(x => x[0] === cur) || THEMES[0])[2];
+  $('[data-th]', box).forEach(b => b.onclick = () => { f.theme.value = b.dataset.th; themeSwatches(f); applyTheme(b.dataset.th); });
 }
 /** Edit profile: photo, name (also your sign-in name), birth date, height, unit. Your own profile only. */
 function openProfile() {
