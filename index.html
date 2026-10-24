@@ -369,7 +369,7 @@ button.loading img,button.loading svg{opacity:0}
 .fsug button:last-child{border-bottom:0}.fsug button:active{background:var(--soft)}.fsug .fn{flex:1;min-width:0}.fsug .fn b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fsug .fn small,.fsug .fk small{display:block;color:var(--muted);font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fsug .fn i{font-style:normal;font-size:11px;font-weight:800;color:var(--accent)}
 input[type=search]{-webkit-appearance:none;appearance:none}input[type=search]::-webkit-search-cancel-button{display:none}#mealForm>*,#planForm>*{min-width:0}#mBasket{min-width:0;max-width:100%;overflow:hidden;margin:0 0 10px;border:1px solid var(--line);border-radius:12px;padding:4px 12px;background:var(--soft)}#mBasket.hide{display:none}
-.msplit{display:flex;align-items:center;gap:10px;margin:0 0 10px;font-size:14px;color:var(--muted)}.msplit .fq{background:var(--soft)}.msplit .fq b{min-width:34px;text-align:center;color:var(--text);font-size:16px}.msplit #mSplitTxt{font-weight:700;color:var(--accent)}
+.msplit{display:flex;align-items:center;gap:10px;white-space:nowrap;margin:0 0 10px;font-size:14px;color:var(--muted)}.msplit .fq{background:var(--soft)}.msplit .fq b{min-width:34px;text-align:center;color:var(--text);font-size:16px}.msplit #mSplitTxt{font-weight:700;color:var(--accent)}
 .bitem{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.bitem span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bitem b{white-space:nowrap}.bitem button.link.link{min-width:32px;min-height:32px;padding:2px}
 .btot{padding:8px 0 6px;font-size:13px;font-weight:700;color:var(--accent)}
 .mgrp{font-size:13px;font-weight:800;letter-spacing:.03em;color:var(--muted);margin:12px 2px 6px}.mgrp:first-child{margin-top:0}.mdesc{color:var(--text)!important;font-weight:600}
@@ -818,7 +818,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024224229';
+const BUILD = '20261024224515';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1623,7 +1623,7 @@ const FOODS = [
 ['น้ำส้มคั้น', 'Fresh orange juice', 110, 1.7, 26, 0.5, '1 glass (250 ml)'],
 ['โค้ก', 'Coca-Cola', 140, 0, 35, 0, '1 can (325 ml)'],
 ['โค้กซีโร่', 'Coke Zero', 1, 0, 0, 0, '1 can'],
-['เบียร์', 'Beer', 150, 1.5, 13, 0, '1 can (330 ml)'],
+['เบียร์', 'Beer (Asahi, Heineken, Kirin…)', 150, 1.5, 13, 0, '1 can (330 ml)'],
 ['ไวน์แดง', 'Red wine', 125, 0, 4, 0, '1 glass (150 ml)'],
 ['น้ำมะพร้าว', 'Coconut water', 60, 0.7, 14, 0.5, '1 glass (250 ml)'],
 // desserts & snacks
@@ -1713,7 +1713,53 @@ const FOODS = [
 ['กล้วยบวชชี', 'Banana in coconut milk', 300, 2, 45, 14, '1 bowl'],
 ['บิงซู', 'Bingsu', 450, 7, 85, 10, '1 bowl'],
 ['ชีสเค้ก', 'Cheesecake', 400, 7, 32, 28, '1 slice'],
-['บราวนี่', 'Brownie', 260, 3, 35, 13, '1 piece']
+['บราวนี่', 'Brownie', 260, 3, 35, 13, '1 piece'],
+// universal restaurant items (per serving as usually ordered)
+['ข้าวปั้นซูชิ (นิกิริ)', 'Nigiri sushi', 55, 3, 8, 1, '1 piece'],
+['ซูชิโรลแซลมอน', 'Salmon roll (maki, sushi roll)', 300, 13, 45, 7, '1 roll (8 pcs)'],
+['สไปซี่แซลมอนโรล', 'Spicy salmon roll', 380, 17, 50, 12, '1 roll (8 pcs)'],
+['แคลิฟอร์เนียโรล', 'California roll', 330, 9, 50, 10, '1 roll (8 pcs)'],
+['เทมปุระโรล', 'Tempura / crunchy roll', 480, 12, 60, 20, '1 roll (8 pcs)'],
+['ทูน่าโรล', 'Tuna roll', 280, 15, 42, 4, '1 roll (8 pcs)'],
+['อาบุริโรล (ซอสมายองเนส)', 'Aburi / mayo-topped roll', 450, 16, 50, 20, '1 roll (8 pcs)'],
+['ซาชิมิรวม', 'Sashimi platter (salmon, tuna, hamachi)', 300, 45, 2, 12, '1 plate (15 pcs)'],
+['คาร์ปาชโช่ / ครูโด้ปลา', 'Fish carpaccio / crudo (hamachi, salmon)', 280, 22, 3, 20, '1 plate'],
+['ไก่คาราเกะ (จาน)', 'Chicken karaage', 450, 26, 20, 29, '1 plate (6 pcs)'],
+['ไก่นัมบัง', 'Chicken nanban', 550, 30, 35, 30, '1 plate'],
+['ยากิโทริสะโพกไก่', 'Chicken thigh yakitori', 90, 10, 2, 5, '1 skewer'],
+['ยากิโทริหนังไก่', 'Chicken skin yakitori', 130, 5, 1, 12, '1 skewer'],
+['ยากิโทริเนื้อ', 'Beef skewer', 110, 10, 2, 7, '1 skewer'],
+['ยากิโทริผัก / เห็ด', 'Vegetable or mushroom skewer', 35, 1.5, 5, 1, '1 skewer'],
+['ไข่ม้วนญี่ปุ่น (ทามาโกะยากิ)', 'Tamagoyaki', 180, 10, 8, 12, '1 plate'],
+['ทาโกะยากิ', 'Takoyaki', 300, 9, 35, 14, '6 balls'],
+['ถั่วแระญี่ปุ่นต้ม', 'Edamame (bowl)', 190, 17, 14, 8, '1 bowl'],
+['เต้าหู้ทอดอาเกดาชิ', 'Agedashi tofu', 230, 10, 15, 14, '1 bowl'],
+['ผักชุบแป้งทอด (เทมปุระผัก)', 'Fried vegetables (cauliflower, tempura)', 350, 5, 30, 23, '1 plate'],
+['กุ้งเทมปุระ', 'Shrimp tempura', 240, 12, 18, 13, '4 pieces'],
+['แฮมเบิร์กญี่ปุ่น (ฮัมบากุ)', 'Japanese hamburg steak', 550, 30, 15, 40, '1 plate'],
+['เส้นโซเมน / โซบะเย็น', 'Somen / cold soba', 400, 15, 70, 5, '1 bowl'],
+['ข้าวหน้าแกงกะหรี่', 'Curry rice (any)', 700, 20, 100, 22, '1 plate'],
+['ยำสลัดญี่ปุ่น', 'Japanese salad', 150, 4, 10, 10, '1 bowl'],
+['ซุปมิโซะ', 'Miso soup', 40, 3, 4, 1.5, '1 bowl'],
+['เฟรนช์ฟรายส์ทรัฟเฟิล', 'Fries (truffle / seasoned)', 450, 5, 50, 25, '1 plate'],
+['ปีกไก่ทอด (จาน)', 'Chicken wings', 480, 35, 10, 33, '6 wings'],
+['คอหมูย่าง / หมูย่างจาน', 'Grilled pork plate', 400, 24, 6, 31, '1 plate'],
+['เนื้อย่างจาน', 'Grilled beef plate', 450, 35, 5, 32, '1 plate (150 g)'],
+['ปลาย่างจาน', 'Grilled fish plate', 300, 35, 2, 16, '1 plate'],
+['สลัดจานใหญ่', 'Large salad', 250, 6, 20, 16, '1 bowl'],
+['พาสต้าครีม', 'Creamy pasta', 750, 22, 80, 36, '1 plate'],
+['พาสต้าซอสแดง', 'Tomato pasta', 550, 18, 85, 14, '1 plate'],
+['ริซอตโต้', 'Risotto', 600, 15, 75, 25, '1 plate'],
+['เบอร์เกอร์ร้าน', 'Restaurant burger', 750, 38, 50, 42, '1 burger'],
+['ข้าวผัดร้านอาหาร', 'Fried rice (any)', 600, 20, 75, 22, '1 plate'],
+['ผัดผัก (จาน)', 'Stir-fried vegetables (any)', 150, 5, 12, 9, '1 plate'],
+['ต้มยำ / ซุปใส (ชาม)', 'Clear soup (any)', 150, 15, 8, 6, '1 bowl'],
+['แกงกะทิ (ชาม)', 'Coconut curry (any)', 380, 18, 10, 30, '1 bowl'],
+['ไฮบอล', 'Highball', 110, 0, 3, 0, '1 glass'],
+['ชูไฮ / ซาวร์', 'Chuhai / sour', 180, 0, 20, 0, '1 glass'],
+['อุเมะชุ', 'Umeshu (plum wine)', 150, 0, 18, 0, '1 glass (90 ml)'],
+['สาเก', 'Sake', 135, 0.5, 5, 0, '1 tokkuri (100 ml)'],
+['เบียร์รส / ชูไฮกระป๋อง', 'Flavoured beer / canned chuhai (Asahi peach…)', 160, 0.5, 15, 0, '1 can (330 ml)']
 ];
 
 /* Food search: on "What did you eat?" / "Food", type a few letters (Thai or English). Your own foods come first. */
@@ -2064,7 +2110,7 @@ function attachFoodSearch(form) {
     const my = ++seq; cur = null; por.classList.add('hide');
     const parsed = parseFoodQuery(inp.value); if (foodNorm(parsed.q).length < 2) return box.classList.add('hide');
     const mineAll = await myFoods(); if (my !== seq) return; // a newer keystroke won
-    const k = foodNorm(parsed.q), mine = mineAll.filter(x => x.name.length <= 40 && foodNorm(x.name).includes(k)).slice(0, 3);
+    const k = foodNorm(parsed.q), mine = mineAll.filter(x => x.name.length <= 40 && !/ · |(÷d+)/.test(x.name) && foodNorm(x.name).includes(k)).slice(0, 3);
     const built = foodMatches(parsed.q), strong = built.filter(x => { const a = foodNorm(x.name), e = foodNorm(x.en); return a === k || e === k || a.startsWith(k) || e.startsWith(k); });
     const rows = strong.slice(0, 4).map(x => ({ db: x })).concat(mine.map(x => ({ mine: x })), built.filter(x => !strong.slice(0, 4).includes(x)).map(x => ({ db: x }))).slice(0, 10);
     if (!rows.length) { box.innerHTML = '<div class="fnone">Not in the food list yet. Type the calories below, and next time it appears under Yours.</div>'; return box.classList.remove('hide'); }
@@ -2545,7 +2591,7 @@ let mBasket = [], mSplit = 1;
 function drawSplit() {
   const f = $('#mealForm'), items = mBasket.concat(mItem(f).description || mItem(f).calories ? [mItem(f)] : []), tot = items.reduce((a, x) => a + (+x.calories || 0), 0);
   $('#mSplitN').textContent = mSplit;
-  $('#mSplitTxt').textContent = mSplit === 1 ? 'just me' : tot ? Math.round(tot / mSplit) + ' kcal each (of ' + tot + ')' : 'split evenly';
+  $('#mSplitTxt').textContent = mSplit === 1 ? 'just me' : tot ? Math.round(tot / mSplit) + ' kcal each' : 'split evenly';
 }
 $$('[data-sp]').forEach(b => b.onclick = () => { mSplit = Math.min(20, Math.max(1, mSplit + +b.dataset.sp)); drawSplit(); });
 const mItem = f => ({ description: f.description.value.trim(), calories: f.calories.value, protein: f.protein.value, carbs: f.carbs ? f.carbs.value : '', fat: f.fat ? f.fat.value : '' });
