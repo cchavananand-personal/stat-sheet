@@ -805,7 +805,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024154055';
+const BUILD = '20261024154235';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1820,8 +1820,9 @@ function attachFoodSearch(form) {
   let cur = null; // { item, qty, unit }
   const amountOf = () => cur.item.units[cur.unit][1] * cur.qty;
   const calc = () => { const k = amountOf() / cur.item.per, n = cur.item.n; return { kcal: n.kcal * k, p: n.p * k, c: n.c * k, f: n.f * k }; };
-  const label = () => { const u = cur.item.units[cur.unit][0], q = cur.qty;
-    return u === 'g' || u === 'ml' ? q + ' ' + u : (q === 1 ? '' : (q === 0.5 ? '½' : q) + ' × ') + u; };
+  const half = q => (Math.floor(q) || '') + (q % 1 === 0.5 ? '½' : q % 1 ? String(+(q % 1).toFixed(2)).slice(1) : '') || '0';
+  const label = () => { const u = cur.item.units[cur.unit][0], q = cur.qty, m = u.match(/^1 (.+)$/);
+    return u === 'g' || u === 'ml' ? q + ' ' + u : m ? half(q) + ' ' + m[1] + (q > 1 && !/\)$/.test(m[1]) ? 's' : '') : q === 1 ? u : half(q) + ' × ' + u; };
   const apply = () => {
     const v = calc(), set = (nm, x, d) => { if (form[nm]) form[nm].value = x ? +x.toFixed(d) : 0; };
     set('calories', v.kcal, 0); set('protein', v.p, 0); set('carbs', v.c, 0); set('fat', v.f, 0);
@@ -1835,9 +1836,9 @@ function attachFoodSearch(form) {
       <div class="fsum"></div>`;
     const q = $('input', por), sel = $('select', por), step = () => isG(cur.unit) ? 10 : 0.5;
     q.oninput = () => { const v = parseFloat(q.value); if (v > 0) { cur.qty = v; apply(); } };
-    $$('[data-st]', por).forEach(btn => btn.onclick = () => { cur.qty = Math.max(step(), +(cur.qty + step() * btn.dataset.st).toFixed(2)); q.value = cur.qty; apply(); });
+    $$('[data-st]', por).forEach(btn => btn.onclick = () => { cur.qty = Math.max(step(), Math.round((cur.qty + step() * btn.dataset.st) / step()) * step()); q.value = cur.qty; apply(); });
     sel.onchange = () => { const g = amountOf(); cur.unit = +sel.value; // keep the same amount when switching units
-      cur.qty = Math.max(isG(cur.unit) ? 1 : 0.1, +(g / it.units[cur.unit][1]).toFixed(isG(cur.unit) ? 0 : 1)); q.value = cur.qty; apply(); };
+      cur.qty = isG(cur.unit) ? Math.max(1, Math.round(g)) : 1; q.value = cur.qty; apply(); };
     por.classList.remove('hide'); apply();
   };
   const pick = (item, parsed) => {
@@ -1853,9 +1854,9 @@ function attachFoodSearch(form) {
     const my = ++seq; cur = null; por.classList.add('hide');
     const parsed = parseFoodQuery(inp.value); if (foodNorm(parsed.q).length < 2) return box.classList.add('hide');
     const mineAll = await myFoods(); if (my !== seq) return; // a newer keystroke won
-    const k = foodNorm(parsed.q), mine = mineAll.filter(x => foodNorm(x.name).includes(k)).slice(0, 3);
-    const built = foodMatches(parsed.q).slice(0, 10 - mine.length);
-    const rows = mine.map(x => ({ mine: x })).concat(built.map(x => ({ db: x })));
+    const k = foodNorm(parsed.q), mine = mineAll.filter(x => x.name.length <= 40 && foodNorm(x.name).includes(k)).slice(0, 3);
+    const built = foodMatches(parsed.q), strong = built.filter(x => { const a = foodNorm(x.name), e = foodNorm(x.en); return a === k || e === k || a.startsWith(k) || e.startsWith(k); });
+    const rows = strong.slice(0, 4).map(x => ({ db: x })).concat(mine.map(x => ({ mine: x })), built.filter(x => !strong.slice(0, 4).includes(x)).map(x => ({ db: x }))).slice(0, 10);
     if (!rows.length) return box.classList.add('hide');
     box.innerHTML = rows.map((r, i) => { const x = r.mine || r.db;
       const sub = r.mine ? '<i>Yours</i>' : '<small>' + esc(x.en) + ' · ' + esc(x.per === 100 ? 'per 100 g' : x.units[0][0]) + '</small>';
