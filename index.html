@@ -770,7 +770,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024071815';
+const BUILD = '20261024071856';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2300,12 +2300,12 @@ async function renderConnections() {
         <li><b>Find Health Samples</b>: Steps, start date is today → <b>Calculate Statistics</b>: <b>Sum</b> → <b>Set Variable</b> named <code>Steps</code>.</li>
         <li>The same for <b>Active Energy</b> (<b>Sum</b> → <code>Calories</code>) and <b>Resting Heart Rate</b> (<b>Average</b> → <code>RestingHR</code>).</li>
         <li>Have a smart scale? Also <b>Find Health Samples</b>: <b>Weight</b> and <b>Body Fat Percentage</b>, latest one, today.</li>
-        <li><b>Dictionary</b>: for each row tap <b>Add New Item</b>, pick the type, type the key, then fill the value. Keys exactly as written; the URL does <b>not</b> go here.
+        <li><b>Get Contents of URL</b>: paste the <b>URL</b> (below) → <b>Show More</b> → Method <b>POST</b> → Request Body <b>JSON</b>.</li>
+        <li>Under JSON, tap <b>Add New Field</b> for each row: pick the type, type the key exactly as written, then fill the value. (No Dictionary action needed.)
           <table class="gkeys"><tr><td><b>Text</b></td><td><code>k</code></td><td>paste Your Key (below)</td></tr><tr><td><b>Text</b></td><td><code>action</code></td><td><code>healthDay</code></td></tr>
             <tr><td><b>Number</b></td><td><code>steps</code></td><td>pick the <code>Steps</code> variable</td></tr><tr><td><b>Number</b></td><td><code>activeKcal</code></td><td>pick <code>Calories</code></td></tr><tr><td><b>Number</b></td><td><code>restingHR</code></td><td>pick <code>RestingHR</code></td></tr>
             <tr><td><b>Number</b></td><td><code>weight</code> · <code>bodyfat</code></td><td>scale readings (optional)</td></tr></table>
           <span class="small muted">Tip: to pick a variable, tap the value box and choose it from the bar above the keyboard.</span></li>
-        <li><b>Get Contents of URL</b>: paste the <b>URL</b> (below) → <b>Show More</b> → Method <b>POST</b> → Request Body <b>JSON</b> → choose the <b>Dictionary</b>.</li>
         <li>Once it works, share it with others: <b>Share</b> → <b>Copy iCloud Link</b>, and give that link to the app admin.</li></ol>`;
   const apple = `<div class="conn"><div class="row between"><b>Apple Health</b><span class="muted">Garmin · Watch · Oura · Scales</span></div>
       <p style="margin:4px 0 0">Last data received: <b>${when(a.lastImport)}</b></p>
