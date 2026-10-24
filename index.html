@@ -360,6 +360,9 @@ button.loading img,button.loading svg{opacity:0}
 .lbm{min-width:0}.lbm b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lbrow.me .lbm b{color:#3fb58a}
 .lbbar{height:10px;border-radius:99px;background:var(--soft);overflow:hidden;margin-top:4px}.lbbar i{display:block;height:100%;border-radius:99px;background:#3fb58a;transition:width .5s}
 .lbv{font-weight:800;font-size:14px;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.shrow{display:grid;grid-template-columns:1fr 64px 64px;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid var(--line)}.shrow>*:not(:first-child){justify-self:center}
+.shrow.shhead{padding:2px 0 6px}.shrow.shhead b{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.shrow .sw{border:0;padding:0;min-height:0}.shfix{font-size:12px;color:var(--muted)}
+#hiddenNote{margin:0 0 10px;padding:8px 12px;border-radius:12px;background:var(--soft);color:var(--muted);font-size:13px}#hiddenNote.hide{display:none}
 .codeline{display:flex;align-items:center;gap:10px}.codeblk{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.codeblk>.small{margin:0}#newClientCard .codeline button{min-height:32px!important}.codeline button.link.link{min-height:32px;padding:4px 10px;font-size:13px}
 .reqform{display:flex;gap:8px;align-items:stretch}.reqform input{flex:1;min-width:0;margin:0}.reqform button{min-height:46px;white-space:nowrap}#reqList .crow{gap:10px;padding:8px 0}
 #coachReq{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:45;background:linear-gradient(160deg,color-mix(in srgb,#3fb58a 22%,var(--card)),var(--card) 70%);border:2px solid #3fb58a;border-radius:18px;padding:16px;box-shadow:0 12px 40px #000a,0 0 30px #3fb58a55;display:grid;gap:12px;animation:reqIn .4s cubic-bezier(.2,1.3,.4,1)}
@@ -483,6 +486,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
       <div class="seg" id="tMode" style="margin:0;width:200px"><button data-m="day" class="on">30d</button><button data-m="week">Weeks</button><button data-m="month">Months</button></div>
     </div>
     <div class="card hide" id="startCard"></div>
+    <p id="hiddenNote" class="hide"></p>
     <div class="card"><div class="row between"><div><h3 style="margin:0">Weight</h3><button class="lk-open" data-entries style="padding:4px 0">All entries ›</button></div><div class="thead" id="tWHead"></div></div><div class="chart sm"><canvas id="tW"></canvas></div></div>
     <div class="card"><div class="row between"><h3 style="margin:0">Body fat</h3><div class="thead" id="tFHead"></div></div><div class="chart sm"><canvas id="tF"></canvas></div></div>
     <div id="extraCharts"></div>
@@ -691,6 +695,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
     <details class="card" id="chartsCard"><summary><i data-ic="chart"></i>Custom Graphs</summary><div id="chartsBox" class="small"></div></details>
     <details class="card" id="ciDefsCard"><summary><i data-ic="sliders"></i>Custom Parameters</summary><div id="ciDefs" class="small"></div></details>
     <p class="grp">MY DATA</p>
+    <details class="card" id="shareCard"><summary><i data-ic="users"></i>Sharing</summary><div id="shareBox" class="small"></div></details>
     <details class="card" id="histCard"><summary><i data-ic="file"></i>Full History Export</summary><div class="small">
       <p style="margin-top:0">Every day in one file: weight, body fat, meals, workouts (every set), activity, and notes from you and your trainer, plus your goals, meal plan and training rotation. Paste it into ChatGPT, Claude or another AI and ask for advice.</p>
       <button class="primary" id="histCopy" style="width:100%">Copy all</button>
@@ -791,7 +796,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024100829';
+const BUILD = '20261024103152';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1073,6 +1078,9 @@ function renderProgress() {
   $('#todayLbl').textContent = nice(TODAY, {weekday:'long', day:'numeric', month:'long'});
   segment('tMode', tMode, m => { tMode = m; drawTrends(); });
   CD = null; // graphs pick up workouts and details logged since last time
+  const hid = (S.hidden || []).map(c => (SHARE_ROWS.find(r => r[0] === c) || [, c])[1]);
+  $('#hiddenNote').classList.toggle('hide', !hid.length || ROLE === 'owner');
+  if (hid.length) $('#hiddenNote').textContent = S.target.name + ' doesn\'t share: ' + hid.join(', ') + '.';
   drawTrends(); renderPhotoStrip(); loadLog(); renderStart();
 }
 /** Latest progress photos under the body-fat chart; tap one to open the gallery on that day. */
@@ -2310,7 +2318,27 @@ async function renderRanking(box, group) {
     + (group === 'peers' && rows.length <= 1 ? '<div class="lkrow" style="text-align:left;margin:6px 0 0"><button class="lk-nav" data-go="more:peersCard">Add peers above to compare</button></div>' : '');
   sorted.forEach(r => paintAvatar($(`[data-rkav="${r.id}"]`, box), r, r.me ? 'c' : ''));
 }
+/* More › My Data › Sharing: what your trainer and your peers can see. Everything starts on. */
+const SHARE_ROWS = [['body', 'Weight & Body Fat'], ['photos', 'Progress Photos'], ['workouts', 'Workouts'], ['meals', 'Meals & Meal Plan'], ['health', 'Steps, Sleep & Heart'], ['checkins', 'Daily Parameters'], ['goals', 'Goals'], ['notes', 'Notes']];
+function shareGet() { let o = {}; try { o = JSON.parse(S.profile.share || '{}') || {}; } catch (e) {} return o; }
+function renderSharing() {
+  const card = $('#shareCard'); card.classList.toggle('hide', !S.me || viewingClient() || viewingPeer()); if (!S.me) return;
+  const sh = shareGet(), on = (who, c) => !(sh[who] && sh[who][c] === false);
+  const cell = (who, c) => (who === 'peers' && c === 'notes') ? '<span class="shfix">Never</span>' : (who === 'trainer' && c === 'goals') ? '<span class="shfix">Always</span>'
+    : `<button type="button" class="sw${on(who, c) ? ' on' : ''}" data-sh="${who}:${c}" aria-label="${who} ${c}"></button>`;
+  $('#shareBox').innerHTML = `<p class="muted" style="margin:0 0 6px">Choose what your trainer and your peers can see. Changes apply straight away.</p>
+    <div class="shrow shhead"><span></span><b>Trainer</b><b>Peers</b></div>
+    ${SHARE_ROWS.map(([c, n]) => `<div class="shrow"><span>${n}</span>${cell('trainer', c)}${cell('peers', c)}</div>`).join('')}
+    <p class="small muted" style="margin:8px 0 0">Your trainer always sees your goals, since they set them. Notes are between you and your trainer.</p>`;
+  $$('[data-sh]', $('#shareBox')).forEach(b => b.onclick = () => {
+    const [who, c] = b.dataset.sh.split(':'), cur = shareGet(); cur[who] = cur[who] || {};
+    if (on(who, c)) cur[who][c] = false; else delete cur[who][c];
+    b.classList.toggle('on'); S.profile.share = JSON.stringify(cur);
+    api('saveProfile', { share: S.profile.share }).then(p => { S.profile = p; }).catch(() => renderSharing());
+  });
+}
 function renderMore() {
+  renderSharing();
   renderPeers();
   renderMyTrainer(); renderTrainerMode();
   renderAccount();
