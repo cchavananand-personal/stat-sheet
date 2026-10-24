@@ -374,6 +374,9 @@ input[type=search]{-webkit-appearance:none;appearance:none}input[type=search]::-
 
 .codeline{display:flex;align-items:center;gap:10px}.codeblk{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.codeblk>.small{margin:0}#newClientCard .codeline button{min-height:32px!important}.codeline button.link.link{min-height:32px;padding:4px 10px;font-size:13px}
 .reqform{display:flex;gap:8px;align-items:stretch}.reqform input{flex:1;min-width:0;margin:0}.reqform button{min-height:46px;white-space:nowrap}#reqList .crow{gap:10px;padding:8px 0}
+#noteNew{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:44;background:linear-gradient(160deg,color-mix(in srgb,#4f8df2 20%,var(--card)),var(--card) 70%);border:2px solid #4f8df2;border-radius:18px;padding:16px;box-shadow:0 12px 40px #000a,0 0 30px #4f8df255;display:grid;gap:12px;animation:reqIn .4s cubic-bezier(.2,1.3,.4,1)}#noteNew.hide{display:none}
+#noteNew .rq{display:flex;gap:12px;align-items:flex-start}#noteNew .rq .avatar{width:42px;height:42px;font-size:17px;flex:none}#noteNew b{font-size:16px;display:block}#noteNew q{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;quotes:none;font-size:14px;margin-top:4px;color:var(--text)}
+#noteNew .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}#noteNew button{min-height:44px}
 #coachReq{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:45;background:linear-gradient(160deg,color-mix(in srgb,#3fb58a 22%,var(--card)),var(--card) 70%);border:2px solid #3fb58a;border-radius:18px;padding:16px;box-shadow:0 12px 40px #000a,0 0 30px #3fb58a55;display:grid;gap:12px;animation:reqIn .4s cubic-bezier(.2,1.3,.4,1)}
 #coachReq .rq{display:flex;align-items:center;gap:12px}#coachReq .rq .avatar{width:46px;height:46px;font-size:19px;flex:none}#coachReq .rq b{font-size:17px;display:block;line-height:1.25}
 @keyframes reqIn{from{transform:translateY(30px);opacity:0}}#coachReq.hide{display:none}#coachReq .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}#coachReq button{min-height:44px}
@@ -774,6 +777,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
   <button id="mSignIn">Sign in</button>
 </div></div>
 <div id="coachReq" class="hide"></div>
+<div id="noteNew" class="hide"></div>
 <div id="recSheet" class="hide"><div class="card"></div></div>
 <div id="profSheet" class="hide"><div class="psheet">
   <div class="row between"><button class="link" id="profClose">Cancel</button><b>My Profile</b><span style="width:64px"></span></div>
@@ -805,7 +809,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024165523';
+const BUILD = '20261024174918';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -3519,6 +3523,31 @@ async function prefetchClients(d) {
   }
 }
 /** A trainer asked to coach you: Accept / Decline, right over the app. */
+/* New notes from someone else (your trainer, or your client when you're viewing them): one card, once per note. */
+function showNewNotes() {
+  const box = $('#noteNew');
+  if (!S.me || !S.target || viewingPeer() || !$('#coachReq').classList.contains('hide')) return box.classList.add('hide');
+  const key = 'noteSeen-' + S.me.id + '-' + S.target.id;
+  let seen = null; try { seen = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) {}
+  const others = (S.notes || []).filter(n => n.byId ? n.byId !== S.me.id : (ROLE === 'trainer' ? n.author !== 'Trainer' : n.author === 'Trainer'));
+  const save = ids => { try { localStorage.setItem(key, JSON.stringify(ids.slice(-80))); } catch (e) {} };
+  if (!seen) { // first time on this phone: only the last 3 days count as new
+    const cut = addDays(TODAY, -3); seen = others.filter(n => String(n.date).slice(0, 10) < cut).map(n => n.id); save(seen);
+  }
+  const fresh = others.filter(n => seen.indexOf(n.id) < 0);
+  if (!fresh.length) return box.classList.add('hide');
+  const n = fresh[0], who = ROLE === 'trainer' ? S.target.name : ((S.coach && S.coach.name) || trainerName()), day = String(n.date).slice(0, 10);
+  const done = () => { save(seen.concat(fresh.map(x => x.id))); box.classList.add('hide'); };
+  box.innerHTML = `<div class="rq"><span class="avatar" id="nnAv"></span><div style="min-width:0">
+      <b>${fresh.length > 1 ? fresh.length + ' new notes from ' + esc(who) : 'New note from ' + esc(who)}</b>
+      <div class="small muted">${nice(day, { weekday: 'short', day: 'numeric', month: 'short' })}</div><q>${esc(n.text)}</q></div></div>
+    <div class="row"><button class="link" id="nnLater">Later</button><button class="primary" id="nnRead">Read</button></div>`;
+  paintAvatar($('#nnAv'), ROLE === 'trainer' ? S.target : (S.coach || { name: who }), 't');
+  box.classList.remove('hide');
+  $('#nnLater').onclick = done;
+  $('#nnRead').onclick = () => { done(); wSel = day; wMonth = day.slice(0, 7); logMode = 'weight'; show('today');
+    setTimeout(() => { const nt = $('#notes'); if (nt) nt.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 700); };
+}
 function showCoachRequest() {
   const box = $('#coachReq'), r = S.coachRequest;
   box.classList.toggle('hide', !r); if (!r) return;
@@ -3527,6 +3556,7 @@ function showCoachRequest() {
   const answer = accept => e => busy(e.target, async () => {
     Object.assign(S, await api('answerCoach', { accept })); box.classList.add('hide');
     if (accept) toast("You're now training with " + r.name, false, 5000);
+    setTimeout(showNewNotes, 600);
     if (curTab === 'more') renderMore();
   });
   paintAvatar($('#crAv'), r, 't');
@@ -3565,7 +3595,7 @@ document.addEventListener('visibilitychange', () => {
   setTimeout(() => api('bootstrap', { date: TODAY }).then(d => {
     Object.assign(S, d); Object.keys(WKD).forEach(k => delete WKD[k]);
     try { localStorage.setItem(BOOT_KEY, JSON.stringify({ date: TODAY, data: d, at: Date.now() })); } catch (e) {}
-    showCoachRequest();
+    showCoachRequest(); setTimeout(showNewNotes, 400);
     if (!/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) { renderRoleTag(); show(curTab, true); }
   }).catch(() => {}), 1200);
 });
@@ -3576,7 +3606,7 @@ api('bootstrap', { date: TODAY })
     Object.assign(S, d);
     if (WHO && d.me && !!WHO.trainer !== !!d.me.trainer) { store('who', JSON.stringify(Object.assign({}, WHO, { trainer: !!d.me.trainer }))); store('as', null); return location.replace(location.pathname); }
     if (ROLE === 'owner' && d.profile) applyTheme(d.profile.theme);
-    showCoachRequest();
+    showCoachRequest(); setTimeout(showNewNotes, 400);
     syncSavedClients(); // a client added or removed elsewhere: fix the saved copies and the buttons at the top
     // sign-in was switched on (or off) since this phone last looked
     store('pinsOn', d.pinsOn ? '1' : '0');
