@@ -781,7 +781,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024091319';
+const BUILD = '20261024091621';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2226,7 +2226,7 @@ async function renderPeers() {
       </div>
       ${r.me ? '' : `<div class="pacts hide" data-pacts="${r.id}"><button type="button" class="link" data-pc="${esc(r.code || '')}">Copy Code</button><button type="button" class="link danger" data-unpeer="${r.id}">Remove</button></div>`}`).join('') : ''}
     <form id="peerForm" style="display:flex;gap:8px;align-items:flex-end;margin-top:12px"><label class="grow" style="margin:0">Add A Peer<input name="code" maxlength="24" autocapitalize="characters" placeholder="e.g. MINT-4821" style="text-transform:uppercase"></label><button class="primary">Add</button></form>`;
-  rows.forEach(r => paintAvatar($(`[data-pav="${r.id}"]`, box), r, r.me ? 'c' : ''));
+  rows.forEach(r => { const el = $(`[data-pav="${r.id}"]`, box); if (el) paintAvatar(el, r, r.me ? 'c' : ''); });
   $$('[data-peer]', box).forEach(row => row.onclick = e => { if (!e.target.closest('[data-pmenu]')) switchTo(row.dataset.peer, 'peer'); });
   $$('[data-pmenu]', box).forEach(b => b.onclick = () => $(`[data-pacts="${b.dataset.pmenu}"]`, box).classList.toggle('hide'));
   $$('[data-pc]', box).forEach(b => b.onclick = () => { const c = b.dataset.pc; if (!c) return; (navigator.clipboard ? navigator.clipboard.writeText(c) : Promise.reject()).then(() => toast('Copied ' + c), () => prompt('Code', c)); });
