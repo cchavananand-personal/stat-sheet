@@ -367,7 +367,11 @@ button.loading img,button.loading svg{opacity:0}
 .fsug button{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:8px 12px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;text-align:left;text-transform:none;font-weight:600}
 .fsug button:last-child{border-bottom:0}.fsug button:active{background:var(--soft)}.fsug .fn{flex:1;min-width:0}.fsug .fn b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fsug .fn small,.fsug .fk small{display:block;color:var(--muted);font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fsug .fn i{font-style:normal;font-size:11px;font-weight:800;color:var(--accent)}
-input[type=search]{-webkit-appearance:none;appearance:none}input[type=search]::-webkit-search-cancel-button{display:none}.fnone{padding:12px;font-size:13px;color:var(--muted)}.fsug .fk{text-align:right;font-weight:800;white-space:nowrap}
+input[type=search]{-webkit-appearance:none;appearance:none}input[type=search]::-webkit-search-cancel-button{display:none}#mBasket{margin:0 0 10px;border:1px solid var(--line);border-radius:12px;padding:4px 12px;background:var(--soft)}#mBasket.hide{display:none}
+.bitem{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.bitem span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bitem b{white-space:nowrap}.bitem button.link.link{min-width:32px;min-height:32px;padding:2px}
+.btot{padding:8px 0 6px;font-size:13px;font-weight:700;color:var(--accent)}
+.mgrp{font-size:13px;font-weight:800;letter-spacing:.03em;color:var(--muted);margin:12px 2px 6px}.mgrp:first-child{margin-top:0}.mdesc{color:var(--text)!important;font-weight:600}
+.fnone{padding:12px;font-size:13px;color:var(--muted)}.fsug .fk{text-align:right;font-weight:800;white-space:nowrap}
 .fpor{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;margin:-4px 0 12px}.fpor select{margin:0;min-height:44px}.fsum{grid-column:1/-1;font-size:13px;font-weight:700;color:var(--accent)}
 .fq{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--soft)}.fq input{width:64px;margin:0;border:0;border-radius:0;text-align:center;min-height:44px;background:transparent;font-weight:700}
 .fq button{min-height:44px;width:40px;padding:0;border-radius:0;background:none;font-size:20px;font-weight:700;color:var(--accent)}
@@ -580,7 +584,9 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
             <label>Protein<input type="number" name="protein" min="0" inputmode="numeric" placeholder="g"></label>
           </div>
           <label class="pick" id="mealPick"><span><i data-ic="camera"></i>Add photo</span><input type="file" name="file" accept="image/*"></label>
-          <button class="primary">Add meal</button>
+          <div id="mBasket" class="hide"></div>
+          <button type="button" class="link" id="mMore" style="width:100%;margin-bottom:10px">+ Add Another Item</button>
+          <button class="primary" id="mAdd">Add meal</button>
         </form>
       </div>
     </div>
@@ -809,7 +815,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024180239';
+const BUILD = '20261024180619';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2476,9 +2482,10 @@ function renderMeals(list) {
   // plan meals show as a tick on the plan card; only what's not on the plan is listed here
   const plan = planItems(wSel), extras = list.filter(m => !plan.some(x => sameMeal(x, m)));
   $('#mListCard').classList.toggle('hide', !extras.length);
-  $('#mList').innerHTML = extras.map(m => `<div class="item mtile" style="${mealStyle(m)}">
+  extras.sort((a, b) => String(a.time || '99').localeCompare(String(b.time || '99')));
+  $('#mList').innerHTML = extras.map((m, i) => `${i && extras[i - 1].type === m.type && (extras[i - 1].time || '') === (m.time || '') ? '' : `<div class="mgrp">${esc(m.type)}${m.time ? ' · ' + esc(m.time) : ''}</div>`}<div class="item mtile" style="${mealStyle(m)}">
     ${m.thumbId ? imgTag(m.thumbId, m.photoId, 'thumb', m.type + ' · ' + m.description) : `<label class="thumb add">＋<br>photo<input type="file" accept="${IMG_ACCEPT}" data-mid="${m.id}"></label>`}
-    <div class="grow"><b>${esc(m.type)}</b>${m.source === 'plan' ? ' <span class="tag">from plan</span>' : ''}<p>${esc(m.description)}</p><p>${[m.calories && m.calories + ' kcal', m.protein && m.protein + 'g protein'].filter(Boolean).join(' · ')}</p></div>
+    <div class="grow">${m.source === 'plan' ? '<span class="tag">from plan</span>' : ''}<p class="mdesc">${esc(m.description || m.type)}</p><p>${[m.calories && m.calories + ' kcal', m.protein && m.protein + 'g protein'].filter(Boolean).join(' · ')}</p></div>
     <button class="link" data-delm="${m.id}" aria-label="Delete">✕</button></div>`).join('');
   $$('[data-delm]').forEach(b => b.onclick = () => confirm('Delete this meal?') && busy(b, async () => {
     await api('remove', { sheet: 'Meals', id: b.dataset.delm });
@@ -2531,12 +2538,39 @@ mealFile().onchange = () => {
   const f = mealFile().files[0];
   $('#mealPick span').innerHTML = f ? `<img src="${URL.createObjectURL(f)}" style="vertical-align:middle;margin-right:6px">Photo added · tap to change` : ic('camera') + 'Add photo';
 };
+/* Several items under one meal and time: "+ Add Another Item" keeps what you've entered and clears the food boxes for the next. */
+let mBasket = [];
+const mItem = f => ({ description: f.description.value.trim(), calories: f.calories.value, protein: f.protein.value, carbs: f.carbs ? f.carbs.value : '', fat: f.fat ? f.fat.value : '' });
+function clearMealItem(f) {
+  ['description', 'calories', 'protein', 'carbs', 'fat'].forEach(k => { if (f[k]) f[k].value = ''; });
+  f.dispatchEvent(new Event('reset')); // closes the food list and portion row (the boxes above stay)
+}
+function drawBasket() {
+  const box = $('#mBasket'), f = $('#mealForm'); box.classList.toggle('hide', !mBasket.length);
+  const tot = mBasket.reduce((a, x) => a + (+x.calories || 0), 0);
+  box.innerHTML = mBasket.map((x, i) => `<div class="bitem"><span>${esc(x.description || 'Item')}</span><b>${+x.calories || 0} kcal</b><button type="button" class="link" data-bx="${i}" aria-label="Remove">✕</button></div>`).join('')
+    + `<div class="btot">${mBasket.length} item${mBasket.length > 1 ? 's' : ''} · ${tot} kcal so far</div>`;
+  $$('[data-bx]', box).forEach(b => b.onclick = () => { mBasket.splice(+b.dataset.bx, 1); drawBasket(); });
+  const n = mBasket.length + (mItem(f).description || mItem(f).calories ? 1 : 0);
+  $('#mAdd').textContent = n > 1 ? 'Add ' + n + ' Items' : 'Add meal';
+}
+$('#mMore').onclick = () => {
+  const f = $('#mealForm'), it = mItem(f);
+  if (!it.description && !it.calories) return toast('Add what you ate first', true);
+  mBasket.push(it); clearMealItem(f); drawBasket(); f.description.focus();
+};
+$('#mealForm').addEventListener('input', () => { if (mBasket.length) drawBasket(); });
 $('#mealForm').onsubmit = e => {
-  e.preventDefault(); const f = e.target, date = wSel;
-  if (!f.description.value && !f.calories.value && !mealFile().files[0]) return toast('Add what you ate, calories or a photo', true);
+  e.preventDefault(); const f = e.target, date = wSel, cur = mItem(f);
+  const items = mBasket.concat(cur.description || cur.calories ? [cur] : []);
+  if (!items.length && !mealFile().files[0]) return toast('Add what you ate, calories or a photo', true);
   busy($('button.primary', f), async () => {
-    const list = await api('addMeal', Object.assign(formObj(f), { date }, await imagePair(mealFile().files[0])));
-    mealsChanged(date, list); toast('Meal added · ' + nice(date)); f.reset(); mealFile().onchange(); renderMeals(list);
+    const photo = await imagePair(mealFile().files[0]); let list;
+    const shared = { date, type: f.type.value, time: f.time.value };
+    if (!items.length) items.push({ description: '', calories: '' });
+    for (let i = 0; i < items.length; i++) list = await api('addMeal', Object.assign({}, items[i], shared, i === 0 ? photo : {}));
+    mealsChanged(date, list); toast((items.length > 1 ? items.length + ' items added · ' : 'Meal added · ') + nice(date));
+    mBasket = []; f.reset(); drawBasket(); mealFile().onchange(); renderMeals(list); MY_FOODS = null;
   });
 };
 
