@@ -181,6 +181,13 @@ body.tmode .thumb.add,body.tmode .addtile,body.tmode #mealPick,body.tmode [data-
 #startCard .st{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:8px 12px;margin-top:8px;border-radius:12px;background:var(--soft);border:1px solid var(--line);color:var(--text);font-weight:650;text-align:left}
 #startCard .st i.n{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:13px;font-weight:800;border:2px solid var(--accent);color:var(--accent)}
 #startCard .st.done{opacity:.55}#startCard .st.done i.n{background:var(--accent);color:var(--accent-ink)}#startCard .st .grow{flex:1}#startCard .st .go{color:var(--accent);font-size:18px}
+.gstep{margin-top:10px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}.gstep>summary{display:flex;align-items:center;gap:10px;padding:12px;font-weight:700;list-style:none;cursor:pointer}
+.gstep>summary::-webkit-details-marker{display:none}.gstep>summary::after{content:"›";margin-left:auto;color:var(--muted);transition:transform .2s}.gstep[open]>summary::after{transform:rotate(90deg)}
+.gn{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:12px;font-weight:800;background:var(--accent);color:var(--accent-ink)}
+.gbody{padding:0 12px 12px}.gbody ol,.gbody ul{padding-left:20px;margin:6px 0;line-height:1.55}.gbody li{margin:4px 0}
+.gapp{border-top:1px solid var(--line)}.gapp>summary{padding:10px 0;font-weight:650;display:flex;align-items:baseline;gap:8px;cursor:pointer;list-style:none}.gapp>summary::-webkit-details-marker{display:none}
+.gapp>summary small{color:var(--muted);font-weight:500;font-size:12.5px;text-transform:none}.gapp>summary::after{content:"+";margin-left:auto;color:var(--accent);font-weight:800}.gapp[open]>summary::after{content:"−"}
+.gkeys{width:100%;border-collapse:collapse;margin:6px 0;font-size:13px}.gkeys td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}.gkeys td:first-child{white-space:nowrap}
 .ecta{display:flex;align-items:center;gap:12px;margin:10px 0 2px;padding:12px;border:1px dashed var(--line);border-radius:14px;background:color-mix(in srgb,var(--soft) 55%,transparent);text-align:left}
 .ecta .eic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}.ecta .eic svg{width:20px;height:20px}
 .ecta .et{flex:1;min-width:0}.ecta .et b{display:block;font-size:15px}.ecta .et small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35;margin-top:2px}
@@ -763,7 +770,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024011626';
+const BUILD = '20261024071050';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2269,28 +2276,52 @@ async function renderConnections() {
     return `<div class="conn"><div class="row between"><b>${x.name}</b><span class="muted">${what}</span></div>
       <p style="margin:4px 0 8px">${status}</p>${btns ? '<div class="grid2">' + btns + '</div>' : ''}</div>`;
   };
-  const steps = a.shortcutUrl
-    ? `<ol style="padding-left:18px;line-height:1.6;margin:8px 0">
+  // Step 1: each app writes to Apple Health · Step 2: one daily Shortcut sends it here · Step 3: check it arrived
+  const APPS = [
+    ['Garmin Connect', 'Watch · Index scale', ['Open <b>Garmin Connect</b> → <b>More</b> (bottom right) → <b>Settings</b> → <b>Connected Apps</b> → <b>Apple Health</b>.',
+      'Turn on <b>Steps</b>, <b>Active Calories</b>, <b>Heart Rate</b>, <b>Sleep</b> and <b>Weight</b>.', 'Open Garmin Connect once a day so your watch syncs.']],
+    ['Apple Watch', 'Built in', ['Nothing to set up: Apple Watch writes to Apple Health by itself.']],
+    ['Oura', 'Ring', ['Oura app → <b>Settings</b> → <b>Apple Health</b> → turn on everything.']],
+    ['Withings', 'Health Mate', ['Health Mate → <b>Settings</b> → <b>Apps</b> → <b>Apple Health</b> → allow <b>Weight</b> and <b>Body Fat %</b>.']],
+    ['Eufy', 'EufyLife', ['EufyLife → <b>Profile</b> → <b>Settings</b> → <b>Apple Health</b> → allow <b>Weight</b> and <b>Body Fat %</b>.']],
+    ['Renpho', 'Renpho Health', ['Renpho → <b>Profile</b> → <b>Apple Health</b> → allow <b>Weight</b> and <b>Body Fat %</b>.']],
+    ['Xiaomi / Mi', 'Zepp Life', ['Zepp Life → <b>Profile</b> → <b>Add Accounts</b> → <b>Apple Health</b> → allow <b>Weight</b> and <b>Body Fat %</b>.']],
+    ['FitDays', 'Scale', ['FitDays → <b>Me</b> → <b>Apple Health</b> → allow <b>Weight</b> and <b>Body Fat %</b>.']],
+    ['Omron', 'Omron Connect', ['Omron Connect → <b>Settings</b> → <b>Apple Health</b> → allow <b>Weight</b> and <b>Body Fat %</b>.']]];
+  const appGuides = APPS.map(([n, sub, st]) => `<details class="gapp"><summary>${n}<small>${sub}</small></summary><ol>${st.map(x => `<li>${x}</li>`).join('')}
+    <li>Check: iPhone <b>Health</b> app → <b>Browse</b> → e.g. <b>Steps</b> or <b>Weight</b> → ${n.split(' ')[0]} appears under <b>Data Sources</b>.</li></ol></details>`).join('');
+  const shortcut = a.shortcutUrl
+    ? `<ol>
         <li><a class="lk-ext" href="${esc(a.shortcutUrl)}" target="_blank">Get the Stat Sheet Shortcut</a> and tap <b>Add Shortcut</b>.</li>
-        <li>When it asks for your key, paste the key below.</li>
-        <li><b>Shortcuts</b> → Automation → <b>+</b> → Time of Day <b>23:50</b>, Daily, <b>Run Immediately</b> → pick the Stat Sheet shortcut.</li>
-      </ol>`
-    : `<ol style="padding-left:18px;line-height:1.6;margin:8px 0">
-        <li><b>Shortcuts</b> → Automation → <b>+</b> → Time of Day <b>23:50</b>, Daily, <b>Run Immediately</b> → New Blank Automation.</li>
-        <li><b>Find Health Samples</b>: Steps, today → <b>Calculate Statistics</b>: Sum. Same for <b>Active Energy</b> (Sum) and <b>Resting Heart Rate</b> (Average).</li>
-        <li><b>Dictionary</b>: <code>k</code> = your key, <code>action</code> = <code>healthDay</code>, <code>steps</code>, <code>activeKcal</code>, <code>restingHR</code>.</li>
-        <li><b>Get Contents of URL</b>: the URL below, <b>POST</b>, Request Body <b>JSON</b> = Dictionary.</li>
-        <li>Smart scale: a second automation when <b>FitDays</b> (or your scale app) <b>Is Closed</b>, sending <code>weight</code> and <code>bodyfat</code> the same way.</li>
-      </ol>`;
-  box.innerHTML = `<p class="muted" style="margin-top:0">Link your apps once. Data syncs every morning, or tap Sync now.</p>
+        <li>When it asks for your key, paste <b>Your Key</b> from below.</li>
+        <li><b>Shortcuts</b> → <b>Automation</b> → <b>+</b> → <b>Time of Day</b> → <b>22:00</b>, Daily → <b>Run Immediately</b> → pick the Stat Sheet shortcut.</li></ol>`
+    : `<ol>
+        <li><b>Shortcuts</b> app → <b>Automation</b> → <b>+</b> → <b>Time of Day</b> → <b>22:00</b>, Daily → <b>Run Immediately</b> → <b>New Blank Automation</b>.</li>
+        <li><b>Find Health Samples</b>: Steps, start date is today → <b>Calculate Statistics</b>: <b>Sum</b>.</li>
+        <li>The same for <b>Active Energy</b> (<b>Sum</b>) and <b>Resting Heart Rate</b> (<b>Average</b>).</li>
+        <li>Have a smart scale? Also <b>Find Health Samples</b>: <b>Weight</b> and <b>Body Fat Percentage</b>, latest one, today.</li>
+        <li><b>Dictionary</b> with these keys:
+          <table class="gkeys"><tr><td><code>k</code></td><td>Your Key (below)</td></tr><tr><td><code>action</code></td><td><code>healthDay</code></td></tr>
+            <tr><td><code>steps</code></td><td>Steps sum</td></tr><tr><td><code>activeKcal</code></td><td>Active Energy sum</td></tr><tr><td><code>restingHR</code></td><td>Resting Heart Rate</td></tr>
+            <tr><td><code>weight</code> · <code>bodyfat</code></td><td>Scale readings (optional)</td></tr><tr><td><code>sleepHours</code> · <code>hrv</code></td><td>Sleep, HRV (optional)</td></tr></table></li>
+        <li><b>Get Contents of URL</b>: paste the <b>URL</b> → <b>Show More</b> → Method <b>POST</b> → Request Body <b>JSON</b> → the Dictionary.</li></ol>`;
+  const apple = `<div class="conn"><div class="row between"><b>Apple Health</b><span class="muted">Garmin · Watch · Oura · Scales</span></div>
+      <p style="margin:4px 0 0">Last data received: <b>${when(a.lastImport)}</b></p>
+      <p class="small muted" style="margin:6px 0 0">Garmin and most scales connect through Apple Health. It's free and takes about 10 minutes, once.</p>
+      <details class="gstep"><summary><i class="gn">1</i>Connect Your App To Apple Health</summary><div class="gbody">${appGuides}</div></details>
+      <details class="gstep"><summary><i class="gn">2</i>Set Up The Daily Shortcut</summary><div class="gbody">${shortcut}${copyBtn('URL', a.postUrl)}${copyBtn('Your Key (keep it private)', a.key)}</div></details>
+      <details class="gstep"><summary><i class="gn">3</i>Test It</summary><div class="gbody"><ol>
+        <li>In Shortcuts, open the automation and tap <b>▶</b> to run it once now.</li>
+        <li>Come back here: <b>Last data received</b> should say today. Steps and calories show in <b>Today</b> under your weight.</li></ol>
+        <p class="small" style="margin:10px 0 4px"><b>Not updating?</b></p><ul>
+        <li><b>Phone locked at run time:</b> Apple Health hides its data while locked. Pick a time you're usually on your phone, or add a second automation <b>When Charger Connected</b>.</li>
+        <li><b>No data in Health:</b> open your device's app once so it syncs.</li>
+        <li><b>"Add your key to the Shortcut":</b> the <code>k</code> value is missing or wrong. Copy Your Key again.</li></ul></div></details>
+    </div>`;
+  box.innerHTML = `<p class="muted" style="margin-top:0">Link your apps once. Data syncs every day, or tap Sync now.</p>
     ${svc('whoop', 'recovery · HRV · sleep')}
     ${svc('fitbit', 'steps · heart · sleep · scale')}
-    <div class="conn"><div class="row between"><b>Apple Health</b><span class="muted">Garmin · scales · Oura · Watch</span></div>
-      <p style="margin:4px 0 0">Last data received: <b>${when(a.lastImport)}</b></p>
-      <p class="muted" style="margin:6px 0 0"><b>Garmin:</b> Garmin Connect app → Settings → Connected Apps → <b>Apple Health</b> → allow all. (Garmin only lets approved companies connect directly, so Apple Health is the way in — it's free.)</p>
-      <details style="margin-top:8px"><summary style="padding:6px 0;font-weight:600">Set up the iPhone Shortcut</summary>
-        ${steps}${copyBtn('URL', a.postUrl)}${copyBtn('Your key (keep it private)', a.key)}</details>
-    </div>
+    ${apple}
     ${c.admin ? adminBox(c.admin) : ''}`;
   $$('[data-copy]', box).forEach(b => b.onclick = () => { navigator.clipboard ? navigator.clipboard.writeText(b.dataset.copy) : b.previousElementSibling.select(); toast('Copied'); });
   $$('[data-on]', box).forEach(b => b.onclick = () => {
