@@ -346,6 +346,11 @@ button.loading img,button.loading svg{opacity:0}
 #newClientCard #clientForm{align-items:center!important}#newClientCard #clientForm label{margin:0}#newClientCard #clientForm .cnum{color:var(--accent);font-weight:800;min-width:26px}.addway b{font-size:15px}.addway p{margin:2px 0 10px}
 #newClientCard .row.between{flex-direction:column;align-items:stretch;gap:10px}#newClientCard .row.between>.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}#newClientCard .row.between button{white-space:nowrap;min-height:44px!important}
 #peersCard .crow>.grow{overflow:hidden;margin-right:8px}.pcode{display:inline-flex;align-items:center;white-space:nowrap;text-align:left;justify-content:flex-start;background:none;border:0;padding:2px 0;min-height:0;font-size:12.5px;font-weight:700;letter-spacing:.04em;color:var(--muted);text-transform:none}.pcode span{color:var(--accent);margin-left:4px}
+.prow{display:grid;grid-template-columns:20px 38px 1fr 34px 34px;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+.prow .n{font-weight:800;color:var(--muted);text-align:center}.prow .avatar{width:38px;height:38px;font-size:15px}.prow .pm{min-width:0}
+.prow .pm b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}.prow .pm small{display:block;color:var(--muted);font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prow .rk-bar{margin-top:5px}.prow .ps{font-weight:800;font-size:17px;text-align:right;font-variant-numeric:tabular-nums}.prow.me{cursor:default}.prow.me .pm b{color:#3fb58a}
+.prow button.link.link.pmore{min-width:34px;padding:4px}.pacts{display:flex;gap:8px;justify-content:flex-end;padding:0 0 10px}.pacts.hide{display:none}
 .codeline{display:flex;align-items:center;gap:10px}.codeblk{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.codeblk>.small{margin:0}#newClientCard .codeline button{min-height:32px!important}.codeline button.link.link{min-height:32px;padding:4px 10px;font-size:13px}
 .reqform{display:flex;gap:8px;align-items:stretch}.reqform input{flex:1;min-width:0;margin:0}.reqform button{min-height:46px;white-space:nowrap}#reqList .crow{gap:10px;padding:8px 0}
 #coachReq{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:45;background:linear-gradient(160deg,color-mix(in srgb,#3fb58a 22%,var(--card)),var(--card) 70%);border:2px solid #3fb58a;border-radius:18px;padding:16px;box-shadow:0 12px 40px #000a,0 0 30px #3fb58a55;display:grid;gap:12px;animation:reqIn .4s cubic-bezier(.2,1.3,.4,1)}
@@ -672,7 +677,6 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
     <div class="card" id="trainerMode"></div>
     <p class="grp">MY PEERS</p>
     <div class="card" id="peersCard"></div>
-    <details class="card" id="rankCard"><summary><i data-ic="bars"></i>Rankings</summary><div id="rankBox" class="small"></div></details>
     <p class="grp">CUSTOMIZE</p>
     <details class="card" id="chartsCard"><summary><i data-ic="chart"></i>Custom Graphs</summary><div id="chartsBox" class="small"></div></details>
     <details class="card" id="ciDefsCard"><summary><i data-ic="sliders"></i>Custom Parameters</summary><div id="ciDefs" class="small"></div></details>
@@ -777,7 +781,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024090625';
+const BUILD = '20261024091319';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2206,22 +2210,35 @@ function renderTrainerMode() {
 async function renderPeers() {
   const box = $('#peersCard'), list = S.peers || [];
   box.classList.toggle('hide', !S.me); if (!S.me) return;
+  // ranked: you + your peers by Consistency (last 30 days); until the scores arrive, the plain list
+  const scored = PEER_RANK || [S.me].concat(list).map(x => Object.assign({}, x, { me: x.id === S.me.id }));
+  const rows = scored.map(r => Object.assign({}, r, (list.find(x => x.id === r.id) || {}))).map(r => Object.assign(r, { score: r.workouts == null ? null : consistency(r) }));
+  if (PEER_RANK) rows.sort((x, y) => (y.score || 0) - (x.score || 0));
   box.innerHTML = `<div class="row between"><div class="codeblk"><div class="small muted">Your Code</div><span class="codeline"><b id="pCode" style="font-size:18px;letter-spacing:.05em">…</b><button type="button" class="link" data-copycode="#pCode">Copy</button></span></div>
       <button class="primary" id="pShare" style="min-height:40px">Share</button></div>
-    <p class="small muted" style="margin:8px 0 10px">Share your code to compare stats and rankings.</p>
-    ${list.map((x, i) => `<div class="crow" style="cursor:default"><span class="cnum">#${i + 1}</span><span class="avatar" data-pav="${x.id}"></span><span class="grow" style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.name)}</b>${x.code ? `<button type="button" class="pcode" data-pc="${esc(x.code)}">${esc(x.code)} <span>Copy</span></button>` : ''}</span>
-      <button class="lk-nav" data-peer="${x.id}">Open</button><button class="link" data-unpeer="${x.id}">Remove</button></div>`).join('')}
-    <form id="peerForm" style="display:flex;gap:8px;align-items:flex-end;margin-top:10px"><label class="grow" style="margin:0">Add A Peer<input name="code" maxlength="24" autocapitalize="characters" placeholder="e.g. MINT-4821" style="text-transform:uppercase"></label><button class="primary">Add</button></form>`;
-  list.forEach(x => paintAvatar($(`[data-pav="${x.id}"]`, box), x, ''));
-  $$('[data-pc]', box).forEach(b => b.onclick = () => { const c = b.dataset.pc; (navigator.clipboard ? navigator.clipboard.writeText(c) : Promise.reject()).then(() => toast('Copied ' + c), () => prompt('Code', c)); });
-  $$('[data-peer]', box).forEach(b => b.onclick = () => switchTo(b.dataset.peer, 'peer'));
-  $$('[data-unpeer]', box).forEach(b => b.onclick = () => confirm('Stop being peers? Neither of you will see the other\'s stats.') && busy(b, async () => { Object.assign(S, await api('removePeer', { id: b.dataset.unpeer })); renderPeers(); }));
+    <p class="small muted" style="margin:8px 0 4px">${list.length ? 'Ranked by consistency · last 30 days. Tap a peer to see their stats.' : 'Share your code to compare stats and rankings.'}</p>
+    ${list.length ? rows.map((r, i) => `<div class="prow${r.me ? ' me' : ''}" ${r.me ? '' : `data-peer="${r.id}"`}>
+        <span class="n">${i + 1}</span><span class="avatar" data-pav="${r.id}"></span>
+        <div class="pm"><b>${esc(r.me ? r.name + ' (you)' : r.name)}</b>${r.score == null ? '' : `<div class="rk-bar"><i style="width:${Math.max(3, r.score)}%"></i></div>
+          <small>${r.workouts || 0} workout${r.workouts === 1 ? '' : 's'} · ${r.weighIns || 0} weigh-in${r.weighIns === 1 ? '' : 's'}</small>`}</div>
+        <span class="ps">${r.score == null ? '' : r.score}</span>
+        ${r.me ? '<span class="pmore"></span>' : `<button type="button" class="link pmore" data-pmenu="${r.id}" aria-label="Options">⋯</button>`}
+      </div>
+      ${r.me ? '' : `<div class="pacts hide" data-pacts="${r.id}"><button type="button" class="link" data-pc="${esc(r.code || '')}">Copy Code</button><button type="button" class="link danger" data-unpeer="${r.id}">Remove</button></div>`}`).join('') : ''}
+    <form id="peerForm" style="display:flex;gap:8px;align-items:flex-end;margin-top:12px"><label class="grow" style="margin:0">Add A Peer<input name="code" maxlength="24" autocapitalize="characters" placeholder="e.g. MINT-4821" style="text-transform:uppercase"></label><button class="primary">Add</button></form>`;
+  rows.forEach(r => paintAvatar($(`[data-pav="${r.id}"]`, box), r, r.me ? 'c' : ''));
+  $$('[data-peer]', box).forEach(row => row.onclick = e => { if (!e.target.closest('[data-pmenu]')) switchTo(row.dataset.peer, 'peer'); });
+  $$('[data-pmenu]', box).forEach(b => b.onclick = () => $(`[data-pacts="${b.dataset.pmenu}"]`, box).classList.toggle('hide'));
+  $$('[data-pc]', box).forEach(b => b.onclick = () => { const c = b.dataset.pc; if (!c) return; (navigator.clipboard ? navigator.clipboard.writeText(c) : Promise.reject()).then(() => toast('Copied ' + c), () => prompt('Code', c)); });
+  $$('[data-unpeer]', box).forEach(b => b.onclick = () => confirm('Stop being peers? Neither of you will see the other\'s stats.') && busy(b, async () => { Object.assign(S, await api('removePeer', { id: b.dataset.unpeer })); PEER_RANK = null; renderPeers(); }));
   $('#peerForm').onsubmit = e => { e.preventDefault(); const f = e.target;
-    busy($('button', f), async () => { Object.assign(S, await api('addPeer', { code: f.code.value })); renderPeers(); toast('Peer added'); }); };
+    busy($('button', f), async () => { Object.assign(S, await api('addPeer', { code: f.code.value })); PEER_RANK = null; renderPeers(); toast('Peer added'); }); };
   $('#pShare').onclick = () => { const t = 'Compare stats with me on Stat Sheet: ' + location.origin + location.pathname + '?peer=' + encodeURIComponent($('#pCode').textContent);
     navigator.share ? navigator.share({ text: t }).catch(() => {}) : (navigator.clipboard && navigator.clipboard.writeText(t), toast('Copied')); };
-  try { $('#pCode').textContent = await api('myPeerCode', {}); } catch (e) {}
+  if (PEER_CODE) $('#pCode').textContent = PEER_CODE; else api('myPeerCode', {}).then(c => { PEER_CODE = c; if ($('#pCode')) $('#pCode').textContent = c; }).catch(() => {});
+  if (!PEER_RANK && list.length) api('ranking', { group: 'peers' }).then(r => { PEER_RANK = r; if (curTab === 'more') renderPeers(); }).catch(() => {});
 }
+let PEER_RANK = null, PEER_CODE = null;
 /* Rankings: one Consistency score (0–100) over the last 30 days. Half is workout days (16 = 4 a week = full marks),
    half is weigh-ins (one a day = full marks). More › Rankings: you + your peers. My Clients: a trainer's clients. */
 const consistency = r => Math.round(Math.min((r.workouts || 0) / 16, 1) * 50 + Math.min((r.weighIns || 0) / 30, 1) * 50);
@@ -2241,8 +2258,6 @@ async function renderRanking(box, group) {
 }
 function renderMore() {
   renderPeers();
-  $('#rankCard').classList.toggle('hide', !S.me || viewingClient() || viewingPeer());
-  $('#rankCard').ontoggle = () => $('#rankCard').open && renderRanking($('#rankBox'), 'peers');
   renderMyTrainer(); renderTrainerMode();
   renderAccount();
   const f = $('#profileForm');
