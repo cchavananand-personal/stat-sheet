@@ -772,7 +772,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024082654';
+const BUILD = '20261024083145';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -977,6 +977,7 @@ function renderRoleTag() {
   $('#trainerBar').classList.toggle('hide', !trainer || viewingPeer());
   $('#peerBar').classList.toggle('hide', !viewingPeer());
   if (viewingPeer()) $('#peerName').textContent = S.target.name;
+  if (viewingClient()) { const me = (S.clients || []).find(c => c.id === S.target.id); if (me && me.news && me.news.length) { me.news = []; syncSavedClients(); } }
   document.body.classList.toggle('tmode', viewingClient());
   paintMode();
   $$('#modeSeg button').forEach(b => b.classList.toggle('on', (b.dataset.m === 't') === viewingClient()));
@@ -2781,7 +2782,7 @@ async function prefetchClients(d) {
     try { const old = JSON.parse(localStorage.getItem(key) || 'null'); if (old && old.date === TODAY && Date.now() - (old.at || 0) < 3e5) continue; } catch (e) {}
     try {
       const r = await (await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ k: KEY, as: id, action: 'bootstrap', data: { date: TODAY } }) })).json();
+        body: JSON.stringify({ k: KEY, as: id, action: 'bootstrap', data: { date: TODAY, prefetch: true } }) })).json(); // prefetch never clears dots
       if (r.ok) localStorage.setItem(key, JSON.stringify({ date: TODAY, data: r.result, at: Date.now() }));
     } catch (e) { return; } // offline or storage full: switching just loads as before
   }
