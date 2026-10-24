@@ -368,8 +368,10 @@ button.loading img,button.loading svg{opacity:0}
 .fsug button:last-child{border-bottom:0}.fsug button:active{background:var(--soft)}.fsug .fn{flex:1;min-width:0}.fsug .fn b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fsug .fn small,.fsug .fk small{display:block;color:var(--muted);font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fsug .fn i{font-style:normal;font-size:11px;font-weight:800;color:var(--accent)}
 .fsug .fk{text-align:right;font-weight:800;white-space:nowrap}
-.fpor{display:flex;align-items:center;gap:6px;margin:-4px 0 10px;flex-wrap:wrap}.fpor span{font-size:12px;color:var(--muted);margin-right:auto}
-.fpor button{min-height:32px;padding:4px 12px;border-radius:99px;border:1px solid var(--line);background:var(--soft);font-size:13px;font-weight:700;color:var(--muted)}.fpor button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.fpor{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;margin:-4px 0 12px}.fpor select{margin:0;min-height:44px}.fsum{grid-column:1/-1;font-size:13px;font-weight:700;color:var(--accent)}
+.fq{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--soft)}.fq input{width:64px;margin:0;border:0;border-radius:0;text-align:center;min-height:44px;background:transparent;font-weight:700}
+.fq button{min-height:44px;width:40px;padding:0;border-radius:0;background:none;font-size:20px;font-weight:700;color:var(--accent)}
+
 .codeline{display:flex;align-items:center;gap:10px}.codeblk{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.codeblk>.small{margin:0}#newClientCard .codeline button{min-height:32px!important}.codeline button.link.link{min-height:32px;padding:4px 10px;font-size:13px}
 .reqform{display:flex;gap:8px;align-items:stretch}.reqform input{flex:1;min-width:0;margin:0}.reqform button{min-height:46px;white-space:nowrap}#reqList .crow{gap:10px;padding:8px 0}
 #coachReq{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:45;background:linear-gradient(160deg,color-mix(in srgb,#3fb58a 22%,var(--card)),var(--card) 70%);border:2px solid #3fb58a;border-radius:18px;padding:16px;box-shadow:0 12px 40px #000a,0 0 30px #3fb58a55;display:grid;gap:12px;animation:reqIn .4s cubic-bezier(.2,1.3,.4,1)}
@@ -803,7 +805,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024153147';
+const BUILD = '20261024154055';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1652,33 +1654,218 @@ async function myFoods() {
   try { MY_FOODS = await api('myFoods'); MY_FOODS_FOR = AS; } catch (e) { MY_FOODS = []; }
   return MY_FOODS;
 }
-const foodNorm = s => String(s || '').toLowerCase().replace(/\s+/g, '');
+/* Ingredients per 100 g (cooked unless noted): [Thai, English, kcal, P, C, F, [[unit, grams], …]]. First unit = default. */
+const ING = [
+// beef
+['ริบอาย', 'Ribeye steak', 291, 24, 0, 21, [['steak (250 g)', 250], ['g', 1]]],
+['เซอร์ลอยน์', 'Sirloin steak', 244, 27, 0, 14, [['steak (220 g)', 220], ['g', 1]]],
+['เทนเดอร์ลอยน์', 'Tenderloin / filet mignon', 227, 30, 0, 11, [['steak (200 g)', 200], ['g', 1]]],
+['ทีโบน', 'T-bone steak', 260, 25, 0, 17, [['steak (350 g)', 350], ['g', 1]]],
+['เนื้อวากิว', 'Wagyu beef (marbled)', 480, 13, 0, 47, [['g', 1], ['steak (150 g)', 150]]],
+['ฟลังค์สเต๊ก', 'Flank steak', 192, 28, 0, 8, [['g', 1], ['steak (200 g)', 200]]],
+['เนื้อบด', 'Ground beef (15% fat)', 250, 26, 0, 15, [['g', 1], ['patty (110 g)', 110]]],
+['เนื้อติดมัน / ชอร์ตริบ', 'Beef short rib', 330, 22, 0, 27, [['g', 1]]],
+['เนื้อสไลซ์ชาบู', 'Beef slices (shabu)', 250, 20, 0, 19, [['g', 1], ['plate (100 g)', 100]]],
+['เนื้อตุ๋น', 'Braised beef', 220, 28, 2, 11, [['g', 1], ['bowl portion (120 g)', 120]]],
+['ลูกชิ้นเนื้อ', 'Beef balls', 180, 12, 8, 11, [['ball (15 g)', 15], ['g', 1]]],
+// pork
+['สันในหมู', 'Pork tenderloin', 143, 26, 0, 3.5, [['g', 1]]],
+['สันนอกหมู', 'Pork loin', 197, 29, 0, 8, [['g', 1], ['chop (180 g)', 180]]],
+['หมูสับ', 'Minced pork', 263, 25, 0, 18, [['g', 1], ['tbsp (15 g)', 15]]],
+['หมูสามชั้น', 'Pork belly', 518, 9, 0, 53, [['g', 1], ['slice (20 g)', 20]]],
+['คอหมูย่าง', 'Grilled pork neck', 330, 20, 2, 27, [['g', 1], ['plate (120 g)', 120]]],
+['หมูกรอบ', 'Crispy pork belly', 550, 15, 2, 53, [['g', 1], ['piece (15 g)', 15]]],
+['หมูแดง', 'Red BBQ pork', 220, 22, 10, 10, [['g', 1], ['portion (80 g)', 80]]],
+['แฮม', 'Ham', 145, 21, 1.5, 6, [['slice (20 g)', 20], ['g', 1]]],
+['เบคอน', 'Bacon', 541, 37, 1.4, 42, [['strip (8 g)', 8], ['g', 1]]],
+['ไส้กรอกหมู', 'Pork sausage', 300, 12, 3, 27, [['piece (40 g)', 40], ['g', 1]]],
+['ลูกชิ้นหมู', 'Pork balls', 190, 12, 8, 12, [['ball (15 g)', 15], ['g', 1]]],
+['หมูยอ', 'Vietnamese pork roll', 190, 15, 4, 13, [['slice (20 g)', 20], ['g', 1]]],
+// chicken & duck
+['อกไก่', 'Chicken breast (skinless)', 165, 31, 0, 3.6, [['piece (150 g)', 150], ['½ piece (75 g)', 75], ['g', 1]]],
+['สะโพกไก่ไม่มีหนัง', 'Chicken thigh (skinless)', 209, 26, 0, 11, [['thigh (100 g)', 100], ['g', 1]]],
+['สะโพกไก่ติดหนัง', 'Chicken thigh (with skin)', 229, 24, 0, 15, [['thigh (110 g)', 110], ['g', 1]]],
+['น่องไก่', 'Chicken drumstick', 216, 27, 0, 11, [['drumstick (75 g)', 75], ['g', 1]]],
+['ปีกไก่', 'Chicken wings', 290, 27, 0, 19, [['wing (30 g)', 30], ['g', 1]]],
+['ไก่บด', 'Ground chicken', 189, 23, 0, 10, [['g', 1]]],
+['ไก่ย่าง (ติดหนัง)', 'Grilled chicken (with skin)', 239, 27, 0, 14, [['quarter (150 g)', 150], ['g', 1]]],
+['ไก่ทอด', 'Fried chicken', 280, 20, 10, 18, [['piece (110 g)', 110], ['g', 1]]],
+['ไก่สะเต๊ะ', 'Chicken satay', 220, 20, 6, 12, [['stick (25 g)', 25], ['g', 1]]],
+['ไก่คาราเกะ', 'Karaage chicken', 280, 18, 12, 18, [['piece (30 g)', 30], ['g', 1]]],
+['เป็ดย่าง', 'Roast duck', 337, 19, 0, 28, [['g', 1], ['portion (100 g)', 100]]],
+// fish & seafood
+['แซลมอน', 'Salmon', 208, 22, 0, 13, [['piece (150 g)', 150], ['½ piece (75 g)', 75], ['skewer (40 g)', 40], ['sashimi slice (15 g)', 15], ['g', 1]]],
+['แซลมอนรมควัน', 'Smoked salmon', 117, 18, 0, 4.3, [['slice (20 g)', 20], ['g', 1]]],
+['ทูน่าสเต๊ก', 'Tuna steak', 130, 29, 0, 1, [['steak (150 g)', 150], ['g', 1]]],
+['ทูน่ากระป๋องในน้ำแร่', 'Canned tuna in water', 116, 26, 0, 1, [['can drained (100 g)', 100], ['g', 1]]],
+['ทูน่ากระป๋องในน้ำมัน', 'Canned tuna in oil', 198, 29, 0, 8, [['can drained (100 g)', 100], ['g', 1]]],
+['ปลาซาบะย่าง', 'Grilled saba (mackerel)', 260, 20, 0, 20, [['piece (120 g)', 120], ['g', 1]]],
+['ปลานิล', 'Tilapia', 128, 26, 0, 2.7, [['fillet (120 g)', 120], ['g', 1]]],
+['ปลากะพง', 'Sea bass', 124, 24, 0, 2.6, [['fillet (150 g)', 150], ['g', 1]]],
+['ปลาแซลมอนซาชิมิ', 'Salmon sashimi', 208, 20, 0, 13, [['slice (15 g)', 15], ['g', 1]]],
+['ปลาดอลลี่', 'Dory fillet', 90, 18, 0, 2, [['fillet (120 g)', 120], ['g', 1]]],
+['กุ้ง', 'Shrimp', 99, 24, 0.2, 0.3, [['large shrimp (15 g)', 15], ['g', 1]]],
+['กุ้งแม่น้ำเผา', 'Grilled river prawn', 110, 22, 0, 2, [['prawn (100 g meat)', 100], ['g', 1]]],
+['ปลาหมึก', 'Squid', 92, 16, 3, 1.4, [['g', 1], ['skewer (60 g)', 60]]],
+['ปลาหมึกทอด', 'Fried calamari', 175, 15, 8, 9, [['g', 1], ['plate (120 g)', 120]]],
+['หอยแมลงภู่', 'Mussels', 172, 24, 7, 4.5, [['g', 1]]],
+['หอยเชลล์', 'Scallops', 111, 21, 5, 0.8, [['scallop (20 g)', 20], ['g', 1]]],
+['เนื้อปู', 'Crab meat', 97, 19, 0, 1.5, [['g', 1]]],
+['ปูอัด', 'Crab stick', 95, 7.6, 15, 0.5, [['stick (17 g)', 17], ['g', 1]]],
+['ลูกชิ้นปลา', 'Fish balls', 100, 11, 8, 2, [['ball (12 g)', 12], ['g', 1]]],
+// eggs, tofu, dairy
+['ไข่ไก่', 'Egg', 155, 13, 1.1, 11, [['egg (50 g)', 50], ['g', 1]]],
+['ไข่ขาว', 'Egg white', 52, 11, 0.7, 0.2, [['egg white (33 g)', 33], ['g', 1]]],
+['ไข่แดง', 'Egg yolk', 322, 16, 3.6, 27, [['yolk (17 g)', 17], ['g', 1]]],
+['ไข่ดาว', 'Fried egg', 196, 14, 0.8, 15, [['egg (55 g)', 55], ['g', 1]]],
+['ไข่เจียว', 'Thai omelette', 280, 12, 1, 25, [['2-egg omelette (120 g)', 120], ['g', 1]]],
+['เต้าหู้แข็ง', 'Firm tofu', 144, 15, 3, 8.7, [['g', 1], ['block (300 g)', 300]]],
+['เต้าหู้อ่อน', 'Silken tofu', 55, 5, 2, 2.7, [['tube (130 g)', 130], ['g', 1]]],
+['นมสด', 'Whole milk', 61, 3.2, 4.8, 3.3, [['glass (250 ml)', 250], ['box (225 ml)', 225], ['ml', 1]]],
+['นมพร่องมันเนย', 'Skim milk', 35, 3.4, 5, 0.1, [['glass (250 ml)', 250], ['ml', 1]]],
+['นมอัลมอนด์ไม่หวาน', 'Unsweetened almond milk', 15, 0.6, 0.3, 1.1, [['glass (250 ml)', 250], ['ml', 1]]],
+['กรีกโยเกิร์ต', 'Greek yogurt (2%)', 73, 10, 4, 2, [['cup (150 g)', 150], ['g', 1]]],
+['ชีสเชดดาร์', 'Cheddar cheese', 403, 25, 1.3, 33, [['slice (20 g)', 20], ['g', 1]]],
+['มอสซาเรลลา', 'Mozzarella', 280, 28, 3, 17, [['g', 1]]],
+['คอทเทจชีส', 'Cottage cheese', 98, 11, 3.4, 4.3, [['cup (225 g)', 225], ['g', 1]]],
+['เนย', 'Butter', 717, 0.9, 0.1, 81, [['tbsp (14 g)', 14], ['tsp (5 g)', 5], ['g', 1]]],
+// carbs
+['ข้าวสวย', 'White rice (cooked)', 130, 2.7, 28, 0.3, [['cup (180 g)', 180], ['scoop (100 g)', 100], ['g', 1]]],
+['ข้าวกล้อง', 'Brown rice (cooked)', 112, 2.6, 23, 0.9, [['cup (180 g)', 180], ['g', 1]]],
+['ข้าวไรซ์เบอร์รี่', 'Riceberry rice (cooked)', 120, 3, 25, 1, [['cup (180 g)', 180], ['g', 1]]],
+['ข้าวเหนียวนึ่ง', 'Steamed sticky rice', 210, 4.3, 46, 0.4, [['bag (100 g)', 100], ['g', 1]]],
+['เส้นพาสต้า', 'Pasta (cooked)', 158, 5.8, 31, 0.9, [['plate (200 g)', 200], ['g', 1]]],
+['เส้นก๋วยเตี๋ยว', 'Rice noodles (cooked)', 108, 1.8, 24, 0.2, [['bowl portion (150 g)', 150], ['g', 1]]],
+['บะหมี่ไข่', 'Egg noodles (cooked)', 138, 4.5, 25, 2, [['bowl portion (150 g)', 150], ['g', 1]]],
+['วุ้นเส้น', 'Glass noodles (cooked)', 85, 0.1, 21, 0, [['g', 1]]],
+['มันฝรั่ง', 'Potato (boiled)', 87, 1.9, 20, 0.1, [['medium (170 g)', 170], ['g', 1]]],
+['มันฝรั่งบด', 'Mashed potato', 113, 2, 17, 4, [['cup (210 g)', 210], ['g', 1]]],
+['มันหวาน', 'Sweet potato (baked)', 90, 2, 21, 0.2, [['medium (130 g)', 130], ['g', 1]]],
+['ข้าวโพด', 'Sweet corn', 96, 3.4, 21, 1.5, [['cob (100 g kernels)', 100], ['g', 1]]],
+['ข้าวโอ๊ต', 'Oats (dry)', 389, 17, 66, 7, [['½ cup (40 g)', 40], ['g', 1]]],
+['ควินัว', 'Quinoa (cooked)', 120, 4.4, 21, 1.9, [['cup (185 g)', 185], ['g', 1]]],
+['ขนมปังโฮลวีต', 'Whole wheat bread', 247, 13, 41, 3.4, [['slice (30 g)', 30], ['g', 1]]],
+['ขนมปังขาว', 'White bread', 265, 9, 49, 3.2, [['slice (28 g)', 28], ['g', 1]]],
+['แผ่นตอร์ติญา', 'Tortilla wrap', 218, 6, 36, 5, [['wrap (60 g)', 60], ['g', 1]]],
+['กราโนล่า', 'Granola', 471, 10, 64, 20, [['½ cup (50 g)', 50], ['g', 1]]],
+// vegetables
+['บรอกโคลี', 'Broccoli', 35, 2.4, 7, 0.4, [['cup (90 g)', 90], ['g', 1]]],
+['ผักสลัด', 'Mixed salad greens', 20, 1.5, 3.5, 0.2, [['bowl (100 g)', 100], ['g', 1]]],
+['แครอท', 'Carrot', 41, 0.9, 10, 0.2, [['medium (60 g)', 60], ['g', 1]]],
+['แตงกวา', 'Cucumber', 15, 0.7, 3.6, 0.1, [['cucumber (200 g)', 200], ['g', 1]]],
+['มะเขือเทศ', 'Tomato', 18, 0.9, 3.9, 0.2, [['medium (120 g)', 120], ['g', 1]]],
+['ผักโขม', 'Spinach', 23, 2.9, 3.6, 0.4, [['cup (30 g)', 30], ['g', 1]]],
+['คะน้า', 'Chinese kale', 26, 1.2, 4.7, 0.4, [['cup (90 g)', 90], ['g', 1]]],
+['ผักบุ้ง', 'Morning glory', 19, 2.6, 3.1, 0.2, [['g', 1]]],
+['อะโวคาโด', 'Avocado', 160, 2, 9, 15, [['½ avocado (75 g)', 75], ['avocado (150 g)', 150], ['g', 1]]],
+['เห็ด', 'Mushrooms', 22, 3.1, 3.3, 0.3, [['cup (70 g)', 70], ['g', 1]]],
+['ถั่วแระญี่ปุ่น', 'Edamame', 121, 12, 9, 5, [['cup (155 g)', 155], ['g', 1]]],
+// fruit
+['กล้วยหอม', 'Banana', 89, 1.1, 23, 0.3, [['medium (118 g)', 118], ['g', 1]]],
+['แอปเปิ้ล', 'Apple', 52, 0.3, 14, 0.2, [['medium (182 g)', 182], ['g', 1]]],
+['ส้ม', 'Orange', 47, 0.9, 12, 0.1, [['medium (130 g)', 130], ['g', 1]]],
+['มะม่วงสุก', 'Ripe mango', 60, 0.8, 15, 0.4, [['mango (250 g flesh)', 250], ['cheek (100 g)', 100], ['g', 1]]],
+['แตงโม', 'Watermelon', 30, 0.6, 8, 0.2, [['cup (150 g)', 150], ['g', 1]]],
+['สับปะรด', 'Pineapple', 50, 0.5, 13, 0.1, [['cup (165 g)', 165], ['g', 1]]],
+['มะละกอ', 'Papaya', 43, 0.5, 11, 0.3, [['cup (145 g)', 145], ['g', 1]]],
+['ฝรั่ง', 'Guava', 68, 2.6, 14, 1, [['fruit (150 g)', 150], ['g', 1]]],
+['องุ่น', 'Grapes', 69, 0.7, 18, 0.2, [['cup (150 g)', 150], ['g', 1]]],
+['สตรอว์เบอร์รี', 'Strawberries', 32, 0.7, 7.7, 0.3, [['cup (150 g)', 150], ['g', 1]]],
+['บลูเบอร์รี', 'Blueberries', 57, 0.7, 14, 0.3, [['cup (150 g)', 150], ['g', 1]]],
+['แก้วมังกร', 'Dragon fruit', 60, 1.2, 13, 0, [['½ fruit (150 g)', 150], ['g', 1]]],
+['กีวี', 'Kiwi', 61, 1.1, 15, 0.5, [['kiwi (75 g)', 75], ['g', 1]]],
+['ทุเรียน', 'Durian', 147, 1.5, 27, 5.3, [['pod (50 g)', 50], ['g', 1]]],
+['ลำไย', 'Longan', 60, 1.3, 15, 0.1, [['10 fruits (60 g)', 60], ['g', 1]]],
+// nuts, fats, extras
+['อัลมอนด์', 'Almonds', 579, 21, 22, 50, [['handful (28 g)', 28], ['g', 1]]],
+['ถั่วลิสง', 'Peanuts', 567, 26, 16, 49, [['handful (28 g)', 28], ['g', 1]]],
+['เม็ดมะม่วงหิมพานต์', 'Cashews', 553, 18, 30, 44, [['handful (28 g)', 28], ['g', 1]]],
+['เนยถั่ว', 'Peanut butter', 588, 25, 20, 50, [['tbsp (16 g)', 16], ['g', 1]]],
+['น้ำมันมะกอก', 'Olive oil', 884, 0, 0, 100, [['tbsp (13.5 g)', 13.5], ['tsp (4.5 g)', 4.5], ['g', 1]]],
+['น้ำมันพืช', 'Vegetable oil', 884, 0, 0, 100, [['tbsp (13.5 g)', 13.5], ['g', 1]]],
+['มายองเนส', 'Mayonnaise', 680, 1, 0.6, 75, [['tbsp (14 g)', 14], ['g', 1]]],
+['น้ำผึ้ง', 'Honey', 304, 0.3, 82, 0, [['tbsp (21 g)', 21], ['tsp (7 g)', 7], ['g', 1]]],
+['น้ำตาล', 'Sugar', 387, 0, 100, 0, [['tsp (4 g)', 4], ['tbsp (12 g)', 12], ['g', 1]]],
+['เมล็ดเจีย', 'Chia seeds', 486, 17, 42, 31, [['tbsp (12 g)', 12], ['g', 1]]],
+['เวย์โปรตีน', 'Whey protein powder', 400, 80, 10, 5, [['scoop (30 g)', 30], ['g', 1]]],
+['ครีเอทีน', 'Creatine', 0, 0, 0, 0, [['scoop (5 g)', 5]]]
+];
+
+/* One food model: per = 100 g (ingredients) or per serving (dishes); units = [[label, amount]]. */
+const DISH_DUPES = new Set(['ข้าวสวย', 'ข้าวกล้อง', 'ข้าวเหนียว', 'ไข่ดาว', 'ไข่ต้ม', 'ไข่ขาวต้ม', 'อกไก่ย่าง', 'กล้วยหอม', 'แอปเปิ้ล', 'ส้ม', 'มะม่วงสุก', 'แตงโม', 'สับปะรด', 'มะละกอ', 'ฝรั่ง', 'ทุเรียน', 'องุ่น',
+  'ถั่วอัลมอนด์', 'ถั่วลิสง', 'เนยถั่ว', 'ข้าวโอ๊ต', 'กราโนล่า', 'ขนมปังโฮลวีต', 'ขนมปังขาว', 'เต้าหู้', 'อะโวคาโด', 'มันหวานต้ม', 'ข้าวโพดต้ม', 'แซลมอนย่าง', 'สเต๊กเนื้อ', 'ซาชิมิแซลมอน',
+  'กรีกโยเกิร์ต', 'นมจืด', 'นมไขมันต่ำ', 'เวย์โปรตีน', 'ไก่ทอด', 'ไก่ย่าง', 'คอหมูย่าง', 'ไข่ต้มสุก 7-11']);
+const FOOD_DB = ING.map(f => ({ name: f[0], en: f[1], per: 100, n: { kcal: f[2], p: f[3], c: f[4], f: f[5] }, units: f[6] }))
+  .concat(FOODS.filter(f => !DISH_DUPES.has(f[0])).map(f => ({ name: f[0], en: f[1], per: 1, n: { kcal: f[2], p: f[3], c: f[4], f: f[5] }, units: [[f[6], 1]] })));
+/** "ribeye 200g", "2 eggs", "แซลมอน 150 กรัม" → { q: words to search, grams, count } */
+function parseFoodQuery(t) {
+  let q = String(t || '').trim(), grams = null, count = null, m;
+  if ((m = q.match(/(\d+(?:\.\d+)?)\s*(g|gr|gram|grams|กรัม|ก\.|ml|มล\.?)(?=\s|$)/i))) { grams = +m[1]; q = q.replace(m[0], ' '); }
+  else if ((m = q.match(/^(\d+(?:\.\d+)?|½)\s+/)) || (m = q.match(/\s(\d+(?:\.\d+)?|½)$/))) { count = m[1] === '½' ? 0.5 : +m[1]; q = q.replace(m[0], ' '); }
+  return { q: q.replace(/\s+/g, ' ').trim(), grams, count };
+}
+const foodNorm = s => String(s || '').toLowerCase().replace(/\s+/g, '').replace(/s$/, '');
+function foodMatches(q) {
+  const k = foodNorm(q); if (k.length < 2) return [];
+  const words = q.toLowerCase().split(' ').filter(w => w.length > 1).map(w => w.replace(/s$/, ''));
+  const score = x => { const a = foodNorm(x.name), e = foodNorm(x.en);
+    if (a === k || e === k) return 0; if (a.startsWith(k) || e.startsWith(k)) return 1; if (a.includes(k) || e.includes(k)) return 2;
+    return words.length > 1 && words.every(w => e.includes(w) || a.includes(w)) ? 3 : 9; };
+  return FOOD_DB.map(x => [score(x), x]).filter(z => z[0] < 9).sort((u, v) => u[0] - v[0]).map(z => z[1]);
+}
 function attachFoodSearch(form) {
   const inp = form.description; if (!inp || inp._food) return; inp._food = true; inp.setAttribute('autocomplete', 'off');
   const box = document.createElement('div'); box.className = 'fsug hide'; inp.parentNode.after(box);
   const por = document.createElement('div'); por.className = 'fpor hide'; box.after(por);
-  let base = null;
-  const fill = (x, k) => { const set = (n, v) => { if (form[n]) form[n].value = v ? Math.round(v * k) : ''; };
-    set('calories', x.kcal); set('protein', x.p); set('carbs', x.c); set('fat', x.f); };
-  const pick = x => { inp.value = x.name; base = x; fill(x, 1); box.classList.add('hide');
-    por.classList.toggle('hide', !x.serving); if (x.serving) drawPor(1); };
-  const drawPor = k => { por.innerHTML = '<span>' + esc(base.serving) + '</span>' + [0.5, 1, 1.5, 2].map(v => '<button type="button" data-k="' + v + '" class="' + (v === k ? 'on' : '') + '">' + (v === 0.5 ? '½' : v === 1.5 ? '1½' : v) + '×</button>').join('');
-    $$('[data-k]', por).forEach(b => b.onclick = () => { fill(base, +b.dataset.k); drawPor(+b.dataset.k); }); };
+  let cur = null; // { item, qty, unit }
+  const amountOf = () => cur.item.units[cur.unit][1] * cur.qty;
+  const calc = () => { const k = amountOf() / cur.item.per, n = cur.item.n; return { kcal: n.kcal * k, p: n.p * k, c: n.c * k, f: n.f * k }; };
+  const label = () => { const u = cur.item.units[cur.unit][0], q = cur.qty;
+    return u === 'g' || u === 'ml' ? q + ' ' + u : (q === 1 ? '' : (q === 0.5 ? '½' : q) + ' × ') + u; };
+  const apply = () => {
+    const v = calc(), set = (nm, x, d) => { if (form[nm]) form[nm].value = x ? +x.toFixed(d) : 0; };
+    set('calories', v.kcal, 0); set('protein', v.p, 0); set('carbs', v.c, 0); set('fat', v.f, 0);
+    inp.value = cur.item.name + ' · ' + label();
+    $('.fsum', por).textContent = Math.round(v.kcal) + ' kcal · P ' + Math.round(v.p) + ' · C ' + Math.round(v.c) + ' · F ' + Math.round(v.f);
+  };
+  const drawPor = () => {
+    const it = cur.item, isG = u => /^(g|ml)$/.test(it.units[u][0]);
+    por.innerHTML = `<div class="fq"><button type="button" data-st="-1" aria-label="Less">−</button><input type="number" inputmode="decimal" min="0" step="any" value="${cur.qty}"><button type="button" data-st="1" aria-label="More">+</button></div>
+      <select>${it.units.map((u, i) => `<option value="${i}" ${i === cur.unit ? 'selected' : ''}>${esc(u[0])}</option>`).join('')}</select>
+      <div class="fsum"></div>`;
+    const q = $('input', por), sel = $('select', por), step = () => isG(cur.unit) ? 10 : 0.5;
+    q.oninput = () => { const v = parseFloat(q.value); if (v > 0) { cur.qty = v; apply(); } };
+    $$('[data-st]', por).forEach(btn => btn.onclick = () => { cur.qty = Math.max(step(), +(cur.qty + step() * btn.dataset.st).toFixed(2)); q.value = cur.qty; apply(); });
+    sel.onchange = () => { const g = amountOf(); cur.unit = +sel.value; // keep the same amount when switching units
+      cur.qty = Math.max(isG(cur.unit) ? 1 : 0.1, +(g / it.units[cur.unit][1]).toFixed(isG(cur.unit) ? 0 : 1)); q.value = cur.qty; apply(); };
+    por.classList.remove('hide'); apply();
+  };
+  const pick = (item, parsed) => {
+    let unit = 0, qty = 1;
+    if (parsed && parsed.grams && item.per === 100) { unit = Math.max(0, item.units.findIndex(u => /^(g|ml)$/.test(u[0]))); qty = parsed.grams; }
+    else if (parsed && parsed.count) qty = parsed.count;
+    cur = { item, qty, unit }; box.classList.add('hide'); drawPor();
+  };
+  const pickMine = x => { cur = null; por.classList.add('hide'); box.classList.add('hide'); inp.value = x.name;
+    [['calories', x.kcal], ['protein', x.p], ['carbs', x.c], ['fat', x.f]].forEach(([nm, v]) => { if (form[nm]) form[nm].value = v ? Math.round(v) : ''; }); };
+  let seq = 0;
   inp.addEventListener('input', async () => {
-    base = null; por.classList.add('hide');
-    const q = foodNorm(inp.value); if (q.length < 2) return box.classList.add('hide');
-    const mine = (await myFoods()).filter(x => foodNorm(x.name).includes(q)).slice(0, 4).map(x => Object.assign({ mine: 1 }, x));
-    const seen = new Set(mine.map(x => foodNorm(x.name)));
-    const built = FOODS.filter(f => foodNorm(f[0]).includes(q) || foodNorm(f[1]).includes(q)).filter(f => !seen.has(foodNorm(f[0])) && !seen.has(foodNorm(f[1]))).slice(0, 8 - mine.length)
-      .map(f => ({ name: f[0], en: f[1], kcal: f[2], p: f[3], c: f[4], f: f[5], serving: f[6] }));
-    const all = mine.concat(built);
-    if (!all.length || foodNorm(inp.value) !== q) return box.classList.add('hide');
-    box.innerHTML = all.map((x, i) => `<button type="button" data-fi="${i}"><span class="fn"><b>${esc(x.name)}</b>${x.mine ? '<i>Yours</i>' : '<small>' + esc(x.en) + ' · ' + esc(x.serving) + '</small>'}</span><span class="fk">${Math.round(x.kcal)} kcal${x.p ? '<small>P ' + Math.round(x.p) + 'g</small>' : ''}</span></button>`).join('');
+    const my = ++seq; cur = null; por.classList.add('hide');
+    const parsed = parseFoodQuery(inp.value); if (foodNorm(parsed.q).length < 2) return box.classList.add('hide');
+    const mineAll = await myFoods(); if (my !== seq) return; // a newer keystroke won
+    const k = foodNorm(parsed.q), mine = mineAll.filter(x => foodNorm(x.name).includes(k)).slice(0, 3);
+    const built = foodMatches(parsed.q).slice(0, 10 - mine.length);
+    const rows = mine.map(x => ({ mine: x })).concat(built.map(x => ({ db: x })));
+    if (!rows.length) return box.classList.add('hide');
+    box.innerHTML = rows.map((r, i) => { const x = r.mine || r.db;
+      const sub = r.mine ? '<i>Yours</i>' : '<small>' + esc(x.en) + ' · ' + esc(x.per === 100 ? 'per 100 g' : x.units[0][0]) + '</small>';
+      const kc = r.mine ? Math.round(x.kcal) + ' kcal' : Math.round(x.n.kcal) + ' kcal';
+      return `<button type="button" data-fi="${i}"><span class="fn"><b>${esc(x.name)}</b>${sub}</span><span class="fk">${kc}${!r.mine && x.n.p ? '<small>P ' + Math.round(x.n.p) + 'g</small>' : ''}</span></button>`; }).join('');
     box.classList.remove('hide');
-    $$('[data-fi]', box).forEach(b => b.onclick = () => pick(all[+b.dataset.fi]));
+    $$('[data-fi]', box).forEach(btn => btn.onmousedown = btn.onclick = e => { e.preventDefault(); const r = rows[+btn.dataset.fi]; r.mine ? pickMine(r.mine) : pick(r.db, parsed); });
   });
-  inp.addEventListener('blur', () => setTimeout(() => box.classList.add('hide'), 200));
-  form.addEventListener('reset', () => { base = null; por.classList.add('hide'); box.classList.add('hide'); });
+  inp.addEventListener('blur', () => setTimeout(() => box.classList.add('hide'), 250));
+  form.addEventListener('reset', () => { cur = null; seq++; por.classList.add('hide'); box.classList.add('hide'); });
 }
 let ciQ = Promise.resolve();
 /* The first time you add a photo, say who can see it. One tap to agree; remembered on your profile. */
