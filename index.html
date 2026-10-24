@@ -345,7 +345,7 @@ button.loading img,button.loading svg{opacity:0}
 #tab-clients #clientList .crow:nth-last-child(2){border-bottom:0}#newClientCard #clientForm{margin-top:0!important}
 #newClientCard #clientForm{align-items:center!important}#newClientCard #clientForm label{margin:0}#newClientCard #clientForm .cnum{color:var(--accent);font-weight:800;min-width:26px}.addway b{font-size:15px}.addway p{margin:2px 0 10px}
 #newClientCard .row.between{flex-direction:column;align-items:stretch;gap:10px}#newClientCard .row.between>.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}#newClientCard .row.between button{white-space:nowrap;min-height:44px!important}
-.pcode{background:none;border:0;padding:2px 0;min-height:0;font-size:12.5px;font-weight:700;letter-spacing:.04em;color:var(--muted);text-transform:none}.pcode span{color:var(--accent);margin-left:4px}
+.pcode{display:inline-flex;align-items:center;white-space:nowrap;text-align:left;justify-content:flex-start;background:none;border:0;padding:2px 0;min-height:0;font-size:12.5px;font-weight:700;letter-spacing:.04em;color:var(--muted);text-transform:none}.pcode span{color:var(--accent);margin-left:4px}
 .codeline{display:flex;align-items:center;gap:10px}.codeblk{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.codeblk>.small{margin:0}#newClientCard .codeline button{min-height:32px!important}.codeline button.link.link{min-height:32px;padding:4px 10px;font-size:13px}
 .reqform{display:flex;gap:8px;align-items:stretch}.reqform input{flex:1;min-width:0;margin:0}.reqform button{min-height:46px;white-space:nowrap}#reqList .crow{gap:10px;padding:8px 0}
 #coachReq{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:45;background:linear-gradient(160deg,color-mix(in srgb,#3fb58a 22%,var(--card)),var(--card) 70%);border:2px solid #3fb58a;border-radius:18px;padding:16px;box-shadow:0 12px 40px #000a,0 0 30px #3fb58a55;display:grid;gap:12px;animation:reqIn .4s cubic-bezier(.2,1.3,.4,1)}
@@ -774,7 +774,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024085715';
+const BUILD = '20261024090225';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
