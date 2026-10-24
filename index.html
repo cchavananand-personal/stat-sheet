@@ -815,7 +815,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024181357';
+const BUILD = '20261024183032';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1856,19 +1856,19 @@ const ING = [
 ['เวย์โปรตีน', 'Whey protein powder', 400, 80, 10, 5, [['scoop (30 g)', 30], ['g', 1]]],
 ['ครีเอทีน', 'Creatine', 0, 0, 0, 0, [['scoop (5 g)', 5]]],
 // coffee & tea (per 100 ml; cups: S 12 oz, M 16 oz, L 22 oz; iced cups hold ice, so less milk)
-['อเมริกาโน่', 'Americano (hot or iced)', 2, 0.1, 0.4, 0, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['large cup (22 oz)', 650], ['ml', 1]]],
+['อเมริกาโน่', 'Americano', 2, 0.1, 0.4, 0, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['large cup (22 oz)', 650], ['ml', 1]]],
 ['เอสเพรสโซ่', 'Espresso', 9, 0.1, 1.7, 0.2, [['shot (30 ml)', 30], ['double shot (60 ml)', 60], ['ml', 1]]],
-['ลาเต้', 'Latte', 40, 2.6, 4, 1.5, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['large cup (22 oz)', 650], ['iced medium (16 oz)', 330], ['iced large (22 oz)', 455], ['ml', 1]]],
-['ลาเต้นมโอ๊ต', 'Oat milk latte', 38, 0.8, 5.5, 1.5, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['large cup (22 oz)', 650], ['iced medium (16 oz)', 335], ['iced large (22 oz)', 460], ['ml', 1]]],
-['ลาเต้นมอัลมอนด์', 'Almond milk latte', 17, 0.6, 1.7, 1, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['large cup (22 oz)', 650], ['iced medium (16 oz)', 330], ['iced large (22 oz)', 455], ['ml', 1]]],
-['ลาเต้นมพร่องมันเนย', 'Skim milk latte', 28, 2.8, 4.2, 0.1, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['large cup (22 oz)', 650], ['iced medium (16 oz)', 330], ['iced large (22 oz)', 455], ['ml', 1]]],
-['คาปูชิโน่', 'Cappuccino', 30, 2, 3, 1.1, [['cup (12 oz)', 355], ['small cup (8 oz)', 240], ['iced medium (16 oz)', 330], ['ml', 1]]],
-['แฟลตไวท์', 'Flat white', 45, 3, 4, 2, [['cup (8 oz)', 240], ['iced medium (16 oz)', 330], ['ml', 1]]],
-['มอคค่า', 'Mocha', 75, 2.7, 10, 3, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['large cup (22 oz)', 650], ['iced medium (16 oz)', 380], ['iced large (22 oz)', 520], ['ml', 1]]],
-['คาราเมลลาเต้', 'Caramel latte', 60, 2.2, 8.5, 1.8, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['large cup (22 oz)', 650], ['iced medium (16 oz)', 395], ['iced large (22 oz)', 545], ['ml', 1]]],
-['วานิลลาลาเต้', 'Vanilla latte', 58, 2.2, 8.2, 1.8, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['large cup (22 oz)', 650], ['iced medium (16 oz)', 390], ['iced large (22 oz)', 540], ['ml', 1]]],
-['มัทฉะลาเต้', 'Matcha latte', 42, 2, 6, 1.2, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['large cup (22 oz)', 650], ['iced medium (16 oz)', 395], ['iced large (22 oz)', 545], ['ml', 1]]],
-['โกโก้', 'Cocoa / hot chocolate', 80, 3, 11, 3, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['iced medium (16 oz)', 375], ['iced large (22 oz)', 515], ['ml', 1]]],
+['ลาเต้', 'Latte', 40, 2.6, 4, 1.5, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['large cup (22 oz)', 650], ['ml', 1]]],
+['ลาเต้นมโอ๊ต', 'Oat milk latte', 38, 0.8, 5.5, 1.5, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['large cup (22 oz)', 650], ['ml', 1]]],
+['ลาเต้นมอัลมอนด์', 'Almond milk latte', 17, 0.6, 1.7, 1, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['large cup (22 oz)', 650], ['ml', 1]]],
+['ลาเต้นมพร่องมันเนย', 'Skim milk latte', 28, 2.8, 4.2, 0.1, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['large cup (22 oz)', 650], ['ml', 1]]],
+['คาปูชิโน่', 'Cappuccino', 30, 2, 3, 1.1, [['cup (12 oz)', 355], ['small cup (8 oz)', 240], ['ml', 1]]],
+['แฟลตไวท์', 'Flat white', 45, 3, 4, 2, [['cup (8 oz)', 240], ['ml', 1]]],
+['มอคค่า', 'Mocha', 75, 2.7, 10, 3, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['large cup (22 oz)', 650], ['ml', 1]]],
+['คาราเมลลาเต้', 'Caramel latte', 60, 2.2, 8.5, 1.8, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['large cup (22 oz)', 650], ['ml', 1]]],
+['วานิลลาลาเต้', 'Vanilla latte', 58, 2.2, 8.2, 1.8, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['large cup (22 oz)', 650], ['ml', 1]]],
+['มัทฉะลาเต้', 'Matcha latte', 42, 2, 6, 1.2, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['large cup (22 oz)', 650], ['ml', 1]]],
+['โกโก้', 'Cocoa / hot chocolate', 80, 3, 11, 3, [['medium cup (16 oz)', 473], ['small cup (12 oz)', 355], ['ml', 1]]],
 ['เอสเย็น', 'Thai iced espresso (es yen)', 70, 1.5, 11, 2.5, [['cup (16 oz)', 473], ['ml', 1]]],
 ['โอเลี้ยง', 'Thai black iced coffee (sweet)', 35, 0, 9, 0, [['cup (16 oz)', 473], ['ml', 1]]],
 ['กาแฟเย็นหวานน้อย', 'Thai iced coffee (less sweet)', 40, 0.8, 6, 1.5, [['cup (16 oz)', 473], ['ml', 1]]],
@@ -2052,7 +2052,6 @@ function attachFoodSearch(form) {
     let unit = 0, qty = 1;
     if (parsed && parsed.grams && item.per === 100) { unit = Math.max(0, item.units.findIndex(u => /^(g|ml)$/.test(u[0]))); qty = parsed.grams; }
     else if (parsed && parsed.count) qty = parsed.count;
-    if (parsed && parsed.iced) { const k = item.units.findIndex(u => /^iced/.test(u[0])); if (k >= 0) unit = k; }
     cur = { item, qty, unit }; box.classList.add('hide'); drawPor();
   };
   const pickMine = x => { cur = null; por.classList.add('hide'); box.classList.add('hide'); inp.value = x.name;
