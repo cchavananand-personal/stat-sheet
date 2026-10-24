@@ -191,6 +191,7 @@ body.tmode .thumb.add,body.tmode .addtile,body.tmode #mealPick,body.tmode [data-
 .gsub{margin:14px 0 4px;font-weight:800;font-size:13px;letter-spacing:.04em;color:var(--accent)}.gfield{color:var(--accent);font-weight:600}.gnote{list-style:none;margin-left:-20px!important;color:var(--muted);font-size:12.5px}
 .gkeys{width:100%;border-collapse:collapse;margin:6px 0;font-size:13px}.gkeys td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}.gkeys td{text-align:left}.gkeys td:first-child{white-space:nowrap;width:1%}
 body.coachview #bodyForm input{opacity:.85}body.coachview #ciToggle,body.coachview #ciBox{display:none!important}
+.exnote{margin:3px 0 0!important;font-size:12.5px;color:var(--muted);font-style:italic;white-space:normal}
 .ecta{display:flex;align-items:center;gap:12px;margin:10px 0 2px;padding:12px;border:1px dashed var(--line);border-radius:14px;background:color-mix(in srgb,var(--soft) 55%,transparent);text-align:left}
 .ecta .eic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}.ecta .eic svg{width:20px;height:20px}
 .ecta .et{flex:1;min-width:0}.ecta .et b{display:block;font-size:15px}.ecta .et small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35;margin-top:2px}
@@ -540,6 +541,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
           <div class="setrow head small muted"><span>Set</span><span>Reps</span><span>kg</span><span></span></div>
           <div id="wkSets"></div>
           <button type="button" class="link" id="wkAddSet" style="margin:2px 0 10px">+ Add set</button>
+          <label>Notes <span class="muted" style="font-weight:500">(optional)</span><input name="notes" maxlength="200" placeholder="e.g. Plate under feet · neutral grip"></label>
           <button class="primary" id="wkSave">Save exercise</button>
           <button type="button" class="link hide" id="wkCancel" style="width:100%;margin-top:6px">Cancel editing</button>
         </form>
@@ -789,7 +791,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024094653';
+const BUILD = '20261024095522';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1514,7 +1516,7 @@ const exTiles = (rows, del, btn, day) => {
   return codes.map((c, i) => {
     const g = groups[c], p = partOf(g[0].part), n = setCount(g), s = setLines(g);
     return `<div class="item mtile${day && OWNER ? ' edt' : ''}" style="--c:${p.color};--cbg:${p.color}1f" data-code="${c}"><div class="grow"><b>${esc(g[0].name || exName(c))}</b>${day && S.hasCoach ? (g.some(w => w.by) ? '<span class="mb t" title="Logged by ' + esc(g.find(w => w.by).by) + '">T</span>' : '<span class="mb c" title="Logged by ' + esc(clientName()) + '">C</span>') : ''}
-      <p>${esc(p.name)}${n ? ' · ' + n + (n > 1 ? ' sets' : ' set') : ''}</p>${s}</div>
+      <p>${esc(p.name)}${n ? ' · ' + n + (n > 1 ? ' sets' : ' set') : ''}</p>${s}${(g.find(w => w.notes) || {}).notes ? `<p class="exnote">✎ ${esc(g.find(w => w.notes).notes)}</p>` : ''}</div>
       ${btn ? btn(g[0]) : del ? `<button class="link" ${del}="${c}" aria-label="Delete">✕</button>` : ''}</div>`;
   }).join('');
 };
@@ -1610,7 +1612,7 @@ function startEdit(code) {
   const rows = wkList.filter(w => w.code === code).sort((a, b) => (num(a.set) || 0) - (num(b.set) || 0));
   if (!rows.length) return;
   wkEdit = { date: wSel, code };
-  const f = $('#wkForm'); f.code.value = code;
+  const f = $('#wkForm'); f.code.value = code; f.notes.value = (rows.find(w => w.notes) || {}).notes || '';
   drawSets(rows.map(w => ({ reps: w.reps == null ? '' : w.reps, weight: w.weight == null ? '' : w.weight })));
   $('#wkFormTitle').innerHTML = 'Edit ' + esc(exName(code));
   $('#wkSave').textContent = 'Save changes'; $('#wkCancel').classList.remove('hide');
@@ -1677,14 +1679,24 @@ $('#wkForm').onsubmit = e => {
     const at = wkList.findIndex(w => w.code === old), rest = wkList.filter(w => w.code !== old);
     rest.splice(Math.min(at, rest.length), 0, ...fresh);
     endEdit(); renderWorkout(rest); toast(exName(code) + ' updated');
-    return wkSync(date, () => api('replaceWorkoutExercise', { date, oldCode: old, code, sets }));
+    const notes = f.notes.value.trim(); fresh.forEach(w => w.notes = notes);
+    return wkSync(date, () => api('replaceWorkoutExercise', { date, oldCode: old, code, sets, notes }));
   }
   const part = WK().parts.find(p => p.code === code.slice(0, 2)).name, k = Math.max(0, ...wkList.filter(w => w.code === code).map(w => num(w.set) || 0));
   // show it straight away; the server numbers the sets the same way and replaces these when it answers
-  renderWorkout(wkList.concat(sets.map((s, i) => ({ id: 'new' + i + Date.now(), date, part, code, name: exName(code), reps: s.reps, weight: s.weight, by: viewingClient() ? S.me.name : '', set: k + i + 1 }))));
+  const notes = f.notes.value.trim(); lastNote[code] = notes;
+  renderWorkout(wkList.map(w => w.code === code && notes ? Object.assign({}, w, { notes }) : w).concat(sets.map((s, i) => ({ id: 'new' + i + Date.now(), date, part, code, name: exName(code), reps: s.reps, weight: s.weight, by: viewingClient() ? S.me.name : '', set: k + i + 1, notes }))));
   drawCal(); f.reset(); resetSets(); toast(exName(code) + ' · ' + sets.length + (sets.length > 1 ? ' sets' : ' set') + ' saved');
-  wkSync(date, () => api('addWorkout', { date, code, sets }));
+  wkSync(date, () => api('addWorkout', { date, code, sets, notes }));
 };
+/* Notes follow the exercise: picking it again fills in what you wrote last time (from the month already loaded). */
+const lastNote = {};
+function noteFor(code) {
+  if (code in lastNote) return lastNote[code];
+  const all = [].concat(...Object.values(WKD)).filter(w => w.code === code && w.notes).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  return all.length ? all[0].notes : '';
+}
+$('#wkForm').code.addEventListener('change', e => { if (!wkEdit) e.target.form.notes.value = noteFor(e.target.value); });
 $('#wkRepeat').onclick = e => busy(e.target, () => wkSync(wSel, async () => {
   const r = await api('repeatWorkout', { date: wSel }); toast('Copied from ' + nice(r.from)); return r.list;
 }));
