@@ -789,7 +789,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024092156';
+const BUILD = '20261024094603';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2239,7 +2239,7 @@ async function renderPeers() {
   $$('[data-peer]', box).forEach(row => row.onclick = e => { if (!e.target.closest('[data-pmenu]')) switchTo(row.dataset.peer, 'peer'); });
   $$('[data-pmenu]', box).forEach(b => b.onclick = () => $(`[data-pacts="${b.dataset.pmenu}"]`, box).classList.toggle('hide'));
   $$('[data-pc]', box).forEach(b => b.onclick = () => { const c = b.dataset.pc; if (!c) return; (navigator.clipboard ? navigator.clipboard.writeText(c) : Promise.reject()).then(() => toast('Copied ' + c), () => prompt('Code', c)); });
-  $$('[data-unpeer]', box).forEach(b => b.onclick = () => confirm('Stop being peers? Neither of you will see the other\'s stats.') && busy(b, async () => { Object.assign(S, await api('removePeer', { id: b.dataset.unpeer })); PEER_RANK = null; renderPeers(); }));
+  $$('[data-unpeer]', box).forEach(b => b.onclick = () => confirm('Remove ' + (((S.peers || []).find(x => x.id === b.dataset.unpeer) || {}).name || 'this person') + ' as a peer? Neither of you will see the other\'s stats any more.') && busy(b, async () => { Object.assign(S, await api('removePeer', { id: b.dataset.unpeer })); PEER_RANK = null; renderPeers(); }));
   $('#peerForm').onsubmit = e => { e.preventDefault(); const f = e.target;
     busy($('button', f), async () => { Object.assign(S, await api('addPeer', { code: f.code.value })); PEER_RANK = null; renderPeers(); toast('Peer added'); }); };
   $('#pShare').onclick = () => { const t = 'Compare stats with me on Stat Sheet: ' + location.origin + location.pathname + '?peer=' + encodeURIComponent($('#pCode').textContent);
