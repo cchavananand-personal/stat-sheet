@@ -805,7 +805,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024165307';
+const BUILD = '20261024165523';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2005,9 +2005,10 @@ function attachFoodSearch(form) {
     const rows = strong.slice(0, 4).map(x => ({ db: x })).concat(mine.map(x => ({ mine: x })), built.filter(x => !strong.slice(0, 4).includes(x)).map(x => ({ db: x }))).slice(0, 10);
     if (!rows.length) { box.innerHTML = '<div class="fnone">Not in the food list yet. Type the calories below, and next time it appears under Yours.</div>'; return box.classList.remove('hide'); }
     box.innerHTML = rows.map((r, i) => { const x = r.mine || r.db;
-      const sub = r.mine ? '<i>Yours</i>' : '<small>' + esc(x.en) + ' · ' + esc(x.per === 100 ? 'per 100 g' : x.units[0][0]) + '</small>';
-      const kc = r.mine ? Math.round(x.kcal) + ' kcal' : Math.round(x.n.kcal) + ' kcal';
-      return `<button type="button" data-fi="${i}"><span class="fn"><b>${esc(x.name)}</b>${sub}</span><span class="fk">${kc}${!r.mine && x.n.p ? '<small>P ' + Math.round(x.n.p) + 'g</small>' : ''}</span></button>`; }).join('');
+      const u0 = r.mine ? null : x.units[0], k0 = r.mine ? 1 : u0[1] / x.per; // shown for the default portion, e.g. 1 slice
+      const sub = r.mine ? '<i>Yours</i>' : '<small>' + esc(x.en) + ' · ' + esc(/^(g|ml)$/.test(u0[0]) ? 'per 100 ' + u0[0] : u0[0]) + '</small>';
+      const kc = r.mine ? Math.round(x.kcal) + ' kcal' : Math.round(x.n.kcal * (/^(g|ml)$/.test(u0[0]) ? 1 : k0)) + ' kcal';
+      return `<button type="button" data-fi="${i}"><span class="fn"><b>${esc(x.name)}</b>${sub}</span><span class="fk">${kc}${!r.mine && x.n.p ? '<small>P ' + Math.round(x.n.p * (/^(g|ml)$/.test(u0[0]) ? 1 : k0)) + 'g</small>' : ''}</span></button>`; }).join('');
     box.classList.remove('hide');
     $$('[data-fi]', box).forEach(btn => btn.onmousedown = btn.onclick = e => { e.preventDefault(); const r = rows[+btn.dataset.fi]; r.mine ? pickMine(r.mine) : pick(r.db, parsed); });
   });
