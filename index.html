@@ -347,10 +347,10 @@ button.loading img,button.loading svg{opacity:0}
 #newClientCard #clientForm{align-items:center!important}#newClientCard #clientForm label{margin:0}#newClientCard #clientForm .cnum{color:var(--accent);font-weight:800;min-width:26px}.addway b{font-size:15px}.addway p{margin:2px 0 10px}
 #newClientCard .row.between{flex-direction:column;align-items:stretch;gap:10px}#newClientCard .row.between>.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}#newClientCard .row.between button{white-space:nowrap;min-height:44px!important}
 #peersCard .crow>.grow{overflow:hidden;margin-right:8px}.pcode{display:inline-flex;align-items:center;white-space:nowrap;text-align:left;justify-content:flex-start;background:none;border:0;padding:2px 0;min-height:0;font-size:12.5px;font-weight:700;letter-spacing:.04em;color:var(--muted);text-transform:none}.pcode span{color:var(--accent);margin-left:4px}
-.prow{display:grid;grid-template-columns:20px 38px 1fr 34px 34px;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+.prow{display:grid;grid-template-columns:26px 38px 1fr auto 34px;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
 .prow .n{font-weight:800;color:var(--muted);text-align:center}.prow .avatar{width:38px;height:38px;font-size:15px}.prow .pm{min-width:0}
 .prow .pm b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}.prow .pm small{display:block;color:var(--muted);font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.prow .rk-bar{margin-top:5px}.prow .ps{font-weight:800;font-size:17px;text-align:right;font-variant-numeric:tabular-nums}.prow.me{cursor:default}.prow.me .pm b{color:#3fb58a}
+.prow .rk-bar{margin-top:5px}.prow .ps{font-weight:800;font-size:15px;white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}.prow.me{cursor:default}.prow.me .pm b{color:#3fb58a}
 .prow button.link.link.pmore{min-width:34px;padding:4px}.pacts{display:flex;gap:8px;justify-content:flex-end;padding:0 0 10px}.pacts.hide{display:none}
 .lbchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:6px;padding-bottom:2px}.lbchips::-webkit-scrollbar{display:none}
 .lbchips button{flex:none;min-height:34px;padding:6px 12px;border-radius:99px;border:1px solid var(--line);background:var(--soft);font-size:13px;font-weight:700;color:var(--muted)}
@@ -796,7 +796,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024105940';
+const BUILD = '20261024124427';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2246,20 +2246,27 @@ async function renderPeers() {
   box.classList.toggle('hide', !S.me); if (!S.me) return;
   // ranked: you + your peers by Consistency (last 30 days); until the scores arrive, the plain list
   const scored = PEER_RANK || [S.me].concat(list).map(x => Object.assign({}, x, { me: x.id === S.me.id }));
-  const rows = scored.map(r => Object.assign({}, r, (list.find(x => x.id === r.id) || {}))).map(r => Object.assign(r, { score: r.workouts == null ? null : consistency(r) }));
-  if (PEER_RANK) rows.sort((x, y) => (y.score || 0) - (x.score || 0));
+  // one list: the chip picks the measure, the same rows re-sort; crowns for #1 (gold) and #2 (silver)
+  const m = LB.find(x => x[0] === LB_METRIC) || LB[0];
+  const rows = scored.map(r => Object.assign({}, r, (list.find(x => x.id === r.id) || {}))).map(r => Object.assign(r, { score: PEER_RANK ? m[2](r) : null }));
+  if (PEER_RANK) rows.sort((x, y) => (x.score == null) - (y.score == null) || (y.score || 0) - (x.score || 0));
+  const vals = rows.filter(r => r.score != null).map(r => r.score), hi = Math.max(1e-9, ...vals.map(Math.abs));
+  const place = r => r.score == null ? null : vals.filter(v => v > r.score).length;
+  const rankCell = (r, i) => !PEER_RANK ? i + 1 : place(r) == null ? '–' : place(r) === 0 ? CROWN('#f5c542') : place(r) === 1 ? CROWN('#c9d1d9') : place(r) + 1;
+  const sub = r => m[0] === 'overall' ? `${r.workouts || 0} workout${r.workouts === 1 ? '' : 's'} · ${r.weighIns || 0} weigh-in${r.weighIns === 1 ? '' : 's'}` : r.score == null ? 'No data yet' : '';
   box.innerHTML = `<div class="row between"><div class="codeblk"><div class="small muted">Your Code</div><span class="codeline"><b id="pCode" style="font-size:18px;letter-spacing:.05em">…</b><button type="button" class="link" data-copycode="#pCode">Copy</button></span></div>
       <button class="primary" id="pShare" style="min-height:40px">Share</button></div>
-    <p class="small muted" style="margin:8px 0 4px">${list.length ? 'Ranked by consistency · last 30 days. Tap a peer to see their stats.' : 'Share your code to compare stats and rankings.'}</p>
-    ${list.length ? rows.map((r, i) => `<div class="prow${r.me ? ' me' : ''}" ${r.me ? '' : `data-peer="${r.id}"`}>
-        <span class="n">${i + 1}</span><span class="avatar" data-pav="${r.id}"></span>
-        <div class="pm"><b>${esc(r.me ? r.name + ' (you)' : r.name)}</b>${r.score == null ? '' : `<div class="rk-bar"><i style="width:${Math.max(3, r.score)}%"></i></div>
-          <small>${r.workouts || 0} workout${r.workouts === 1 ? '' : 's'} · ${r.weighIns || 0} weigh-in${r.weighIns === 1 ? '' : 's'}</small>`}</div>
-        <span class="ps">${r.score == null ? '' : r.score}</span>
+    ${list.length ? `<div class="lbchips">${LB.map(x => `<button type="button" data-lb="${x[0]}" class="${x[0] === m[0] ? 'on' : ''}">${x[1]}</button>`).join('')}</div>
+      <p class="small muted" style="margin:6px 0 4px">${m[4]}${m[0] === 'overall' ? ' · last 30 days' : ''}. Tap a peer to see their stats.</p>` : '<p class="small muted" style="margin:8px 0 4px">Share your code to compare stats and rankings.</p>'}
+    ${list.length ? rows.map((r, i) => { const pl = place(r);
+      return `<div class="prow${r.me ? ' me' : ''}" ${r.me ? '' : `data-peer="${r.id}"`}>
+        <span class="n">${rankCell(r, i)}</span><span class="avatar" data-pav="${r.id}"></span>
+        <div class="pm"><b>${esc(r.me ? r.name + ' (you)' : r.name)}</b>${!PEER_RANK ? '' : `<div class="rk-bar"><i style="width:${r.score == null ? 0 : Math.max(3, Math.abs(r.score) / hi * 100)}%;${pl === 0 ? 'background:#f5c542' : pl === 1 ? 'background:#c9d1d9' : ''}"></i></div>
+          ${sub(r) ? `<small>${sub(r)}</small>` : ''}`}</div>
+        <span class="ps">${r.score == null ? '' : m[3](r.score)}</span>
         ${r.me ? '<span class="pmore"></span>' : `<button type="button" class="link pmore" data-pmenu="${r.id}" aria-label="Options">⋯</button>`}
       </div>
-      ${r.me ? '' : `<div class="pacts hide" data-pacts="${r.id}"><button type="button" class="link" data-pc="${esc(r.code || '')}">Copy Code</button><button type="button" class="link danger" data-unpeer="${r.id}">Remove</button></div>`}`).join('') : ''}
-    ${list.length ? '<button type="button" class="lk-open" id="lbToggle" style="margin-top:8px">' + (LB_OPEN ? 'Hide Leaderboard ‹' : 'Leaderboard ›') + '</button><div id="lbBox"></div>' : ''}
+      ${r.me ? '' : `<div class="pacts hide" data-pacts="${r.id}"><button type="button" class="link" data-pc="${esc(r.code || '')}">Copy Code</button><button type="button" class="link danger" data-unpeer="${r.id}">Remove</button></div>`}`; }).join('') : ''}
     <form id="peerForm" style="display:flex;gap:8px;align-items:flex-end;margin-top:12px"><label class="grow" style="margin:0">Add A Peer<input name="code" maxlength="24" autocapitalize="characters" placeholder="e.g. MINT-4821" style="text-transform:uppercase"></label><button class="primary">Add</button></form>`;
   rows.forEach(r => { const el = $(`[data-pav="${r.id}"]`, box); if (el) paintAvatar(el, r, r.me ? 'c' : ''); });
   $$('[data-peer]', box).forEach(row => row.onclick = e => { if (!e.target.closest('[data-pmenu]')) switchTo(row.dataset.peer, 'peer'); });
@@ -2271,8 +2278,7 @@ async function renderPeers() {
   $('#pShare').onclick = () => { const t = 'Compare stats with me on Stat Sheet: ' + location.origin + location.pathname + '?peer=' + encodeURIComponent($('#pCode').textContent);
     navigator.share ? navigator.share({ text: t }).catch(() => {}) : (navigator.clipboard && navigator.clipboard.writeText(t), toast('Copied')); };
   if (PEER_CODE) $('#pCode').textContent = PEER_CODE; else api('myPeerCode', {}).then(c => { PEER_CODE = c; if ($('#pCode')) $('#pCode').textContent = c; }).catch(() => {});
-  if ($('#lbToggle')) $('#lbToggle').onclick = () => { LB_OPEN = !LB_OPEN; $('#lbToggle').textContent = LB_OPEN ? 'Hide Leaderboard ‹' : 'Leaderboard ›'; renderLeaderboard(); };
-  renderLeaderboard();
+  $$('[data-lb]', box).forEach(b => b.onclick = () => { LB_METRIC = b.dataset.lb; renderPeers(); });
   if (!PEER_RANK && list.length) api('ranking', { group: 'peers' }).then(r => { PEER_RANK = r; if (curTab === 'more') renderPeers(); }).catch(() => {});
 }
 let PEER_RANK = null, PEER_CODE = null, LB_OPEN = false, LB_METRIC = 'overall';
