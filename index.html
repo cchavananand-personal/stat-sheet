@@ -796,7 +796,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024103442';
+const BUILD = '20261024105940';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2324,16 +2324,15 @@ const SHARE_ROWS = [['body', 'Weight & Body Fat'], ['photos', 'Progress Photos']
 function shareGet() { let o = {}; try { o = JSON.parse(S.profile.share || '{}') || {}; } catch (e) {} return o; }
 function renderSharing() {
   const card = $('#shareCard'); card.classList.toggle('hide', !S.me || viewingClient() || viewingPeer()); if (!S.me) return;
-  const sh = shareGet(), on = (who, c) => !(sh[who] && sh[who][c] === false);
-  const cell = (who, c) => (who === 'peers' && c === 'notes') ? '<span class="shfix">Never</span>' : (who === 'trainer' && c === 'goals') ? '<span class="shfix">Always</span>'
-    : `<button type="button" class="sw${on(who, c) ? ' on' : ''}" data-sh="${who}:${c}" aria-label="${who} ${c}"></button>`;
+  const sh = shareGet(), on = (who, c) => who === 'peers' && c === 'notes' ? !!(sh.peers && sh.peers.notes === true) : !(sh[who] && sh[who][c] === false);
+  const cell = (who, c) => `<button type="button" class="sw${on(who, c) ? ' on' : ''}" data-sh="${who}:${c}" aria-label="${who} ${c}"></button>`;
   $('#shareBox').innerHTML = `<p class="muted" style="margin:0 0 6px">Choose what your trainer and your peers can see. Changes apply straight away.</p>
     <div class="shrow shhead"><span></span><b>Trainer</b><b>Peers</b></div>
     ${SHARE_ROWS.map(([c, n]) => `<div class="shrow"><span>${n}</span>${cell('trainer', c)}${cell('peers', c)}</div>`).join('')}
-    <p class="small muted" style="margin:8px 0 0">Your trainer always sees your goals, since they set them. Notes are between you and your trainer.</p>`;
+    <p class="small muted" style="margin:8px 0 0">Notes are off for peers until you turn them on. Hiding Goals from your trainer also stops them setting your goals.</p>`;
   $$('[data-sh]', $('#shareBox')).forEach(b => b.onclick = () => {
     const [who, c] = b.dataset.sh.split(':'), cur = shareGet(); cur[who] = cur[who] || {};
-    if (on(who, c)) cur[who][c] = false; else delete cur[who][c];
+    cur[who][c] = !on(who, c);
     b.classList.toggle('on'); S.profile.share = JSON.stringify(cur);
     api('saveProfile', { share: S.profile.share }).then(p => { S.profile = p; }).catch(() => renderSharing());
   });
