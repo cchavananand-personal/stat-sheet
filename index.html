@@ -818,7 +818,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261025090451';
+const BUILD = '20261025090620';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2046,6 +2046,7 @@ const ING = [
 const DISH_DUPES = new Set(['ข้าวสวย', 'ข้าวกล้อง', 'ข้าวเหนียว', 'ไข่ดาว', 'ไข่ต้ม', 'ไข่ขาวต้ม', 'อกไก่ย่าง', 'กล้วยหอม', 'แอปเปิ้ล', 'ส้ม', 'มะม่วงสุก', 'แตงโม', 'สับปะรด', 'มะละกอ', 'ฝรั่ง', 'ทุเรียน', 'องุ่น',
   'ถั่วอัลมอนด์', 'ถั่วลิสง', 'เนยถั่ว', 'ข้าวโอ๊ต', 'กราโนล่า', 'ขนมปังโฮลวีต', 'ขนมปังขาว', 'เต้าหู้', 'อะโวคาโด', 'มันหวานต้ม', 'ข้าวโพดต้ม', 'แซลมอนย่าง', 'สเต๊กเนื้อ', 'ซาชิมิแซลมอน',
   'กรีกโยเกิร์ต', 'นมจืด', 'นมไขมันต่ำ', 'เวย์โปรตีน', 'ไก่ทอด', 'ไก่ย่าง', 'คอหมูย่าง', 'ครัวซองต์', 'ไข่ไก่', 'อเมริกาโน่', 'ลาเต้', 'ลาเต้ นมไขมันต่ำ', 'น้ำส้มคั้น', 'มัทฉะลาเต้', 'โกโก้เย็น', 'ไข่ต้มสุก 7-11']);
+const showName = en => en.replace(/ ([^)]*,[^)]*)/, '').replace(/ ([^)]*…)/, '');
 const FOOD_DB = ING.map(f => ({ name: f[0], en: f[1], per: 100, n: { kcal: f[2], p: f[3], c: f[4], f: f[5] }, units: f[6] }))
   .concat(FOODS.filter(f => !DISH_DUPES.has(f[0])).map(f => ({ name: f[0], en: f[1], per: 1, n: { kcal: f[2], p: f[3], c: f[4], f: f[5] }, units: [[f[6], 1]] })));
 /** "ribeye 200g", "2 eggs", "แซลมอน 150 กรัม" → { q: words to search, grams, count } */
@@ -2082,7 +2083,7 @@ function attachFoodSearch(form) {
   const apply = () => {
     const v = calc(), set = (nm, x, d) => { if (form[nm]) form[nm].value = x ? +x.toFixed(d) : 0; };
     set('calories', v.kcal, 0); set('protein', v.p, 0); set('carbs', v.c, 0); set('fat', v.f, 0);
-    inp.value = cur.item.en + ' · ' + label();
+    inp.value = showName(cur.item.en) + ' · ' + label();
     $('.fsum', por).textContent = Math.round(v.kcal) + ' kcal · P ' + Math.round(v.p) + ' · C ' + Math.round(v.c) + ' · F ' + Math.round(v.f);
   };
   const drawPor = () => {
@@ -2118,7 +2119,7 @@ function attachFoodSearch(form) {
       const u0 = r.mine ? null : x.units[0], k0 = r.mine ? 1 : u0[1] / x.per; // shown for the default portion, e.g. 1 slice
       const sub = r.mine ? '<i>Yours</i>' : '<small>' + esc(x.name) + ' · ' + esc(/^(g|ml)$/.test(u0[0]) ? 'per 100 ' + u0[0] : u0[0]) + '</small>';
       const kc = r.mine ? Math.round(x.kcal) + ' kcal' : Math.round(x.n.kcal * (/^(g|ml)$/.test(u0[0]) ? 1 : k0)) + ' kcal';
-      return `<button type="button" data-fi="${i}"><span class="fn"><b>${esc(r.mine ? x.name : x.en)}</b>${sub}</span><span class="fk">${kc}${!r.mine && x.n.p ? '<small>P ' + Math.round(x.n.p * (/^(g|ml)$/.test(u0[0]) ? 1 : k0)) + 'g</small>' : ''}</span></button>`; }).join('');
+      return `<button type="button" data-fi="${i}"><span class="fn"><b>${esc(r.mine ? x.name : showName(x.en))}</b>${sub}</span><span class="fk">${kc}${!r.mine && x.n.p ? '<small>P ' + Math.round(x.n.p * (/^(g|ml)$/.test(u0[0]) ? 1 : k0)) + 'g</small>' : ''}</span></button>`; }).join('');
     box.classList.remove('hide');
     $$('[data-fi]', box).forEach(btn => btn.onmousedown = btn.onclick = e => { e.preventDefault(); const r = rows[+btn.dataset.fi]; r.mine ? pickMine(r.mine) : pick(r.db, parsed); });
   });
@@ -2524,7 +2525,7 @@ function mealsChanged(date, list) { // keep today's list and the calorie chart d
 }
 let mList = [];
 /** "ขนมปังซาวโดว์ · 1 slice (÷3)" → { name: "Sourdough bread · 1 slice", share: 3 } */
-const FOOD_EN = (() => { const m = {}; try { FOOD_DB.forEach(x => { m[x.name] = x.en; }); } catch (e) {} return m; })();
+const FOOD_EN = (() => { const m = {}; try { FOOD_DB.forEach(x => { m[x.name] = showName(x.en); m[x.en] = showName(x.en); }); } catch (e) {} return m; })();
 function mealLabel(d) {
   let t = String(d || ''), share = null; const sm = t.match(/ \(÷(\d+)\)$/); if (sm) { share = +sm[1]; t = t.slice(0, -sm[0].length); }
   const i = t.indexOf(' · '), head = i < 0 ? t : t.slice(0, i); if (FOOD_EN[head]) t = FOOD_EN[head] + (i < 0 ? '' : t.slice(i));
