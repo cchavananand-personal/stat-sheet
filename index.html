@@ -372,7 +372,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}input[type=search]::-
 .msplit{display:flex;align-items:center;gap:10px;white-space:nowrap;margin:0 0 10px;font-size:14px;color:var(--muted)}.msplit .fq{background:var(--soft)}.msplit .fq b{min-width:34px;text-align:center;color:var(--text);font-size:16px}.msplit #mSplitTxt{font-weight:700;color:var(--accent)}
 .bitem{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.bitem span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bitem b{white-space:nowrap}.bitem button.link.link{min-width:32px;min-height:32px;padding:2px}
 .btot{padding:8px 0 6px;font-size:13px;font-weight:700;color:var(--accent)}
-.mgrp{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800;letter-spacing:.03em;color:var(--muted);margin:12px 2px 6px}.mgrp button.link.link{min-height:30px;min-width:40px;padding:2px 8px}.medit{cursor:pointer}.medit:active{filter:brightness(1.15)}.mgrp:first-child{margin-top:0}.mdesc{color:var(--text)!important;font-weight:600}
+.mgrp{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800;letter-spacing:.03em;color:var(--muted);margin:12px 2px 6px}.mgrp button.link.link{min-height:30px;min-width:40px;padding:2px 8px}.medit{cursor:pointer}.medit:active{filter:brightness(1.15)}.mgrp:first-child{margin-top:0}.mdesc{color:var(--text)!important;font-weight:600}.mshare{font-style:normal;color:var(--accent)}
 .fnone{padding:12px;font-size:13px;color:var(--muted)}.fsug .fk{text-align:right;font-weight:800;white-space:nowrap}
 .fpor{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;margin:-4px 0 12px}.fpor select{margin:0;min-height:44px}.fsum{grid-column:1/-1;font-size:13px;font-weight:700;color:var(--accent)}
 .fq{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--soft)}.fq input{width:64px;margin:0;border:0;border-radius:0;text-align:center;min-height:44px;background:transparent;font-weight:700}
@@ -818,7 +818,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261025085513';
+const BUILD = '20261025090451';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2082,7 +2082,7 @@ function attachFoodSearch(form) {
   const apply = () => {
     const v = calc(), set = (nm, x, d) => { if (form[nm]) form[nm].value = x ? +x.toFixed(d) : 0; };
     set('calories', v.kcal, 0); set('protein', v.p, 0); set('carbs', v.c, 0); set('fat', v.f, 0);
-    inp.value = cur.item.name + ' · ' + label();
+    inp.value = cur.item.en + ' · ' + label();
     $('.fsum', por).textContent = Math.round(v.kcal) + ' kcal · P ' + Math.round(v.p) + ' · C ' + Math.round(v.c) + ' · F ' + Math.round(v.f);
   };
   const drawPor = () => {
@@ -2116,9 +2116,9 @@ function attachFoodSearch(form) {
     if (!rows.length) { box.innerHTML = '<div class="fnone">Not in the food list yet. Type the calories below, and next time it appears under Yours.</div>'; return box.classList.remove('hide'); }
     box.innerHTML = rows.map((r, i) => { const x = r.mine || r.db;
       const u0 = r.mine ? null : x.units[0], k0 = r.mine ? 1 : u0[1] / x.per; // shown for the default portion, e.g. 1 slice
-      const sub = r.mine ? '<i>Yours</i>' : '<small>' + esc(x.en) + ' · ' + esc(/^(g|ml)$/.test(u0[0]) ? 'per 100 ' + u0[0] : u0[0]) + '</small>';
+      const sub = r.mine ? '<i>Yours</i>' : '<small>' + esc(x.name) + ' · ' + esc(/^(g|ml)$/.test(u0[0]) ? 'per 100 ' + u0[0] : u0[0]) + '</small>';
       const kc = r.mine ? Math.round(x.kcal) + ' kcal' : Math.round(x.n.kcal * (/^(g|ml)$/.test(u0[0]) ? 1 : k0)) + ' kcal';
-      return `<button type="button" data-fi="${i}"><span class="fn"><b>${esc(x.name)}</b>${sub}</span><span class="fk">${kc}${!r.mine && x.n.p ? '<small>P ' + Math.round(x.n.p * (/^(g|ml)$/.test(u0[0]) ? 1 : k0)) + 'g</small>' : ''}</span></button>`; }).join('');
+      return `<button type="button" data-fi="${i}"><span class="fn"><b>${esc(r.mine ? x.name : x.en)}</b>${sub}</span><span class="fk">${kc}${!r.mine && x.n.p ? '<small>P ' + Math.round(x.n.p * (/^(g|ml)$/.test(u0[0]) ? 1 : k0)) + 'g</small>' : ''}</span></button>`; }).join('');
     box.classList.remove('hide');
     $$('[data-fi]', box).forEach(btn => btn.onmousedown = btn.onclick = e => { e.preventDefault(); const r = rows[+btn.dataset.fi]; r.mine ? pickMine(r.mine) : pick(r.db, parsed); });
   });
@@ -2523,6 +2523,13 @@ function mealsChanged(date, list) { // keep today's list and the calorie chart d
   if (list.length) S.nutrition[date] = t; else delete S.nutrition[date];
 }
 let mList = [];
+/** "ขนมปังซาวโดว์ · 1 slice (÷3)" → { name: "Sourdough bread · 1 slice", share: 3 } */
+const FOOD_EN = (() => { const m = {}; try { FOOD_DB.forEach(x => { m[x.name] = x.en; }); } catch (e) {} return m; })();
+function mealLabel(d) {
+  let t = String(d || ''), share = null; const sm = t.match(/ \(÷(\d+)\)$/); if (sm) { share = +sm[1]; t = t.slice(0, -sm[0].length); }
+  const i = t.indexOf(' · '), head = i < 0 ? t : t.slice(0, i); if (FOOD_EN[head]) t = FOOD_EN[head] + (i < 0 ? '' : t.slice(i));
+  return { name: t, share };
+}
 function renderMeals(list) {
   mList = list;
   renderMealPlan(list);
@@ -2531,9 +2538,9 @@ function renderMeals(list) {
   const plan = planItems(wSel), extras = list.filter(m => !plan.some(x => sameMeal(x, m)));
   $('#mListCard').classList.toggle('hide', !extras.length);
   extras.sort((a, b) => String(a.time || '99').localeCompare(String(b.time || '99')));
-  $('#mList').innerHTML = extras.map((m, i) => `${i && extras[i - 1].type === m.type && (extras[i - 1].time || '') === (m.time || '') ? '' : `<div class="mgrp"><span>${esc(m.type)}${m.time ? ' · ' + esc(m.time) : ''}</span>${OWNER ? `<button type="button" class="link" data-gmenu="${esc(m.type + '|' + (m.time || ''))}" aria-label="Meal options">⋯</button>` : ''}</div>`}<div class="item mtile${OWNER ? ' medit' : ''}" data-mx="${m.id}" style="${mealStyle(m)}">
+  $('#mList').innerHTML = extras.map((m, i) => `${i && extras[i - 1].type === m.type && (extras[i - 1].time || '') === (m.time || '') ? '' : `<div class="mgrp"><span>${esc(m.type)}${m.time ? ' · ' + esc(m.time) : ''}${(sh => sh ? ' · <i class="mshare">Shared by ' + sh + '</i>' : '')(mealLabel(m.description).share)}</span>${OWNER ? `<button type="button" class="link" data-gmenu="${esc(m.type + '|' + (m.time || ''))}" aria-label="Meal options">⋯</button>` : ''}</div>`}<div class="item mtile${OWNER ? ' medit' : ''}" data-mx="${m.id}" style="${mealStyle(m)}">
     ${m.thumbId ? imgTag(m.thumbId, m.photoId, 'thumb', m.type + ' · ' + m.description) : `<label class="thumb add">＋<br>photo<input type="file" accept="${IMG_ACCEPT}" data-mid="${m.id}"></label>`}
-    <div class="grow">${m.source === 'plan' ? '<span class="tag">from plan</span>' : ''}<p class="mdesc">${esc(m.description || m.type)}</p><p>${[m.calories && Math.round(m.calories) + ' kcal', m.protein && Math.round(m.protein) + 'g protein'].filter(Boolean).join(' · ')}</p></div>
+    <div class="grow">${m.source === 'plan' ? '<span class="tag">from plan</span>' : ''}<p class="mdesc">${esc(mealLabel(m.description).name || m.type)}</p><p>${[m.calories && Math.round(m.calories) + ' kcal', m.protein && Math.round(m.protein) + 'g protein'].filter(Boolean).join(' · ')}</p></div>
     <button class="link" data-delm="${m.id}" aria-label="Delete">✕</button></div>`).join('');
   $$('#mList [data-mx]').forEach(t => t.onclick = e => { if (e.target.closest('button, label, input, img')) return; openMealEdit(extras.find(x => x.id === t.dataset.mx)); });
   $$('#mList [data-gmenu]').forEach(b => b.onclick = () => { const [ty, tm] = b.dataset.gmenu.split('|'); openGroupMenu(extras.filter(x => x.type === ty && (x.time || '') === tm)); });
