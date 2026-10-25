@@ -370,6 +370,7 @@ button.loading img,button.loading svg{opacity:0}
 .fsug .fn small,.fsug .fk small{display:block;color:var(--muted);font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fsug .fn i{font-style:normal;font-size:11px;font-weight:800;color:var(--accent)}
 input[type=search]{-webkit-appearance:none;appearance:none}input[type=search]::-webkit-search-cancel-button{display:none}#mealForm>*,#planForm>*{min-width:0}#mBasket{min-width:0;max-width:100%;overflow:hidden;margin:0 0 10px;border:1px solid var(--line);border-radius:12px;padding:4px 12px;background:var(--soft)}#mBasket.hide{display:none}
 .msplit{display:flex;align-items:center;gap:10px;white-space:nowrap;margin:0 0 10px;font-size:14px;color:var(--muted)}.msplit .fq{background:var(--soft)}.msplit .fq b{min-width:34px;text-align:center;color:var(--text);font-size:16px}.msplit #mSplitTxt{font-weight:700;color:var(--accent)}
+#mGroupTo{display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:10px 12px;border-radius:12px;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);font-size:14px}#mGroupTo.hide{display:none}#mGroupTo b{color:var(--accent)}#mGroupTo button{margin-left:auto;min-height:32px}
 .bitem{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.bitem span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bitem b{white-space:nowrap}.bitem button.link.link{min-width:32px;min-height:32px;padding:2px}
 .btot{padding:8px 0 6px;font-size:13px;font-weight:700;color:var(--accent)}
 .mgrp{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800;letter-spacing:.03em;color:var(--muted);margin:12px 2px 6px}.mgrp button.link.link{min-height:30px;min-width:40px;padding:2px 8px}.medit{cursor:pointer}.medit:active{filter:brightness(1.15)}.mgrp:first-child{margin-top:0}.mdesc{color:var(--text)!important;font-weight:600}.mshare{font-style:normal;color:var(--accent)}
@@ -818,7 +819,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261025090916';
+const BUILD = '20261025091413';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2598,6 +2599,16 @@ mealFile().onchange = () => {
 };
 /* Several items under one meal and time: "+ Add Another Item" keeps what you've entered and clears the food boxes for the next. */
 let mBasket = [], mSplit = 1;
+/* Add more items to a meal already logged: same meal, time and sharing; a banner says where they go. */
+function addToGroup(type, time, share) {
+  const f = $('#mealForm'); if (![...f.type.options].some(o => o.value === type)) f.type.add(new Option(type, type));
+  f.type.value = type; f.time.value = time; mSplit = share; drawSplit();
+  let b = $('#mGroupTo'); if (!b) { b = document.createElement('div'); b.id = 'mGroupTo'; f.prepend(b); }
+  b.innerHTML = `Adding to <b>${esc(type)}${time ? ' · ' + esc(time) : ''}</b>${share > 1 ? ' · Shared by ' + share : ''}<button type="button" class="link" id="mGroupX">Cancel</button>`;
+  b.classList.remove('hide');
+  $('#mGroupX').onclick = () => { b.classList.add('hide'); mSplit = 1; f.time.value = ''; drawSplit(); };
+  f.scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => f.description.focus(), 400);
+}
 /* Edit a logged extra: name, kcal, protein, meal, time. */
 function openMealEdit(m) {
   if (!m) return; const date = wSel, box = $('#recSheet'); box.classList.remove('hide');
@@ -2618,7 +2629,9 @@ function openGroupMenu(items) {
     $('.card', box).innerHTML = `<h3 style="margin:0">${esc(items[0].type)}${items[0].time ? ' · ' + esc(items[0].time) : ''}</h3>
       <p class="small muted" style="margin:0">${items.length} item${items.length > 1 ? 's' : ''} · ${Math.round(tot)} kcal for the whole table</p>
       <div class="msplit" style="justify-content:center"><span>Shared by</span><div class="fq"><button type="button" data-gs="-1">−</button><b>${n}</b><button type="button" data-gs="1">+</button></div><span id="gsTxt">${n === 1 ? 'just me' : Math.round(tot / n) + ' kcal each'}</span></div>
-      <div class="row"><button type="button" class="link" id="gsCancel">Cancel</button><button class="primary" id="gsSave">Save</button></div>`;
+      <div class="row"><button type="button" class="link" id="gsCancel">Cancel</button><button class="primary" id="gsSave">Save</button></div>
+      <button type="button" class="link" id="gsAdd" style="width:100%">+ Add Items To This Meal</button>`;
+    $('#gsAdd').onclick = () => { box.classList.add('hide'); addToGroup(items[0].type, items[0].time || '', cur ? +cur : 1); };
     $$('[data-gs]', box).forEach(b => b.onclick = () => { n = Math.min(20, Math.max(1, n + +b.dataset.gs)); draw(); });
     $('#gsCancel').onclick = () => box.classList.add('hide');
     $('#gsSave').onclick = e => busy(e.target, async () => {
@@ -2668,7 +2681,7 @@ $('#mealForm').onsubmit = e => {
       ...['calories', 'protein', 'carbs', 'fat'].map(k => ({ [k]: x[k] === '' || x[k] == null ? '' : Math.round(+x[k] / mSplit * 10) / 10 })));
     for (let i = 0; i < items.length; i++) list = await api('addMeal', Object.assign({}, share(items[i]), shared, i === 0 ? photo : {}));
     mealsChanged(date, list); toast((items.length > 1 ? items.length + ' items added · ' : 'Meal added · ') + nice(date));
-    mBasket = []; mSplit = 1; f.reset(); drawBasket(); mealFile().onchange(); renderMeals(list); MY_FOODS = null;
+    mBasket = []; mSplit = 1; f.reset(); drawBasket(); if ($('#mGroupTo')) $('#mGroupTo').classList.add('hide'); mealFile().onchange(); renderMeals(list); MY_FOODS = null;
   });
 };
 
