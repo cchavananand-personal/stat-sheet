@@ -192,6 +192,7 @@ body.tmode .thumb.add,body.tmode .addtile,body.tmode #mealPick,body.tmode [data-
 .gkeys{width:100%;border-collapse:collapse;margin:6px 0;font-size:13px}.gkeys td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}.gkeys td{text-align:left}.gkeys td:first-child{white-space:nowrap;width:1%}
 body.coachview #bodyForm input{opacity:.85}body.coachview #ciToggle,body.coachview #ciBox{display:none!important}
 .exnote{margin:3px 0 0!important;font-size:12.5px;color:var(--muted);font-style:italic;white-space:normal}
+#mTotals.pending .muted{visibility:hidden}
 .ecta{display:flex;align-items:center;gap:12px;margin:10px 0 2px;padding:12px;border:1px dashed var(--line);border-radius:14px;background:color-mix(in srgb,var(--soft) 55%,transparent);text-align:left}
 .ecta .eic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}.ecta .eic svg{width:20px;height:20px}
 .ecta .et{flex:1;min-width:0}.ecta .et b{display:block;font-size:15px}.ecta .et small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35;margin-top:2px}
@@ -819,7 +820,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261025091413';
+const BUILD = '20261025092029';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2509,18 +2510,25 @@ function macroBars(t, p) {
     return `<div><div class="row between small"><span>${l}</span><span class="muted">${Math.round(t[k])}${goal ? ' / ' + goal : ''} ${u}</span></div>${goal ? `<div class="bar"><div style="width:${pct}%"></div></div>` : ''}</div>`;
   }).join('');
 }
+/* Meals per day, remembered so a day opens at once with what it showed last time. */
+const MEALDAY_KEY = 'mealday-' + ((WHO && WHO.id) || ROLE) + '-' + AS;
+const MEALDAY = (() => { try { return JSON.parse(localStorage.getItem(MEALDAY_KEY) || '{}') || {}; } catch (e) { return {}; } })();
+const mealInflight = {};
+function rememberMeals(date, list) {
+  MEALDAY[date] = list;
+  try { const keep = {}; Object.keys(MEALDAY).sort().slice(-40).forEach(d => keep[d] = MEALDAY[d]); localStorage.setItem(MEALDAY_KEY, JSON.stringify(keep)); } catch (e) {}
+}
 async function loadDayMeals() {
-  const want = wSel;
-  if (wSel !== TODAY) { // don't leave the previous day's meals on screen while this one loads
-    $('#mTotals').innerHTML = ''; $('#mPlan').innerHTML = '';
-    $('#mList').innerHTML = '<div class="empty ld">Loading…</div>'; $('#mListCard').classList.remove('hide');
-  }
-  const list = wSel === TODAY ? S.meals : await api('meals', { date: wSel }).catch(() => null);
+  const want = wSel, known = wSel === TODAY ? S.meals : MEALDAY[wSel];
+  if (known) { if (logMode === 'meal') renderMeals(known); if (wSel === TODAY) return; } // instant, no blank state
+  else renderMeals([], true); // first visit to this day: titles and cards in place, numbers fill in
+  const list = await (mealInflight[want] = mealInflight[want] || api('meals', { date: want }).catch(() => null).finally(() => { delete mealInflight[want]; }));
   if (!list) { if (want === wSel) { $('#mList').innerHTML = '<button class="link" id="mRetry">Couldn\'t load · tap to retry</button>'; $('#mRetry').onclick = loadDayMeals; } return; }
+  rememberMeals(want, list);
   if (want === wSel && logMode === 'meal') renderMeals(list);
 }
 function mealsChanged(date, list) { // keep today's list and the calorie chart data in sync
-  if (date === TODAY) S.meals = list;
+  if (date === TODAY) S.meals = list; rememberMeals(date, list);
   const t = sumMeals(list);
   if (list.length) S.nutrition[date] = t; else delete S.nutrition[date];
 }
@@ -2532,13 +2540,17 @@ function mealLabel(d) {
   const i = t.indexOf(' · '), head = i < 0 ? t : t.slice(0, i); if (FOOD_EN[head]) t = FOOD_EN[head] + (i < 0 ? '' : t.slice(i));
   return { name: t, share };
 }
-function renderMeals(list) {
+function renderMeals(list, pending) {
+  const sig = JSON.stringify([wSel, list, !!pending, S.profile.calories, S.profile.protein, planItems(wSel).length]);
+  if (renderMeals._sig === sig) return; renderMeals._sig = sig; // same data: leave the screen exactly as it is
   mList = list;
   renderMealPlan(list);
+  $('#mTotals').classList.toggle('pending', !!pending);
   $('#mTotals').innerHTML = `<div style="display:grid;gap:6px">${macroBars(sumMeals(list), S.profile)}</div>`;
   // plan meals show as a tick on the plan card; only what's not on the plan is listed here
   const plan = planItems(wSel), extras = list.filter(m => !plan.some(x => sameMeal(x, m)));
-  $('#mListCard').classList.toggle('hide', !extras.length);
+  $('#mListCard').classList.toggle('hide', !extras.length && !pending);
+  if (pending) { $('#mList').innerHTML = '<div class="empty ld">Loading…</div>'; return; }
   extras.sort((a, b) => String(a.time || '99').localeCompare(String(b.time || '99')));
   $('#mList').innerHTML = extras.map((m, i) => `${i && extras[i - 1].type === m.type && (extras[i - 1].time || '') === (m.time || '') ? '' : `<div class="mgrp"><span>${esc(m.type)}${m.time ? ' · ' + esc(m.time) : ''}${(sh => sh ? ' · <i class="mshare">Shared by ' + sh + '</i>' : '')(mealLabel(m.description).share)}</span>${OWNER ? `<button type="button" class="link" data-gmenu="${esc(m.type + '|' + (m.time || ''))}" aria-label="Meal options">⋯</button>` : ''}</div>`}<div class="item mtile${OWNER ? ' medit' : ''}" data-mx="${m.id}" style="${mealStyle(m)}">
     ${m.thumbId ? imgTag(m.thumbId, m.photoId, 'thumb', m.type + ' · ' + m.description) : `<label class="thumb add">＋<br>photo<input type="file" accept="${IMG_ACCEPT}" data-mid="${m.id}"></label>`}
