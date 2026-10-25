@@ -193,6 +193,9 @@ body.tmode .thumb.add,body.tmode .addtile,body.tmode #mealPick,body.tmode [data-
 body.coachview #bodyForm input{opacity:.85}body.coachview #ciToggle,body.coachview #ciBox{display:none!important}
 .exnote{margin:3px 0 0!important;font-size:12.5px;color:var(--muted);font-style:italic;white-space:normal}
 #mTotals.pending .muted{visibility:hidden}
+/* any photo still loading shows the lifting mascot, so it never looks missing */
+img[data-pid]:not([src]),img[data-g]:not([src]),img[data-t]:not([src]){background:var(--mascot) center/38px no-repeat,var(--soft);min-height:60px}
+.phload{display:grid;place-items:center;background:var(--soft);border-radius:12px;min-height:160px;aspect-ratio:3/4}
 .ecta{display:flex;align-items:center;gap:12px;margin:10px 0 2px;padding:12px;border:1px dashed var(--line);border-radius:14px;background:color-mix(in srgb,var(--soft) 55%,transparent);text-align:left}
 .ecta .eic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}.ecta .eic svg{width:20px;height:20px}
 .ecta .et{flex:1;min-width:0}.ecta .et b{display:block;font-size:15px}.ecta .et small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35;margin-top:2px}
@@ -821,7 +824,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261025101244';
+const BUILD = '20261025121529';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1468,9 +1471,11 @@ async function renderWeightEntry() {
   const b = MD.by[wSel] || S.body.find(r => r.date === wSel) || {};
   const f = $('#bodyForm'); f.weight.value = b.weight == null ? '' : b.weight; f.bodyfat.value = b.bodyfat == null ? '' : b.bodyfat;
   $('#saveState').textContent = num(b.weight) != null || num(b.bodyfat) != null ? syncedLabel(b) : ROLE === 'trainer' ? S.target.name + ' has not logged this day.' : 'Type your weight. It saves automatically.';
-  wPhotos = []; renderDayPhotos();
+  wPhotos = DAYPH[wSel] || []; renderDayPhotos(!!MD.photos[wSel] && !DAYPH[wSel]); // photos on the way: say so, never look empty
   if (MD.photos[wSel]) {
-    const want = wSel, d = await api('day', { date: wSel });
+    const want = wSel, d = await api('day', { date: wSel }).catch(() => null);
+    if (!d) { if (want === wSel) renderDayPhotos(false); return; }
+    DAYPH[want] = d.photos;
     if (want === wSel) { wPhotos = d.photos; renderDayPhotos(); }
   }
 }
@@ -2168,11 +2173,13 @@ async function addDayPhoto(input) {
     MD.photos[date] = 1; if (date === wSel) renderDayPhotos(); drawCal(); toast('Photo saved · ' + nice(date));
   } finally { tile.style.opacity = ''; input.value = ''; }
 }
-function renderDayPhotos() {
+const DAYPH = {}; // each day's photos once loaded, so going back is instant
+function renderDayPhotos(loading) {
   const el = $('#dayPhotos');
   el.innerHTML = (OWNER ? `<label class="addtile"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Add photo</span>
       <input type="file" accept="${IMG_ACCEPT}" id="dayPhotoFile"></label>` : '') +
-    wPhotos.map(p => `<figure>${imgTag(p.thumbId, p.photoId, '', nice(p.date))}<button class="del" data-delp="${p.id}" aria-label="Delete">✕</button></figure>`).join('');
+    wPhotos.map(p => `<figure>${imgTag(p.thumbId, p.photoId, '', nice(p.date))}<button class="del" data-delp="${p.id}" aria-label="Delete">✕</button></figure>`).join('')
+    + (loading ? '<figure class="phload"><div class="ld">Loading…</div></figure>' : '');
   const inp = $('#dayPhotoFile', el); if (inp) inp.onchange = () => addDayPhoto(inp);
   $$('[data-delp]', el).forEach(b => b.onclick = () => confirm('Delete this photo?') && busy(b, async () => {
     await api('remove', { sheet: 'DailyPhotos', id: b.dataset.delp });
