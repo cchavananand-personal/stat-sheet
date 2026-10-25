@@ -374,7 +374,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}input[type=search]::-
 #mGroupTo{display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:10px 12px;border-radius:12px;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);font-size:14px}#mGroupTo.hide{display:none}#mGroupTo b{color:var(--accent)}#mGroupTo button{margin-left:auto;min-height:32px}
 .bitem{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.bitem span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bitem b{white-space:nowrap}.bitem button.link.link{min-width:32px;min-height:32px;padding:2px}
 .btot{padding:8px 0 6px;font-size:13px;font-weight:700;color:var(--accent)}
-.mgrp{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800;letter-spacing:.03em;color:var(--muted);margin:12px 2px 6px}.mgrp button.link.link{min-height:30px;min-width:40px;padding:2px 8px}.medit{cursor:pointer}.medit:active{filter:brightness(1.15)}.mgrp:first-child{margin-top:0}.mdesc{color:var(--text)!important;font-weight:600}.mshare{font-style:normal;color:var(--accent)}
+.mgrp{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800;letter-spacing:.03em;color:var(--muted);margin:12px 2px 6px}.mgrp button.link.link{min-height:30px;min-width:40px;padding:2px 8px}.medit{cursor:pointer}.medit:active{filter:brightness(1.15)}.mgrp:first-child{margin-top:0}.mdesc{color:var(--text)!important;font-weight:600}.mshare{font-style:normal;color:var(--accent)}.addtag{display:inline-block;margin:0 0 2px;background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent);font-weight:700}#recSheet textarea{font-family:inherit;font-size:15px}
 .fnone{padding:12px;font-size:13px;color:var(--muted)}.fsug .fk{text-align:right;font-weight:800;white-space:nowrap}
 .fpor{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;margin:-4px 0 12px}.fpor select{margin:0;min-height:44px}.fsum{grid-column:1/-1;font-size:13px;font-weight:700;color:var(--accent)}
 .fq{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--soft)}.fq input{width:64px;margin:0;border:0;border-radius:0;text-align:center;min-height:44px;background:transparent;font-weight:700}
@@ -577,7 +577,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
       <div class="card" id="mTotals"></div>
       <div class="card" id="mPlan"></div>
       <div class="card" id="mListCard"><h3>Extras</h3><div id="mList"></div></div>
-      <div class="card owner-only"><h3>Add extra</h3>
+      <div class="card owner-only"><h3>Add Meal</h3>
         <form id="mealForm">
           <div class="grid2">
             <label>Meal<select name="type"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option></select></label>
@@ -821,7 +821,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261025095525';
+const BUILD = '20261025101244';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2545,20 +2545,19 @@ function renderMeals(list, pending) {
   const sig = JSON.stringify([wSel, list, !!pending, S.profile.calories, S.profile.protein, planItems(wSel).length]);
   if (renderMeals._sig === sig) return; renderMeals._sig = sig; // same data: leave the screen exactly as it is
   mList = list;
-  renderMealPlan(list);
   $('#mTotals').classList.toggle('pending', !!pending);
   $('#mTotals').innerHTML = `<div style="display:grid;gap:6px">${macroBars(sumMeals(list), S.profile)}</div>`;
-  // plan meals show as a tick on the plan card; only what's not on the plan is listed here
   const plan = planItems(wSel), extras = list.filter(m => !plan.some(x => sameMeal(x, m)));
-  $('#mListCard').classList.toggle('hide', !extras.length && !pending);
-  if (pending) { $('#mList').innerHTML = '<div class="empty ld">Loading…</div>'; return; }
-  extras.sort((a, b) => String(a.time || '99').localeCompare(String(b.time || '99')));
-  $('#mList').innerHTML = extras.map((m, i) => `${i && extras[i - 1].type === m.type && (extras[i - 1].time || '') === (m.time || '') ? '' : `<div class="mgrp"><span>${esc(m.type)}${m.time ? ' · ' + esc(m.time) : ''}${(sh => sh ? ' · <i class="mshare">Shared by ' + sh + '</i>' : '')(mealLabel(m.description).share)}</span>${OWNER ? `<button type="button" class="link" data-gmenu="${esc(m.type + '|' + (m.time || ''))}" aria-label="Meal options">⋯</button>` : ''}</div>`}<div class="item mtile${OWNER ? ' medit' : ''}" data-mx="${m.id}" style="${mealStyle(m)}">
-    ${m.thumbId ? imgTag(m.thumbId, m.photoId, 'thumb', m.type + ' · ' + m.description) : `<label class="thumb add">＋<br>photo<input type="file" accept="${IMG_ACCEPT}" data-mid="${m.id}"></label>`}
-    <div class="grow">${m.source === 'plan' ? '<span class="tag">from plan</span>' : ''}<p class="mdesc">${esc(mealLabel(m.description).name || m.type)}</p><p>${[m.calories && Math.round(m.calories) + ' kcal', m.protein && Math.round(m.protein) + 'g protein'].filter(Boolean).join(' · ')}</p></div>
-    <button class="link" data-delm="${m.id}" aria-label="Delete">✕</button></div>`).join('');
-  $$('#mList [data-mx]').forEach(t => t.onclick = e => { if (e.target.closest('button, label, input, img')) return; openMealEdit(extras.find(x => x.id === t.dataset.mx)); });
-  $$('#mList [data-gmenu]').forEach(b => b.onclick = () => { const [ty, tm] = b.dataset.gmenu.split('|'); openGroupMenu(extras.filter(x => x.type === ty && (x.time || '') === tm)); });
+  $('#mListCard').classList.add('hide'); // everything lives in the one Meals list now
+  const tile = m => `<div class="item mtile${OWNER ? ' medit' : ''}" data-mx="${m.id}" style="${mealStyle(m)}">
+    ${m.thumbId ? imgTag(m.thumbId, m.photoId, 'thumb', m.type + ' · ' + m.description) : OWNER ? `<label class="thumb add">＋<br>photo<input type="file" accept="${IMG_ACCEPT}" data-mid="${m.id}"></label>` : ''}
+    <div class="grow"><span class="tag addtag">+ Added</span><p class="mdesc">${esc(mealLabel(m.description).name || m.type)}</p><p>${[m.calories && Math.round(m.calories) + ' kcal', m.protein && Math.round(m.protein) + 'g protein'].filter(Boolean).join(' · ')}</p></div>
+    ${OWNER ? `<button class="link" data-delm="${m.id}" aria-label="Delete">✕</button>` : ''}</div>`;
+  renderMealPlan(list, extras, tile);
+  const box = $('#mPlan');
+  if (pending) { box.insertAdjacentHTML('beforeend', '<div class="empty ld">Loading…</div>'); return; }
+  $$('#mPlan [data-mx]').forEach(t => t.onclick = e => { if (e.target.closest('button, label, input, img')) return; openMealEdit(extras.find(x => x.id === t.dataset.mx)); });
+  $$('#mPlan [data-gmenu]').forEach(b => b.onclick = () => { const [ty, tm] = b.dataset.gmenu.split('|'); openGroupMenu(extras.filter(x => x.type === ty && (x.time || '') === tm)); });
   $$('[data-delm]').forEach(b => b.onclick = () => confirm('Delete this meal?') && busy(b, async () => {
     await api('remove', { sheet: 'Meals', id: b.dataset.delm });
     const rest = mList.filter(x => x.id !== b.dataset.delm); mealsChanged(wSel, rest); renderMeals(rest);
@@ -2569,7 +2568,7 @@ function renderMeals(list, pending) {
     const date = wSel; let l; try { l = await api('setMealPhoto', Object.assign({ id: i.dataset.mid }, await imagePair(file))); } catch (e) { return renderMeals(S.meals); }
     mealsChanged(date, l); renderMeals(l); toast('Photo added');
   });
-  hydrate($('#mList'));
+  hydrate(box);
 }
 const PLAN_DAY = 'Daily'; // one plan that repeats every day
 /** Plans have versions: each starts on its "from" date and runs until the next one starts. */
@@ -2580,19 +2579,27 @@ function planStartFor(date) {
 const planItems = date => { const f = planStartFor(date || TODAY); return f == null ? [] :
   S.plan.filter(x => x.day === PLAN_DAY && String(x.from || '') === f).sort((a, b) => String(a.time).localeCompare(String(b.time))); };
 const planLabel = date => { const f = planStartFor(date || TODAY); return f ? 'Plan from ' + nice(f, {day:'numeric', month:'short', year:'numeric'}) : 'Current plan'; };
-const sameMeal = (x, m) => m.type === x.type && m.description === x.description; // a logged meal that is this plan item
-function renderMealPlan(list) {
-  const items = planItems(wSel), el = $('#mPlan');
-  if (!items.length) { el.innerHTML = OWNER ? '<div class="empty">No meal plan yet. Set one up in the <button class="lk-nav" data-go="meals:meals" style="padding:0">Planner</button>.</div>' : '<div class="empty">No meal plan yet.</div>'; return; }
+const sameMeal = (x, m) => m.type === x.type && ((m.time || '') === (x.time || '') || m.description === x.description); // the logged copy of this preset (it may be edited)
+function renderMealPlan(list, extras, tile) {
+  extras = extras || []; const items = planItems(wSel), el = $('#mPlan');
   const eaten = x => list.find(m => sameMeal(x, m)), left = items.filter(x => !eaten(x));
   const mark = x => { const m = eaten(x);
     if (m) return OWNER ? `<button class="link tick" data-unlog="${m.id}" aria-label="Eaten · tap to undo">✓</button>` : '<span class="tick">✓</span>';
     return OWNER ? `<button class="primary" data-logp="${x.id}" style="min-height:40px;padding:6px 14px">+ Log</button>` : ''; };
-  el.innerHTML = `<div class="row between"><h3 style="margin:0">Your plan <span class="small muted" style="font-weight:500">· ${esc(planLabel(wSel))}</span></h3>${OWNER && left.length > 1 ? '<button class="link" id="logAllPlan">Log all</button>' : ''}</div>` +
-    (OWNER ? '<div class="lkrow" style="text-align:left;margin:-2px 0 6px"><button class="lk-nav" data-go="meals:meals">Edit menu in Planner</button></div>' : '') +
-    items.map(x => { const m = eaten(x);
-      return `<div class="item mtile" style="${mealStyle(x)}">${m && m.thumbId ? imgTag(m.thumbId, m.photoId, 'thumb', x.type) : ''}<div class="grow"><b><span class="mtime">${esc(x.time)}</span> · ${esc(x.type)}</b>
-      <p>${esc(x.description)}</p><p>${[x.calories && x.calories + ' kcal', x.protein && x.protein + 'g protein'].filter(Boolean).join(' · ')}</p></div>${mark(x)}</div>`; }).join('');
+  const edited = (x, m) => m && (m.description !== x.description || +m.calories !== +x.calories || +m.protein !== +x.protein);
+  const rows = items.map(x => ({ t: x.time || '99', k: 0, x })).concat(extras.map(m => ({ t: m.time || '99', k: 1, m })))
+    .sort((u, v) => String(u.t).localeCompare(String(v.t)) || u.k - v.k);
+  const head = `<div class="row between"><h3 style="margin:0">Meals${items.length ? ` <span class="small muted" style="font-weight:500">· ${esc(planLabel(wSel))}</span>` : ''}</h3>${OWNER && left.length > 1 ? '<button class="link" id="logAllPlan">Log All</button>' : ''}</div>`
+    + (OWNER && items.length ? '<div class="lkrow" style="text-align:left;margin:-2px 0 6px"><button class="lk-nav" data-go="meals:meals">Edit Preset Meals In Planner</button></div>' : '');
+  if (!rows.length) { el.innerHTML = head + (OWNER ? '<div class="empty">Nothing logged yet. Add a meal below, or set up preset meals in the <button class="lk-nav" data-go="meals:meals" style="padding:0">Planner</button>.</div>' : '<div class="empty">Nothing logged yet.</div>'); return; }
+  el.innerHTML = head + rows.map((r, i) => {
+    if (r.k) { const m = r.m, prev = rows[i - 1], same = prev && prev.k && prev.m.type === m.type && (prev.m.time || '') === (m.time || '');
+      const sh = mealLabel(m.description).share;
+      return (same ? '' : `<div class="mgrp"><span>${esc(m.type)}${m.time ? ' · ' + esc(m.time) : ''}${sh ? ' · <i class="mshare">Shared by ' + sh + '</i>' : ''}</span>${OWNER ? `<button type="button" class="link" data-gmenu="${esc(m.type + '|' + (m.time || ''))}" aria-label="Meal options">⋯</button>` : ''}</div>`) + tile(m); }
+    const x = r.x, m = eaten(x), show = m || x;
+    return `<div class="item mtile${OWNER ? ' medit' : ''}" data-px="${x.id}" style="${mealStyle(x)}">${m && m.thumbId ? imgTag(m.thumbId, m.photoId, 'thumb', x.type) : ''}<div class="grow"><b><span class="mtime">${esc(x.time)}</span> · ${esc(x.type)}</b>${edited(x, m) ? ' <span class="tag">Edited</span>' : ''}
+      <p>${esc(show.description)}</p><p>${[show.calories && Math.round(show.calories) + ' kcal', show.protein && Math.round(show.protein) + 'g protein'].filter(Boolean).join(' · ')}</p></div>${mark(x)}</div>`; }).join('');
+  $$('[data-px]', el).forEach(t => t.onclick = e => { if (e.target.closest('button, label, input, img') || !OWNER) return; const x = items.find(i => i.id === t.dataset.px); openPresetEdit(x, eaten(x)); });
   hydrate(el);
   const date = wSel;
   $$('[data-unlog]', el).forEach(b => b.onclick = () => confirm('Mark as not eaten?') && busy(b, async () => {
@@ -2623,6 +2630,23 @@ function addToGroup(type, time, share) {
   f.scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => f.description.focus(), 400);
 }
 /* Edit a logged extra: name, kcal, protein, meal, time. */
+function openPresetEdit(x, m) {
+  const date = wSel, box = $('#recSheet'), v = m || x; box.classList.remove('hide');
+  $('.card', box).innerHTML = `<h3 style="margin:0">${esc(x.time)} · ${esc(x.type)}</h3><p class="small muted" style="margin:0">Change what was different today. Saving logs it as eaten.</p>
+    <form id="peForm" style="display:grid;gap:10px;text-align:left">
+    <label>What You Ate<textarea name="description" rows="3" maxlength="1000">${esc(v.description || '')}</textarea></label>
+    <div class="grid2"><label>Calories<input name="calories" type="number" inputmode="decimal" min="0" value="${esc(v.calories)}"></label><label>Protein<input name="protein" type="number" inputmode="decimal" min="0" value="${esc(v.protein)}"></label></div>
+    <div class="row"><button type="button" class="link" id="peCancel">Cancel</button><button class="primary">${m ? 'Save' : 'Save As Eaten'}</button></div>
+    ${m && (m.description !== x.description || +m.calories !== +x.calories) ? '<button type="button" class="link" id="peReset" style="width:100%">Back To Preset</button>' : ''}</form>`;
+  const done = list => { box.classList.add('hide'); mealsChanged(date, list); renderMeals(list); };
+  $('#peCancel').onclick = () => box.classList.add('hide');
+  if ($('#peReset')) $('#peReset').onclick = e => busy(e.target, async () => { done(await api('editMeals', { date, items: [{ id: m.id, description: x.description, calories: x.calories, protein: x.protein, carbs: x.carbs, fat: x.fat }] })); toast('Back to the preset'); });
+  $('#peForm').onsubmit = e => { e.preventDefault(); const f = formObj(e.target);
+    busy($('button.primary', e.target), async () => {
+      done(m ? await api('editMeals', { date, items: [Object.assign({ id: m.id }, f)] })
+        : await api('addMeal', Object.assign({ date, type: x.type, time: x.time, carbs: x.carbs, fat: x.fat }, f)));
+      toast(m ? 'Meal updated' : 'Logged with your changes'); }); };
+}
 function openMealEdit(m) {
   if (!m) return; const date = wSel, box = $('#recSheet'); box.classList.remove('hide');
   $('.card', box).innerHTML = `<h3 style="margin:0">Edit Meal</h3><form id="meForm" style="display:grid;gap:10px;text-align:left">
