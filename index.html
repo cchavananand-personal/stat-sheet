@@ -328,7 +328,7 @@ button.loading::after{content:"";position:absolute;inset:0;margin:auto;width:22p
 button.primary.loading::after{background-image:var(--mascot-ink)}
 button.loading img,button.loading svg{opacity:0}
 @keyframes spin{to{transform:rotate(360deg)}}
-.spinner{width:26px;height:26px;border-radius:50%;border:3px solid var(--muted);border-right-color:transparent;animation:spin .8s linear infinite}
+.spinner{width:26px;height:28px;background:var(--mascot) center/contain no-repeat}
 #switcher{position:fixed;inset:0;z-index:25;background:#0005}
 #switcher .sheet{position:absolute;top:56px;right:12px;width:260px;max-width:calc(100vw - 24px);background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px;box-shadow:0 10px 30px #0004}
 #switcher .sheet b{display:block;font-size:12px;color:var(--muted);padding:8px 10px 4px;letter-spacing:.04em}
@@ -821,7 +821,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261025092447';
+const BUILD = '20261025092508';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
