@@ -818,7 +818,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261025085323';
+const BUILD = '20261025085513';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2533,7 +2533,7 @@ function renderMeals(list) {
   extras.sort((a, b) => String(a.time || '99').localeCompare(String(b.time || '99')));
   $('#mList').innerHTML = extras.map((m, i) => `${i && extras[i - 1].type === m.type && (extras[i - 1].time || '') === (m.time || '') ? '' : `<div class="mgrp"><span>${esc(m.type)}${m.time ? ' · ' + esc(m.time) : ''}</span>${OWNER ? `<button type="button" class="link" data-gmenu="${esc(m.type + '|' + (m.time || ''))}" aria-label="Meal options">⋯</button>` : ''}</div>`}<div class="item mtile${OWNER ? ' medit' : ''}" data-mx="${m.id}" style="${mealStyle(m)}">
     ${m.thumbId ? imgTag(m.thumbId, m.photoId, 'thumb', m.type + ' · ' + m.description) : `<label class="thumb add">＋<br>photo<input type="file" accept="${IMG_ACCEPT}" data-mid="${m.id}"></label>`}
-    <div class="grow">${m.source === 'plan' ? '<span class="tag">from plan</span>' : ''}<p class="mdesc">${esc(m.description || m.type)}</p><p>${[m.calories && m.calories + ' kcal', m.protein && m.protein + 'g protein'].filter(Boolean).join(' · ')}</p></div>
+    <div class="grow">${m.source === 'plan' ? '<span class="tag">from plan</span>' : ''}<p class="mdesc">${esc(m.description || m.type)}</p><p>${[m.calories && Math.round(m.calories) + ' kcal', m.protein && Math.round(m.protein) + 'g protein'].filter(Boolean).join(' · ')}</p></div>
     <button class="link" data-delm="${m.id}" aria-label="Delete">✕</button></div>`).join('');
   $$('#mList [data-mx]').forEach(t => t.onclick = e => { if (e.target.closest('button, label, input, img')) return; openMealEdit(extras.find(x => x.id === t.dataset.mx)); });
   $$('#mList [data-gmenu]').forEach(b => b.onclick = () => { const [ty, tm] = b.dataset.gmenu.split('|'); openGroupMenu(extras.filter(x => x.type === ty && (x.time || '') === tm)); });
@@ -2617,7 +2617,7 @@ function openGroupMenu(items) {
       const k = cur ? +cur : 1; // undo any earlier split first, then divide by the new number
       const rows = items.map(x => { const base = String(x.description || '').replace(/ \(÷\d+\)$/, '');
         const o = { id: x.id, description: n > 1 ? base + ' (÷' + n + ')' : base };
-        ['calories', 'protein', 'carbs', 'fat'].forEach(q => { if (x[q] !== '' && x[q] != null) o[q] = Math.round(+x[q] * k / n); }); return o; });
+        ['calories', 'protein', 'carbs', 'fat'].forEach(q => { if (x[q] !== '' && x[q] != null) o[q] = Math.round(+x[q] * k / n * 10) / 10; }); return o; }); // 1 decimal, so undo comes back exact
       const list = await api('editMeals', { date, items: rows }); box.classList.add('hide'); mealsChanged(date, list); renderMeals(list);
       toast(n > 1 ? 'Shared by ' + n + ' · ' + Math.round(tot / n) + ' kcal each' : 'Back to a full portion'); }); };
   draw();
@@ -2657,7 +2657,7 @@ $('#mealForm').onsubmit = e => {
     const shared = { date, type: f.type.value, time: f.time.value };
     if (!items.length) items.push({ description: '', calories: '' });
     const share = x => mSplit === 1 ? x : Object.assign({}, x, { description: (x.description || 'Shared meal') + ' (÷' + mSplit + ')' },
-      ...['calories', 'protein', 'carbs', 'fat'].map(k => ({ [k]: x[k] === '' || x[k] == null ? '' : Math.round(+x[k] / mSplit) })));
+      ...['calories', 'protein', 'carbs', 'fat'].map(k => ({ [k]: x[k] === '' || x[k] == null ? '' : Math.round(+x[k] / mSplit * 10) / 10 })));
     for (let i = 0; i < items.length; i++) list = await api('addMeal', Object.assign({}, share(items[i]), shared, i === 0 ? photo : {}));
     mealsChanged(date, list); toast((items.length > 1 ? items.length + ' items added · ' : 'Meal added · ') + nice(date));
     mBasket = []; mSplit = 1; f.reset(); drawBasket(); mealFile().onchange(); renderMeals(list); MY_FOODS = null;
