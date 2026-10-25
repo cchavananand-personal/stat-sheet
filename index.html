@@ -372,7 +372,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}input[type=search]::-
 .msplit{display:flex;align-items:center;gap:10px;white-space:nowrap;margin:0 0 10px;font-size:14px;color:var(--muted)}.msplit .fq{background:var(--soft)}.msplit .fq b{min-width:34px;text-align:center;color:var(--text);font-size:16px}.msplit #mSplitTxt{font-weight:700;color:var(--accent)}
 .bitem{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}.bitem span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bitem b{white-space:nowrap}.bitem button.link.link{min-width:32px;min-height:32px;padding:2px}
 .btot{padding:8px 0 6px;font-size:13px;font-weight:700;color:var(--accent)}
-.mgrp{font-size:13px;font-weight:800;letter-spacing:.03em;color:var(--muted);margin:12px 2px 6px}.mgrp:first-child{margin-top:0}.mdesc{color:var(--text)!important;font-weight:600}
+.mgrp{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800;letter-spacing:.03em;color:var(--muted);margin:12px 2px 6px}.mgrp button.link.link{min-height:30px;min-width:40px;padding:2px 8px}.medit{cursor:pointer}.medit:active{filter:brightness(1.15)}.mgrp:first-child{margin-top:0}.mdesc{color:var(--text)!important;font-weight:600}
 .fnone{padding:12px;font-size:13px;color:var(--muted)}.fsug .fk{text-align:right;font-weight:800;white-space:nowrap}
 .fpor{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;margin:-4px 0 12px}.fpor select{margin:0;min-height:44px}.fsum{grid-column:1/-1;font-size:13px;font-weight:700;color:var(--accent)}
 .fq{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--soft)}.fq input{width:64px;margin:0;border:0;border-radius:0;text-align:center;min-height:44px;background:transparent;font-weight:700}
@@ -818,7 +818,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261024224515';
+const BUILD = '20261025085323';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2531,10 +2531,12 @@ function renderMeals(list) {
   const plan = planItems(wSel), extras = list.filter(m => !plan.some(x => sameMeal(x, m)));
   $('#mListCard').classList.toggle('hide', !extras.length);
   extras.sort((a, b) => String(a.time || '99').localeCompare(String(b.time || '99')));
-  $('#mList').innerHTML = extras.map((m, i) => `${i && extras[i - 1].type === m.type && (extras[i - 1].time || '') === (m.time || '') ? '' : `<div class="mgrp">${esc(m.type)}${m.time ? ' · ' + esc(m.time) : ''}</div>`}<div class="item mtile" style="${mealStyle(m)}">
+  $('#mList').innerHTML = extras.map((m, i) => `${i && extras[i - 1].type === m.type && (extras[i - 1].time || '') === (m.time || '') ? '' : `<div class="mgrp"><span>${esc(m.type)}${m.time ? ' · ' + esc(m.time) : ''}</span>${OWNER ? `<button type="button" class="link" data-gmenu="${esc(m.type + '|' + (m.time || ''))}" aria-label="Meal options">⋯</button>` : ''}</div>`}<div class="item mtile${OWNER ? ' medit' : ''}" data-mx="${m.id}" style="${mealStyle(m)}">
     ${m.thumbId ? imgTag(m.thumbId, m.photoId, 'thumb', m.type + ' · ' + m.description) : `<label class="thumb add">＋<br>photo<input type="file" accept="${IMG_ACCEPT}" data-mid="${m.id}"></label>`}
     <div class="grow">${m.source === 'plan' ? '<span class="tag">from plan</span>' : ''}<p class="mdesc">${esc(m.description || m.type)}</p><p>${[m.calories && m.calories + ' kcal', m.protein && m.protein + 'g protein'].filter(Boolean).join(' · ')}</p></div>
     <button class="link" data-delm="${m.id}" aria-label="Delete">✕</button></div>`).join('');
+  $$('#mList [data-mx]').forEach(t => t.onclick = e => { if (e.target.closest('button, label, input, img')) return; openMealEdit(extras.find(x => x.id === t.dataset.mx)); });
+  $$('#mList [data-gmenu]').forEach(b => b.onclick = () => { const [ty, tm] = b.dataset.gmenu.split('|'); openGroupMenu(extras.filter(x => x.type === ty && (x.time || '') === tm)); });
   $$('[data-delm]').forEach(b => b.onclick = () => confirm('Delete this meal?') && busy(b, async () => {
     await api('remove', { sheet: 'Meals', id: b.dataset.delm });
     const rest = mList.filter(x => x.id !== b.dataset.delm); mealsChanged(wSel, rest); renderMeals(rest);
@@ -2588,6 +2590,38 @@ mealFile().onchange = () => {
 };
 /* Several items under one meal and time: "+ Add Another Item" keeps what you've entered and clears the food boxes for the next. */
 let mBasket = [], mSplit = 1;
+/* Edit a logged extra: name, kcal, protein, meal, time. */
+function openMealEdit(m) {
+  if (!m) return; const date = wSel, box = $('#recSheet'); box.classList.remove('hide');
+  $('.card', box).innerHTML = `<h3 style="margin:0">Edit Meal</h3><form id="meForm" style="display:grid;gap:10px;text-align:left">
+    <label>What Did You Eat?<input name="description" maxlength="300" value="${esc(m.description || '')}"></label>
+    <div class="grid2"><label>Calories<input name="calories" type="number" inputmode="decimal" min="0" value="${esc(m.calories)}"></label><label>Protein<input name="protein" type="number" inputmode="decimal" min="0" value="${esc(m.protein)}"></label></div>
+    <div class="grid2"><label>Meal<select name="type">${['Breakfast', 'Lunch', 'Dinner', 'Snack'].concat([m.type].filter(t => !['Breakfast', 'Lunch', 'Dinner', 'Snack'].includes(t))).map(t => `<option ${t === m.type ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></label><label>Time<input name="time" type="time" value="${esc(m.time || '')}"></label></div>
+    <div class="row"><button type="button" class="link" id="meCancel">Cancel</button><button class="primary">Save</button></div></form>`;
+  $('#meCancel').onclick = () => box.classList.add('hide');
+  $('#meForm').onsubmit = e => { e.preventDefault(); const f = e.target;
+    busy($('button.primary', f), async () => { const list = await api('editMeals', { date, items: [Object.assign({ id: m.id }, formObj(f))] }); box.classList.add('hide'); mealsChanged(date, list); renderMeals(list); toast('Meal updated'); }); };
+}
+/* A meal heading's ⋯: share the whole meal (÷ N) after logging, or undo a split. */
+function openGroupMenu(items) {
+  if (!items.length) return; const date = wSel, box = $('#recSheet'), cur = (String(items[0].description).match(/\(÷(\d+)\)$/) || [])[1];
+  let n = cur ? +cur : 3; box.classList.remove('hide');
+  const draw = () => { const tot = items.reduce((a, x) => a + (+x.calories || 0) * (cur ? +cur : 1), 0);
+    $('.card', box).innerHTML = `<h3 style="margin:0">${esc(items[0].type)}${items[0].time ? ' · ' + esc(items[0].time) : ''}</h3>
+      <p class="small muted" style="margin:0">${items.length} item${items.length > 1 ? 's' : ''} · ${Math.round(tot)} kcal for the whole table</p>
+      <div class="msplit" style="justify-content:center"><span>Shared by</span><div class="fq"><button type="button" data-gs="-1">−</button><b>${n}</b><button type="button" data-gs="1">+</button></div><span id="gsTxt">${n === 1 ? 'just me' : Math.round(tot / n) + ' kcal each'}</span></div>
+      <div class="row"><button type="button" class="link" id="gsCancel">Cancel</button><button class="primary" id="gsSave">Save</button></div>`;
+    $$('[data-gs]', box).forEach(b => b.onclick = () => { n = Math.min(20, Math.max(1, n + +b.dataset.gs)); draw(); });
+    $('#gsCancel').onclick = () => box.classList.add('hide');
+    $('#gsSave').onclick = e => busy(e.target, async () => {
+      const k = cur ? +cur : 1; // undo any earlier split first, then divide by the new number
+      const rows = items.map(x => { const base = String(x.description || '').replace(/ \(÷\d+\)$/, '');
+        const o = { id: x.id, description: n > 1 ? base + ' (÷' + n + ')' : base };
+        ['calories', 'protein', 'carbs', 'fat'].forEach(q => { if (x[q] !== '' && x[q] != null) o[q] = Math.round(+x[q] * k / n); }); return o; });
+      const list = await api('editMeals', { date, items: rows }); box.classList.add('hide'); mealsChanged(date, list); renderMeals(list);
+      toast(n > 1 ? 'Shared by ' + n + ' · ' + Math.round(tot / n) + ' kcal each' : 'Back to a full portion'); }); };
+  draw();
+}
 function drawSplit() {
   const f = $('#mealForm'), items = mBasket.concat(mItem(f).description || mItem(f).calories ? [mItem(f)] : []), tot = items.reduce((a, x) => a + (+x.calories || 0), 0);
   $('#mSplitN').textContent = mSplit;
