@@ -818,7 +818,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261025090620';
+const BUILD = '20261025090916';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2046,7 +2046,7 @@ const ING = [
 const DISH_DUPES = new Set(['ข้าวสวย', 'ข้าวกล้อง', 'ข้าวเหนียว', 'ไข่ดาว', 'ไข่ต้ม', 'ไข่ขาวต้ม', 'อกไก่ย่าง', 'กล้วยหอม', 'แอปเปิ้ล', 'ส้ม', 'มะม่วงสุก', 'แตงโม', 'สับปะรด', 'มะละกอ', 'ฝรั่ง', 'ทุเรียน', 'องุ่น',
   'ถั่วอัลมอนด์', 'ถั่วลิสง', 'เนยถั่ว', 'ข้าวโอ๊ต', 'กราโนล่า', 'ขนมปังโฮลวีต', 'ขนมปังขาว', 'เต้าหู้', 'อะโวคาโด', 'มันหวานต้ม', 'ข้าวโพดต้ม', 'แซลมอนย่าง', 'สเต๊กเนื้อ', 'ซาชิมิแซลมอน',
   'กรีกโยเกิร์ต', 'นมจืด', 'นมไขมันต่ำ', 'เวย์โปรตีน', 'ไก่ทอด', 'ไก่ย่าง', 'คอหมูย่าง', 'ครัวซองต์', 'ไข่ไก่', 'อเมริกาโน่', 'ลาเต้', 'ลาเต้ นมไขมันต่ำ', 'น้ำส้มคั้น', 'มัทฉะลาเต้', 'โกโก้เย็น', 'ไข่ต้มสุก 7-11']);
-const showName = en => en.replace(/ ([^)]*,[^)]*)/, '').replace(/ ([^)]*…)/, '');
+const showName = en => en.replace(/ \([^)]*,[^)]*\)/, '').replace(/ \([^)]*…\)/, '');
 const FOOD_DB = ING.map(f => ({ name: f[0], en: f[1], per: 100, n: { kcal: f[2], p: f[3], c: f[4], f: f[5] }, units: f[6] }))
   .concat(FOODS.filter(f => !DISH_DUPES.has(f[0])).map(f => ({ name: f[0], en: f[1], per: 1, n: { kcal: f[2], p: f[3], c: f[4], f: f[5] }, units: [[f[6], 1]] })));
 /** "ribeye 200g", "2 eggs", "แซลมอน 150 กรัม" → { q: words to search, grams, count } */
