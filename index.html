@@ -824,7 +824,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261025121529';
+const BUILD = '20261025121547';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -2176,6 +2176,7 @@ async function addDayPhoto(input) {
 const DAYPH = {}; // each day's photos once loaded, so going back is instant
 function renderDayPhotos(loading) {
   const el = $('#dayPhotos');
+  if (!loading) DAYPH[wSel] = wPhotos; // adds and deletes stay remembered
   el.innerHTML = (OWNER ? `<label class="addtile"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Add photo</span>
       <input type="file" accept="${IMG_ACCEPT}" id="dayPhotoFile"></label>` : '') +
     wPhotos.map(p => `<figure>${imgTag(p.thumbId, p.photoId, '', nice(p.date))}<button class="del" data-delp="${p.id}" aria-label="Delete">✕</button></figure>`).join('')
