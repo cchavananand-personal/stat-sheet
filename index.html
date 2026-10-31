@@ -366,7 +366,7 @@ button.loading img,button.loading svg{opacity:0}
 .lbbar{height:10px;border-radius:99px;background:var(--soft);overflow:hidden;margin-top:4px}.lbbar i{display:block;height:100%;border-radius:99px;background:#3fb58a;transition:width .5s}
 .lbv{font-weight:800;font-size:14px;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 .shrow{display:grid;grid-template-columns:1fr 64px 64px;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid var(--line)}.shrow>*:not(:first-child){justify-self:center}
-.shrow.shhead{padding:2px 0 6px}.shrow.shhead b{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.shrow .sw{border:0;padding:0;min-height:0}.shfix{font-size:12px;color:var(--muted)}
+.shrow.sh3{grid-template-columns:1fr 54px 54px 54px}.shrow.shhead{padding:2px 0 6px}.shrow.shhead b{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.shrow .sw{border:0;padding:0;min-height:0}.shfix{font-size:12px;color:var(--muted)}
 #hiddenNote{margin:0 0 10px;padding:8px 12px;border-radius:12px;background:var(--soft);color:var(--muted);font-size:13px}#hiddenNote.hide{display:none}
 .fsug{margin:-4px 0 10px;border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden;box-shadow:0 8px 24px #0005}.fsug.hide,.fpor.hide{display:none}
 .fsug button{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;padding:8px 12px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none;text-align:left;text-transform:none;font-weight:600}
@@ -497,7 +497,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
   </svg><b id="brandName">STAT SHEET</b></div>
   <div class="row" style="gap:8px"><div class="role hide" id="roleTag"></div><span class="avatar hide" id="peerAv"></span><button class="avatar" id="menuBtn" aria-label="Account">?</button></div>
 </header>
-<div id="peerBar" class="hide"><span>Viewing <b id="peerName"></b> · peer</span><button class="lk-open" id="peerBack">Back to my stats</button></div>
+<div id="peerBar" class="hide"><span>Viewing <b id="peerName"></b><span id="peerKind"> · peer</span></span><button class="lk-open" id="peerBack">Back to my stats</button></div>
 <div id="trainerBar" class="hide">
   <div id="modeSeg"><button data-m="c"><span class="mb c">C</span>Personal Profile</button><button data-m="t"><span class="mb t">T</span>Client Profile<i class="nbadge hide" id="tBadge"></i></button></div>
   <div id="clientBar" class="hide" role="tablist" aria-label="Clients"></div>
@@ -824,7 +824,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261025121731';
+const BUILD = '20261031214939';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1030,7 +1030,7 @@ function renderRoleTag() {
   // trainers: C | T toggle; in T, one tap per client
   $('#trainerBar').classList.toggle('hide', !trainer || viewingPeer());
   $('#peerBar').classList.toggle('hide', !viewingPeer());
-  if (viewingPeer()) $('#peerName').textContent = S.target.name;
+  if (viewingPeer()) { $('#peerName').textContent = S.target.name; $('#peerKind').textContent = S.coach && S.coach.id === S.target.id ? ' · your trainer' : ' · peer'; }
   if (viewingClient()) { const me = (S.clients || []).find(c => c.id === S.target.id); if (me && me.news && me.news.length) { me.news = []; syncSavedClients(); } }
   document.body.classList.toggle('tmode', viewingClient());
   paintMode();
@@ -2179,7 +2179,7 @@ function renderDayPhotos(loading) {
   el.innerHTML = (OWNER ? `<label class="addtile"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>Add photo</span>
       <input type="file" accept="${IMG_ACCEPT}" id="dayPhotoFile"></label>` : '') +
     wPhotos.map(p => `<figure>${imgTag(p.thumbId, p.photoId, '', nice(p.date))}<button class="del" data-delp="${p.id}" aria-label="Delete">✕</button></figure>`).join('')
-    + (loading ? '<figure class="phload" aria-label="Loading photo"><div class="spinner" style="width:48px;height:52px"></div></figure>' : '');
+    + (loading ? '<figure class="phload" aria-label="Loading photo"><div class="spinner" style="width:38px;height:41px"></div></figure>' : '');
   const inp = $('#dayPhotoFile', el); if (inp) inp.onchange = () => addDayPhoto(inp);
   $$('[data-delp]', el).forEach(b => b.onclick = () => confirm('Delete this photo?') && busy(b, async () => {
     await api('remove', { sheet: 'DailyPhotos', id: b.dataset.delp });
@@ -3008,6 +3008,7 @@ function renderEntries() {
 
 /* ---------- MORE ---------- */
 /** More › Trainer: who your trainer is, or pair with one by their code. */
+document.addEventListener('click', e => { if (e.target.id === 'seeCoach' && S.coach) switchTo(S.coach.id, 'peer'); });
 function renderMyTrainer() {
   const box = $('#myTrainer'), c = S.coach;
   box.classList.toggle('hide', !!(S.me && S.me.trainer)); // trainers can't have a trainer
@@ -3015,7 +3016,7 @@ function renderMyTrainer() {
   if (S.me && S.me.trainer) return;
   box.innerHTML = c
     ? `<div class="row"><span class="avatar big t" id="coachAv"></span><div class="grow"><b>${esc(c.name)}</b>
-         <div class="small muted">Your trainer${c.since ? ' · since ' + nice(c.since, { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</div>${c.code ? `<div class="small muted">Code <b style="color:var(--text);letter-spacing:.04em">${esc(c.code)}</b></div>` : ''}</div>
+         <div class="small muted">Your trainer${c.since ? ' · since ' + nice(c.since, { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</div>${c.shares ? `<button type="button" class="lk-nav" id="seeCoach" style="padding:4px 0">View ${esc(c.name)}'s Stats</button>` : ''}${c.code ? `<div class="small muted">Code <b style="color:var(--text);letter-spacing:.04em">${esc(c.code)}</b></div>` : ''}</div>
          </div>
        <p class="small muted" style="margin:10px 0 0">${esc(c.name)} can see and update your stats, plans and goals, and writes notes to you.</p>
        <button class="link danger hide" id="leaveCoach" style="margin-top:10px">Leave trainer</button>`
@@ -3140,12 +3141,12 @@ const SHARE_ROWS = [['body', 'Weight & Body Fat'], ['photos', 'Progress Photos']
 function shareGet() { let o = {}; try { o = JSON.parse(S.profile.share || '{}') || {}; } catch (e) {} return o; }
 function renderSharing() {
   const card = $('#shareCard'); card.classList.toggle('hide', !S.me || viewingClient() || viewingPeer()); if (!S.me) return;
-  const sh = shareGet(), on = (who, c) => who === 'peers' && c === 'notes' ? !!(sh.peers && sh.peers.notes === true) : !(sh[who] && sh[who][c] === false);
+  const sh = shareGet(), tr = !!(S.me && S.me.trainer), on = (who, c) => who === 'peers' && c === 'notes' ? !!(sh[who] && sh[who][c] === true) : !(sh[who] && sh[who][c] === false);
   const cell = (who, c) => `<button type="button" class="sw${on(who, c) ? ' on' : ''}" data-sh="${who}:${c}" aria-label="${who} ${c}"></button>`;
   $('#shareBox').innerHTML = `<p class="muted" style="margin:0 0 6px">Choose what your trainer and your peers can see. Changes apply straight away.</p>
-    <div class="shrow shhead"><span></span><b>Trainer</b><b>Peers</b></div>
-    ${SHARE_ROWS.map(([c, n]) => `<div class="shrow"><span>${n}</span>${cell('trainer', c)}${cell('peers', c)}</div>`).join('')}
-    <p class="small muted" style="margin:8px 0 0">Notes are off for peers until you turn them on. Hiding Goals from your trainer also stops them setting your goals.</p>`;
+    <div class="shrow shhead${tr ? ' sh3' : ''}"><span></span><b>Trainer</b><b>Peers</b>${tr ? '<b>Clients</b>' : ''}</div>
+    ${SHARE_ROWS.map(([c, n]) => `<div class="shrow${tr ? ' sh3' : ''}"><span>${n}</span>${cell('trainer', c)}${cell('peers', c)}${tr ? cell('clients', c) : ''}</div>`).join('')}
+    <p class="small muted" style="margin:8px 0 0">${tr ? 'Your clients can see your stats, read-only, unless you switch items off here. ' : ''}Notes are off for peers until you turn them on. Hiding Goals from your trainer also stops them setting your goals.</p>`;
   $$('[data-sh]', $('#shareBox')).forEach(b => b.onclick = () => {
     const [who, c] = b.dataset.sh.split(':'), cur = shareGet(); cur[who] = cur[who] || {};
     cur[who][c] = !on(who, c);
