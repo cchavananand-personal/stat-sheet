@@ -827,7 +827,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261108150716';
+const BUILD = '20261108150945';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1249,7 +1249,7 @@ function drawTrend(id, points, color, o) {
   TC[id] = new Chart($('#' + id), {
     data: { labels: s.labels, datasets: ds },
     options: { responsive: true, maintainAspectRatio: false, animation: false,
-      layout: { padding: { left: 6, right: 14, top: 10 } },
+      layout: { padding: { left: 6, right: 22, top: 10 } },
       interaction: { mode: 'index', intersect: false },
       plugins: { legend: { display: false }, tooltip: { displayColors: false, filter: i => !i.dataset.isTarget && i.parsed.y != null,
         callbacks: { label: c => {
@@ -1257,8 +1257,8 @@ function drawTrend(id, points, color, o) {
           const raw = s.data[c.dataIndex];
           return ['Trend ' + fx(c.parsed.y, dp) + o.u].concat(raw != null ? ['Weighed ' + (+raw) + o.u] : []);
         } } } },
-      scales: { x: { grid: { display: false }, border: { color: css('--line') }, ticks: { color: tick, maxRotation: 0, autoSkip: true, maxTicksLimit: M === 'month' ? 6 : 5, align: 'inner', autoSkipPadding: 26,
-                  callback: v => s.ticks ? s.ticks[v] : s.labels[v] } },
+      scales: { x: { grid: { display: false }, border: { color: css('--line') }, ticks: { color: tick, maxRotation: 0, autoSkip: false, align: 'center', // a label on a regular step counted back from today: every 7 days, every 2nd week, every 2nd month
+                  callback: (v, i) => (s.labels.length - 1 - i) % (M === 'day' ? 7 : 2) === 0 ? (s.ticks ? s.ticks[v] : s.labels[v]) : '' } },
                 y: Object.assign(y, { grid: { color: css('--line') }, border: { display: false } }) } }
   });
 }
