@@ -430,6 +430,7 @@ button.link.link.hide{display:none}
 .pills button{min-height:34px;padding:0;border-radius:9px;font-size:14px;font-weight:700;background:var(--soft);color:var(--muted)}
 .pills button.on{background:var(--accent);color:var(--accent-ink)}
 .ciNum{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--muted)}.ciNum input{max-width:120px;margin:0;text-align:center}
+.msadd{display:flex;gap:8px;margin:12px 0 0}.msadd input{flex:1;min-width:0;margin:0}.msadd button{flex:none}
 .msgrid{margin-top:4px;row-gap:0}.msgrid .ci{min-width:0}.msgrid .ciNum input{max-width:none;flex:1;min-width:0}
 .pill-on,.pill-off{min-height:32px;padding:0 14px;border-radius:99px;font-size:13px;font-weight:700}
 .pill-on{background:var(--accent);color:var(--accent-ink)}.pill-off{background:var(--soft);color:var(--muted)}
@@ -826,7 +827,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261108150313';
+const BUILD = '20261108150716';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1140,7 +1141,7 @@ function chartSpec(id) {
   if (kind === 'kcal') return { title: 'Calories eaten', pts: () => Object.keys(S.nutrition).map(d => ({ date: d, v: num(S.nutrition[d].calories) || null })), color: css('--m'), o: { bar: true, u: ' kcal', d: 0, target: num(S.profile.calories) } };
   if (kind === 'e1rm') { const ex = CD && CD.exercises.find(e => e[0] === arg);
     return { title: (ex ? ex[1] : exName(arg)) + ' · est. max', pts: () => CD && CD.e1rm[arg], color: css('--m'), o: { goodUp: true, u: ' kg', d: 1, minSpan: 10, empty: 'Log sets of this exercise to see your strength.' }, needs: true }; }
-  if (kind === 'check') { const ms = MS_SITES.find(x => 'm_' + x[0] === arg), f = ms ? { name: ms[1] + ' (cm)', type: 'number', unit: 'cm' } : ciDefs().find(x => x.key === arg) || { name: arg, type: 'scale' };
+  if (kind === 'check') { const ms = msAll().find(x => 'm_' + x[0] === arg), f = ms ? { name: ms[1] + ' (cm)', type: 'number', unit: 'cm' } : ciDefs().find(x => x.key === arg) || { name: arg, type: 'scale' };
     return { title: f.name, pts: () => CD && CD.checks[arg], color: css('--accent'), o: { goodUp: true, u: f.type === 'scale' ? '/10' : ' ' + (f.unit || ''), d: 1, minSpan: f.type === 'scale' ? 4 : 2, empty: 'Log it in Today › More details.' }, needs: true }; }
   return null;
 }
@@ -1431,10 +1432,13 @@ $('#ciToggle').onclick = () => { ciOpen = !ciOpen; renderCheckins(); };
 
 /* Measurements: tape measurements (cm) per day, tucked behind a small link and opt-in per body site.
    Stored as daily details under m_<site>, so they save, share and graph like any other daily detail. */
-const MS_SITES = [['neck', 'Neck'], ['shoulders', 'Shoulders'], ['chest', 'Chest'], ['waist', 'Waist'], ['hips', 'Hips'], ['arm', 'Arm (Biceps)'], ['forearm', 'Forearm'], ['thigh', 'Thigh'], ['calf', 'Calf']];
-const MS_DEFAULT = 'neck,shoulders,chest,waist,hips,arm,thigh,calf'; // eight sites = a tidy 2 x 4 grid
+const MS_SITES = [['chest', 'Chest'], ['shoulders', 'Shoulders'], ['arm', 'Arm (Biceps)'], ['waist', 'Waist'], ['hips', 'Hips'], ['thigh', 'Thigh'], ['calf', 'Calf'], ['neck', 'Neck'], ['forearm', 'Forearm']];
+const MS_DEFAULT = 'chest,shoulders,arm,waist,hips,thigh,calf,neck'; // eight sites = a tidy 2 x 4 grid
+/** Body parts this person added themselves: Profile.mcustom = [{key: 'c_glutes', name: 'Glutes'}]. */
+const msCustom = () => { try { const a = JSON.parse(S.profile.mcustom || '[]'); return Array.isArray(a) ? a.filter(x => x && x.key && x.name).map(x => [x.key, x.name]) : []; } catch (e) { return []; } };
+const msAll = () => MS_SITES.concat(msCustom());
 const msKeys = () => String(S.profile.msites == null || S.profile.msites === '' ? MS_DEFAULT : S.profile.msites).split(',');
-const msOn = () => MS_SITES.filter(x => msKeys().indexOf(x[0]) >= 0);
+const msOn = () => msAll().filter(x => msKeys().indexOf(x[0]) >= 0);
 let msOpen = false, msEdit = false;
 function ciSave(date, key, value) { // shows straight away, saves in the background
   const v = CI[date] || (CI[date] = {}); v[key] = value; if (value === '') delete v[key];
@@ -1442,7 +1446,7 @@ function ciSave(date, key, value) { // shows straight away, saves in the backgro
   ciQ = ciQ.then(() => api('setCheckin', { date, key, value })).then(o => { CI[date] = o; }, () => { delete CI[date]; if (date === wSel) { renderCheckins(); renderMeasures(); } toast('Not saved. Try again.', true); }).then(() => { ciBusy[date]--; });
 }
 async function renderMeasures() {
-  const date = wSel, box = $('#msBox'), v = CI[date], n = v ? MS_SITES.filter(x => v['m_' + x[0]] != null && v['m_' + x[0]] !== '').length : 0;
+  const date = wSel, box = $('#msBox'), v = CI[date], n = v ? msAll().filter(x => v['m_' + x[0]] != null && v['m_' + x[0]] !== '').length : 0;
   $('#msToggle').textContent = msOpen ? 'Hide measurements ‹' : 'Measurements' + (n ? ' · ' + n + ' logged' : '') + ' ›';
   box.classList.toggle('hide', !msOpen);
   if (!msOpen) return;
@@ -1452,21 +1456,33 @@ async function renderMeasures() {
     if (date === wSel) renderMeasures();
     return;
   }
-  box.innerHTML = msOn().length ? '<div class="grid2 msgrid">' + msOn().map(([k, name]) => `<div class="ci"><span>${name}</span><label class="ciNum"><input type="number" inputmode="decimal" step="0.1" min="5" max="300" data-ms="${k}" value="${esc(v['m_' + k] == null ? '' : v['m_' + k])}" ${OWNER ? '' : 'readonly'}>cm</label></div>`).join('') + '</div>'
+  box.innerHTML = msOn().length ? '<div class="grid2 msgrid">' + msOn().map(([k, name]) => `<div class="ci"><span>${esc(name)}</span><label class="ciNum"><input type="number" inputmode="decimal" step="0.1" min="5" max="300" data-ms="${k}" value="${esc(v['m_' + k] == null ? '' : v['m_' + k])}" ${OWNER ? '' : 'readonly'}>cm</label></div>`).join('') + '</div>'
     : '<p class="small muted" style="text-align:center">Nothing selected to measure.</p>';
   if (OWNER) box.insertAdjacentHTML('beforeend', msEdit
-    ? MS_SITES.map(([k, name]) => { const on = msKeys().indexOf(k) >= 0; return `<div class="cidef${on ? '' : ' off'}"><b>${name}</b><button class="${on ? 'pill-off' : 'pill-on'}" data-mtog="${k}">${on ? 'Remove' : 'Add'}</button></div>`; }).join('') + '<div class="lkrow"><button class="lk-nav" id="msDone">Done</button></div>'
+    ? msAll().map(([k, name]) => { const on = msKeys().indexOf(k) >= 0; return `<div class="cidef${on ? '' : ' off'}"><b>${esc(name)}</b><button class="${on ? 'pill-off' : 'pill-on'}" data-mtog="${k}">${on ? 'Remove' : 'Add'}</button></div>`; }).join('') + '<form id="msAdd" class="msadd"><input name="name" maxlength="24" placeholder="Add your own, e.g. Glutes, Forearm" autocomplete="off"><button class="primary">Add</button></form><div class="lkrow"><button class="lk-nav" id="msDone">Done</button></div>'
     : '<div class="lkrow"><button class="lk-nav" id="msChoose">Choose what to measure</button></div>');
   $$('input[data-ms]', box).forEach(i => i.onchange = () => { ciSave(date, 'm_' + i.dataset.ms, i.value.trim()); renderMeasures(); });
   const choose = $('#msChoose', box); if (choose) choose.onclick = () => { msEdit = true; renderMeasures(); };
   const done = $('#msDone', box); if (done) done.onclick = () => { msEdit = false; renderMeasures(); };
   $$('[data-mtog]', box).forEach(b => b.onclick = () => {
-    const k = b.dataset.mtog, cur = msKeys(), next = MS_SITES.map(x => x[0]).filter(x => x === k ? cur.indexOf(x) < 0 : cur.indexOf(x) >= 0).join(',');
+    const k = b.dataset.mtog, cur = msKeys(), next = msAll().map(x => x[0]).filter(x => x === k ? cur.indexOf(x) < 0 : cur.indexOf(x) >= 0).join(',');
     S.profile.msites = next || '-'; renderMeasures(); // '-' = none chosen (blank would mean the defaults)
     api('saveProfile', { msites: S.profile.msites }).then(p => { S.profile = p; }).catch(() => {});
   });
 }
 $('#msToggle').onclick = () => { msOpen = !msOpen; renderMeasures(); };
+document.addEventListener('submit', e => { // your own body part: added to the list and switched on
+  if (e.target.id !== 'msAdd') return; e.preventDefault();
+  const name = e.target.elements[0].value.trim().replace(/\s+/g, ' '); if (!name) return;
+  const all = msAll(), same = all.find(x => x[1].toLowerCase() === name.toLowerCase()), cur = msKeys().filter(k => k !== '-');
+  let key = same ? same[0] : 'c_' + (name.toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 14) || 'part');
+  if (!same) { while (all.some(x => x[0] === key)) key += '2'; if (msCustom().length >= 8) return toast('That is plenty of extra parts. Remove one first.', true); }
+  const custom = same ? msCustom() : msCustom().concat([[key, name]]);
+  S.profile.mcustom = JSON.stringify(custom.map(x => ({ key: x[0], name: x[1] })));
+  S.profile.msites = cur.indexOf(key) >= 0 ? cur.join(',') : cur.concat([key]).join(',');
+  renderMeasures();
+  api('saveProfile', { mcustom: S.profile.mcustom, msites: S.profile.msites }).then(p => { S.profile = p; }).catch(() => toast('Not saved. Try again.', true));
+});
 
 /** More › Customize › Daily details: choose what to track. */
 function renderCiDefs() {
