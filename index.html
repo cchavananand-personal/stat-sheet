@@ -825,7 +825,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261108145236';
+const BUILD = '20261108145740';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1168,6 +1168,7 @@ function trendSeries(points, M) { // M = 'day' | 'week' | 'month'
     const ks = []; // the last 12 weeks / months in calendar order, empty ones included so the axis matches real time
     if (M === 'month') { let y = +TODAY.slice(0, 4), m = +TODAY.slice(5, 7); for (let i = 0; i < 12; i++) { ks.unshift(y + '-' + String(m).padStart(2, '0')); if (--m < 1) { m = 12; y--; } } }
     else { let w = weekStart(TODAY); for (let i = 0; i < 12; i++) { ks.unshift(w); w = addDays(w, -7); } }
+    const lead = ks.findIndex(k => g[k]); if (lead > 0) ks.splice(0, lead); // start at your first reading; gaps after it stay
     const yrs = ks.length && ks[0].slice(0, 4) !== ks[ks.length - 1].slice(0, 4);
     const label = k => {
       if (M === 'month') return parse(k + '-01').toLocaleDateString(LOCALE, yrs ? {month:'short', year:'2-digit'} : {month:'short'});
@@ -1189,7 +1190,7 @@ function trendSeries(points, M) { // M = 'day' | 'week' | 'month'
   const labels = [], data = [], trend = [];
   if (!first) return { labels, data, trend };
   let cur = null;
-  for (let d = addDays(TODAY, -29); d <= TODAY; d = addDays(d, 1)) {
+  for (let d = first.date; d <= TODAY; d = addDays(d, 1)) {
     if (em[d] != null) cur = em[d];
     labels.push(nice(d)); data.push(by[d] == null ? null : by[d]); trend.push(cur);
   }
