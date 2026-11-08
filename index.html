@@ -190,7 +190,7 @@ body.tmode .thumb.add,body.tmode .addtile,body.tmode #mealPick,body.tmode [data-
 .gapp>summary small{color:var(--muted);font-weight:500;font-size:12.5px;text-transform:none}.gapp>summary::after{content:"+";margin-left:auto;color:var(--accent);font-weight:800}.gapp[open]>summary::after{content:"−"}
 .gsub{margin:14px 0 4px;font-weight:800;font-size:13px;letter-spacing:.04em;color:var(--accent)}.gfield{color:var(--accent);font-weight:600}.gnote{list-style:none;margin-left:-20px!important;color:var(--muted);font-size:12.5px}
 .gkeys{width:100%;border-collapse:collapse;margin:6px 0;font-size:13px}.gkeys td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}.gkeys td{text-align:left}.gkeys td:first-child{white-space:nowrap;width:1%}
-body.coachview #bodyForm input{opacity:.85}body.coachview #ciToggle,body.coachview #ciBox{display:none!important}
+body.coachview #bodyForm input{opacity:.85}body.coachview #ciToggle,body.coachview #ciBox,body.coachview #msToggle,body.coachview #msBox{display:none!important}
 .exnote{margin:3px 0 0!important;font-size:12.5px;color:var(--muted);font-style:italic;white-space:normal}
 #mTotals.pending .muted{visibility:hidden}
 /* any photo still loading shows the lifting mascot, so it never looks missing */
@@ -546,8 +546,9 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
           </div>
         </form>
         <div class="small muted" id="saveState" style="text-align:center;min-height:18px;margin-top:8px"></div>
-        <div style="text-align:center"><button class="lk-open" id="ciToggle">More parameters ›</button></div>
+        <div style="display:flex;justify-content:center;flex-wrap:wrap;column-gap:20px"><button class="lk-open" id="ciToggle">More parameters ›</button><button class="lk-open" id="msToggle">Measurements ›</button></div>
         <div id="ciBox" class="hide"></div>
+        <div id="msBox" class="hide"></div>
         <div class="hstrip hide" id="dayHealth"></div>
         <div class="photos" id="dayPhotos"></div>
         <button class="lk-nav" data-gallery style="width:100%;margin-top:6px">View all progress photos</button>
@@ -824,7 +825,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261108144719';
+const BUILD = '20261108145236';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1138,7 +1139,7 @@ function chartSpec(id) {
   if (kind === 'kcal') return { title: 'Calories eaten', pts: () => Object.keys(S.nutrition).map(d => ({ date: d, v: num(S.nutrition[d].calories) || null })), color: css('--m'), o: { bar: true, u: ' kcal', d: 0, target: num(S.profile.calories) } };
   if (kind === 'e1rm') { const ex = CD && CD.exercises.find(e => e[0] === arg);
     return { title: (ex ? ex[1] : exName(arg)) + ' · est. max', pts: () => CD && CD.e1rm[arg], color: css('--m'), o: { goodUp: true, u: ' kg', d: 1, minSpan: 10, empty: 'Log sets of this exercise to see your strength.' }, needs: true }; }
-  if (kind === 'check') { const f = ciDefs().find(x => x.key === arg) || { name: arg, type: 'scale' };
+  if (kind === 'check') { const ms = MS_SITES.find(x => 'm_' + x[0] === arg), f = ms ? { name: ms[1] + ' (cm)', type: 'number', unit: 'cm' } : ciDefs().find(x => x.key === arg) || { name: arg, type: 'scale' };
     return { title: f.name, pts: () => CD && CD.checks[arg], color: css('--accent'), o: { goodUp: true, u: f.type === 'scale' ? '/10' : ' ' + (f.unit || ''), d: 1, minSpan: f.type === 'scale' ? 4 : 2, empty: 'Log it in Today › More details.' }, needs: true }; }
   return null;
 }
@@ -1397,10 +1398,11 @@ function fillCheckins(r) {
   const [y, m] = wMonth.split('-').map(Number), n = new Date(y, m, 0).getDate();
   for (let i = 1; i <= n; i++) { const d = wMonth + '-' + String(i).padStart(2, '0'); if (!ciBusy[d]) CI[d] = r.checkins[d] || {}; }
   if (ciOpen) renderCheckins();
+  if (msOpen) renderMeasures();
 }
 const ciBusy = {};
 async function renderCheckins() {
-  const date = wSel, box = $('#ciBox'), v = CI[date], n = v ? Object.keys(v).length : 0;
+  const date = wSel, box = $('#ciBox'), v = CI[date], n = v ? Object.keys(v).filter(k => k.slice(0, 2) !== 'm_').length : 0;
   $('#ciToggle').textContent = ciOpen ? 'Hide parameters ‹' : 'More parameters' + (n ? ' · ' + n + ' logged' : '') + ' ›';
   box.classList.toggle('hide', !ciOpen);
   if (!ciOpen) return;
@@ -1424,6 +1426,45 @@ async function renderCheckins() {
   $$('input[data-ck]', box).forEach(i => i.onchange = () => save(i.dataset.ck, i.value.trim()));
 }
 $('#ciToggle').onclick = () => { ciOpen = !ciOpen; renderCheckins(); };
+
+/* Measurements: tape measurements (cm) per day, tucked behind a small link and opt-in per body site.
+   Stored as daily details under m_<site>, so they save, share and graph like any other daily detail. */
+const MS_SITES = [['chest', 'Chest'], ['waist', 'Waist'], ['hips', 'Hips'], ['arm', 'Arm'], ['thigh', 'Thigh'], ['neck', 'Neck'], ['calf', 'Calf'], ['shoulders', 'Shoulders']];
+const MS_DEFAULT = 'chest,waist,hips,arm,thigh';
+const msKeys = () => String(S.profile.msites == null || S.profile.msites === '' ? MS_DEFAULT : S.profile.msites).split(',');
+const msOn = () => MS_SITES.filter(x => msKeys().indexOf(x[0]) >= 0);
+let msOpen = false, msEdit = false;
+function ciSave(date, key, value) { // shows straight away, saves in the background
+  const v = CI[date] || (CI[date] = {}); v[key] = value; if (value === '') delete v[key];
+  ciBusy[date] = (ciBusy[date] || 0) + 1;
+  ciQ = ciQ.then(() => api('setCheckin', { date, key, value })).then(o => { CI[date] = o; }, () => { delete CI[date]; if (date === wSel) { renderCheckins(); renderMeasures(); } toast('Not saved. Try again.', true); }).then(() => { ciBusy[date]--; });
+}
+async function renderMeasures() {
+  const date = wSel, box = $('#msBox'), v = CI[date], n = v ? MS_SITES.filter(x => v['m_' + x[0]] != null && v['m_' + x[0]] !== '').length : 0;
+  $('#msToggle').textContent = msOpen ? 'Hide measurements ‹' : 'Measurements' + (n ? ' · ' + n + ' logged' : '') + ' ›';
+  box.classList.toggle('hide', !msOpen);
+  if (!msOpen) return;
+  if (!v) {
+    box.innerHTML = '<div class="ld" style="padding:8px 0">Loading…</div>';
+    try { CI[date] = await api('checkins', { date }); } catch (e) { box.innerHTML = ''; return; }
+    if (date === wSel) renderMeasures();
+    return;
+  }
+  box.innerHTML = msOn().map(([k, name]) => `<div class="ci"><span>${name}</span><label class="ciNum"><input type="number" inputmode="decimal" step="0.1" min="5" max="300" data-ms="${k}" value="${esc(v['m_' + k] == null ? '' : v['m_' + k])}" ${OWNER ? '' : 'readonly'}>cm</label></div>`).join('')
+    || '<p class="small muted" style="text-align:center">Nothing selected to measure.</p>';
+  if (OWNER) box.insertAdjacentHTML('beforeend', msEdit
+    ? MS_SITES.map(([k, name]) => { const on = msKeys().indexOf(k) >= 0; return `<div class="cidef${on ? '' : ' off'}"><b>${name}</b><button class="${on ? 'pill-off' : 'pill-on'}" data-mtog="${k}">${on ? 'Remove' : 'Add'}</button></div>`; }).join('') + '<div class="lkrow"><button class="lk-nav" id="msDone">Done</button></div>'
+    : '<div class="lkrow"><button class="lk-nav" id="msChoose">Choose what to measure</button></div>');
+  $$('input[data-ms]', box).forEach(i => i.onchange = () => { ciSave(date, 'm_' + i.dataset.ms, i.value.trim()); renderMeasures(); });
+  const choose = $('#msChoose', box); if (choose) choose.onclick = () => { msEdit = true; renderMeasures(); };
+  const done = $('#msDone', box); if (done) done.onclick = () => { msEdit = false; renderMeasures(); };
+  $$('[data-mtog]', box).forEach(b => b.onclick = () => {
+    const k = b.dataset.mtog, cur = msKeys(), next = MS_SITES.map(x => x[0]).filter(x => x === k ? cur.indexOf(x) < 0 : cur.indexOf(x) >= 0).join(',');
+    S.profile.msites = next || '-'; renderMeasures(); // '-' = none chosen (blank would mean the defaults)
+    api('saveProfile', { msites: S.profile.msites }).then(p => { S.profile = p; }).catch(() => {});
+  });
+}
+$('#msToggle').onclick = () => { msOpen = !msOpen; renderMeasures(); };
 
 /** More › Customize › Daily details: choose what to track. */
 function renderCiDefs() {
@@ -1453,7 +1494,8 @@ async function renderChartsBox() {
   if (!CD) { box.innerHTML = '<p class="ld" style="margin:0">Loading…</p>'; try { CD = await api('chartData'); } catch (e) { box.innerHTML = '<button class="link">Couldn\'t load · tap to retry</button>'; $('button', box).onclick = renderChartsBox; return; } }
   const opts = [['strength', 'Overall strength'], ['volume', 'Training volume'], ['steps', 'Steps'], ['kcal', 'Calories eaten']]
     .concat(CD.exercises.map(e => ['e1rm:' + e[0], 'Strength · ' + e[1]]))
-    .concat(ciDefs().map(f => ['check:' + f.key, f.name]));
+    .concat(ciDefs().map(f => ['check:' + f.key, f.name]))
+    .concat(msOn().map(x => ['check:m_' + x[0], x[1] + ' measurement (cm)']));
   list.forEach(id => { if (!opts.some(o => o[0] === id) && chartSpec(id)) opts.push([id, chartSpec(id).title]); }); // keep ones already chosen
   box.innerHTML = `<p class="muted" style="margin-top:0">Weight and Body Fat always show. Added graphs appear underneath, in the order you add them.</p>` +
     opts.map(o => { const on = list.indexOf(o[0]) >= 0;
@@ -1469,7 +1511,7 @@ $('#chartsCard').addEventListener('toggle', e => { if (e.target.open) renderChar
 /** "Synced from Apple Health" (or "from FitDays via Apple Health") for automatic weigh-ins; "✓ Saved" for typed ones. */
 const syncedLabel = b => !b.source ? '✓ Saved' : '⟳ Synced from ' + (b.source === 'Apple Health' ? 'Apple Health' : b.source + ' via Apple Health');
 async function renderWeightEntry() {
-  renderCheckins();
+  renderCheckins(); renderMeasures();
   const b = MD.by[wSel] || S.body.find(r => r.date === wSel) || {};
   const f = $('#bodyForm'); f.weight.value = b.weight == null ? '' : b.weight; f.bodyfat.value = b.bodyfat == null ? '' : b.bodyfat;
   $('#saveState').textContent = num(b.weight) != null || num(b.bodyfat) != null ? syncedLabel(b) : ROLE === 'trainer' ? S.target.name + ' has not logged this day.' : 'Type your weight. It saves automatically.';
@@ -3599,8 +3641,14 @@ const ICONS_UI = {
 };
 const ic = n => '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS_UI[n] || '') + '</svg>';
 $$('[data-ic]').forEach(e => { e.outerHTML = ic(e.dataset.ic); });
+/** The freshest photo we know for this person (you, who you're viewing, your trainer, peers, clients), else the row's own copy. */
+function freshPhoto(person) {
+  if (!person || !person.id) return person && person.photo;
+  const hit = [S.me, S.target, S.coach].concat(S.peers || [], S.clients || []).find(x => x && x.id === person.id && x.photo !== undefined);
+  return hit ? hit.photo : person.photo;
+}
 function paintAvatar(el, person, extra) {
-  const ph = person && person.photo;
+  const ph = freshPhoto(person);
   el.className = 'avatar ' + (extra || '') + (ph ? ' photo' : '');
   el.style.backgroundImage = ph ? 'url(' + ph + ')' : '';
   el.textContent = person ? person.name.charAt(0).toUpperCase() : '?';
