@@ -430,6 +430,7 @@ button.link.link.hide{display:none}
 .pills button{min-height:34px;padding:0;border-radius:9px;font-size:14px;font-weight:700;background:var(--soft);color:var(--muted)}
 .pills button.on{background:var(--accent);color:var(--accent-ink)}
 .ciNum{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--muted)}.ciNum input{max-width:120px;margin:0;text-align:center}
+.msgrid{margin-top:4px;row-gap:0}.msgrid .ci{min-width:0}.msgrid .ciNum input{max-width:none;flex:1;min-width:0}
 .pill-on,.pill-off{min-height:32px;padding:0 14px;border-radius:99px;font-size:13px;font-weight:700}
 .pill-on{background:var(--accent);color:var(--accent-ink)}.pill-off{background:var(--soft);color:var(--muted)}
 .cidef.off b{color:var(--muted);font-weight:600}
@@ -825,7 +826,7 @@ body.ro [data-go^="more"]{display:none} /* peers have no More tab */
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
 <script>
 // Build stamp, set automatically by publish.sh. Used to pull a newer version past phone/browser caches.
-const BUILD = '20261108145740';
+const BUILD = '20261108150313';
 /** On open (and when the app comes back to the screen), check GitHub for a newer build and reload into it. */
 async function checkForUpdate() {
   if (BUILD === 'dev' || location.protocol !== 'https:') return;
@@ -1430,8 +1431,8 @@ $('#ciToggle').onclick = () => { ciOpen = !ciOpen; renderCheckins(); };
 
 /* Measurements: tape measurements (cm) per day, tucked behind a small link and opt-in per body site.
    Stored as daily details under m_<site>, so they save, share and graph like any other daily detail. */
-const MS_SITES = [['chest', 'Chest'], ['waist', 'Waist'], ['hips', 'Hips'], ['arm', 'Arm'], ['thigh', 'Thigh'], ['neck', 'Neck'], ['calf', 'Calf'], ['shoulders', 'Shoulders']];
-const MS_DEFAULT = 'chest,waist,hips,arm,thigh';
+const MS_SITES = [['neck', 'Neck'], ['shoulders', 'Shoulders'], ['chest', 'Chest'], ['waist', 'Waist'], ['hips', 'Hips'], ['arm', 'Arm (Biceps)'], ['forearm', 'Forearm'], ['thigh', 'Thigh'], ['calf', 'Calf']];
+const MS_DEFAULT = 'neck,shoulders,chest,waist,hips,arm,thigh,calf'; // eight sites = a tidy 2 x 4 grid
 const msKeys = () => String(S.profile.msites == null || S.profile.msites === '' ? MS_DEFAULT : S.profile.msites).split(',');
 const msOn = () => MS_SITES.filter(x => msKeys().indexOf(x[0]) >= 0);
 let msOpen = false, msEdit = false;
@@ -1451,8 +1452,8 @@ async function renderMeasures() {
     if (date === wSel) renderMeasures();
     return;
   }
-  box.innerHTML = msOn().map(([k, name]) => `<div class="ci"><span>${name}</span><label class="ciNum"><input type="number" inputmode="decimal" step="0.1" min="5" max="300" data-ms="${k}" value="${esc(v['m_' + k] == null ? '' : v['m_' + k])}" ${OWNER ? '' : 'readonly'}>cm</label></div>`).join('')
-    || '<p class="small muted" style="text-align:center">Nothing selected to measure.</p>';
+  box.innerHTML = msOn().length ? '<div class="grid2 msgrid">' + msOn().map(([k, name]) => `<div class="ci"><span>${name}</span><label class="ciNum"><input type="number" inputmode="decimal" step="0.1" min="5" max="300" data-ms="${k}" value="${esc(v['m_' + k] == null ? '' : v['m_' + k])}" ${OWNER ? '' : 'readonly'}>cm</label></div>`).join('') + '</div>'
+    : '<p class="small muted" style="text-align:center">Nothing selected to measure.</p>';
   if (OWNER) box.insertAdjacentHTML('beforeend', msEdit
     ? MS_SITES.map(([k, name]) => { const on = msKeys().indexOf(k) >= 0; return `<div class="cidef${on ? '' : ' off'}"><b>${name}</b><button class="${on ? 'pill-off' : 'pill-on'}" data-mtog="${k}">${on ? 'Remove' : 'Add'}</button></div>`; }).join('') + '<div class="lkrow"><button class="lk-nav" id="msDone">Done</button></div>'
     : '<div class="lkrow"><button class="lk-nav" id="msChoose">Choose what to measure</button></div>');
